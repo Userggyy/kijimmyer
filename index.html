@@ -1,0 +1,1117 @@
+<html lang="zh-TW"><head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kali Linux 網路安全工具指南</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@2.5.0/fonts/remixicon.css" rel="stylesheet">
+    <style>
+        body { 
+            background-color: #000; 
+            color: #e6f1ff;
+            font-family: 'Inter', 'Noto Sans TC', sans-serif;
+            margin: 0;
+            overflow-x: hidden;
+        }
+        #digital-rain {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            opacity: 0.5;
+        }
+        .content {
+            position: relative;
+            z-index: 10;
+        }
+        .tool-card {
+            transition: all 0.3s ease;
+            cursor: pointer;
+            background: rgba(15, 25, 50, 0.7);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(0, 255, 255, 0.2);
+        }
+        .tool-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 10px 30px rgba(0,255,255,0.3);
+        }
+        .category-filter {
+            transition: all 0.3s ease;
+            cursor: pointer;
+            opacity: 0.6;
+        }
+        .category-filter.active {
+            opacity: 1;
+            border-bottom: 2px solid #00ffff;
+        }
+        /* 移動端響應式調整 */
+        @media (max-width: 768px) {
+            .container {
+                padding-left: 1rem;
+                padding-right: 1rem;
+            }
+            #category-filters {
+                flex-wrap: wrap;
+                justify-content: center;
+                gap: 0.5rem;
+            }
+            .category-filter {
+                margin-bottom: 0.5rem;
+            }
+            #tools {
+                grid-template-columns: 1fr;
+            }
+            .tool-modal {
+                width: 95%;
+                max-height: 80vh;
+                overflow-y: auto;
+            }
+        }
+    </style>
+</head>
+<body>
+    <canvas id="digital-rain" width="400" height="608"></canvas>
+    <div class="container mx-auto px-4 content">
+        <!-- Kali Linux 介紹部分 -->
+        <section id="kali-intro" class="mb-12 text-center">
+            <h1 class="text-4xl font-bold text-cyan-300 mb-6 flex items-center justify-center">
+                <i class="ri-shield-flash-line mr-3"></i>
+                Kali Linux 網路安全作業系統
+            </h1>
+            
+            <div class="max-w-3xl mx-auto bg-gray-900 bg-opacity-50 p-6 rounded-lg">
+                <p class="text-lg mb-4">
+                    Kali Linux 是一個基於 Debian 的 Linux 發行版，專門為網路安全專業人士和道德黑客設計。
+                </p>
+                
+                <div class="grid md:grid-cols-3 gap-4">
+                    <div class="bg-gray-800 p-4 rounded-lg">
+                        <i class="ri-tools-line text-3xl text-cyan-300 mb-2"></i>
+                        <h3 class="font-semibold mb-2">預裝安全工具</h3>
+                        <p>超過600種網路安全和滲透測試工具</p>
+                    </div>
+                    
+                    <div class="bg-gray-800 p-4 rounded-lg">
+                        <i class="ri-secure-payment-line text-3xl text-cyan-300 mb-2"></i>
+                        <h3 class="font-semibold mb-2">開源安全</h3>
+                        <p>所有工具完全開源，可自由使用和修改</p>
+                    </div>
+                    
+                    <div class="bg-gray-800 p-4 rounded-lg">
+                        <i class="ri-code-line text-3xl text-cyan-300 mb-2"></i>
+                        <h3 class="font-semibold mb-2">持續更新</h3>
+                        <p>定期更新，與最新安全技術同步</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="ethical-guidelines" class="mb-12 text-center">
+            <h2 class="text-3xl font-bold text-orange-400 mb-6 flex items-center justify-center">
+                <i class="ri-scales-line mr-3"></i>
+                道德黑客倫理指南
+            </h2>
+            
+            <div class="max-w-4xl mx-auto ethical-guidelines p-8 rounded-lg">
+                <div class="grid md:grid-cols-3 gap-6">
+                    <div class="bg-gray-800 p-6 rounded-lg">
+                        <i class="ri-shield-check-line text-3xl text-orange-300 mb-4"></i>
+                        <h3 class="font-semibold mb-3 text-xl text-orange-300">授權原則</h3>
+                        <p>
+                            僅在獲得明確書面授權的系統或網路上進行安全測試。未經授權的滲透測試是非法的。
+                        </p>
+                    </div>
+                    
+                    <div class="bg-gray-800 p-6 rounded-lg">
+                        <i class="ri-error-warning-line text-3xl text-orange-300 mb-4"></i>
+                        <h3 class="font-semibold mb-3 text-xl text-orange-300">法律邊界</h3>
+                        <p>
+                            嚴格遵守當地法律法規。違反法律可能導致民事或刑事責任。
+                        </p>
+                    </div>
+                    
+                    <div class="bg-gray-800 p-6 rounded-lg">
+                        <i class="ri-hand-heart-line text-3xl text-orange-300 mb-4"></i>
+                        <h3 class="font-semibold mb-3 text-xl text-orange-300">職業道德</h3>
+                        <p>
+                            始終保護個人隱私，不洩露未經授權的敏感資訊。尊重數位倫理。
+                        </p>
+                    </div>
+                </div>
+                
+                <div class="mt-8 bg-gray-900 p-6 rounded-lg">
+                    <h4 class="text-2xl font-bold text-orange-300 mb-4">
+                        <i class="ri-lightbulb-flash-line mr-2"></i>
+                        關鍵行為準則
+                    </h4>
+                    <ul class="space-y-3 text-left">
+                        <li class="flex items-center">
+                            <i class="ri-check-line text-orange-300 mr-2"></i>
+                            僅在獲得明確授權的環境中使用安全工具
+                        </li>
+                        <li class="flex items-center">
+                            <i class="ri-check-line text-orange-300 mr-2"></i>
+                            始終記錄和報告發現的安全漏洞
+                        </li>
+                        <li class="flex items-center">
+                            <i class="ri-check-line text-orange-300 mr-2"></i>
+                            優先考慮系統和數據的安全與完整性
+                        </li>
+                        <li class="flex items-center">
+                            <i class="ri-check-line text-orange-300 mr-2"></i>
+                            持續學習並遵守最新的職業道德準則
+                        </li>
+                    </ul>
+                </div>
+                
+                <div class="mt-6 text-gray-400 italic">
+                    🚨 違反這些準則可能導致嚴重的法律後果和職業生涯風險。
+                </div>
+            </div>
+        </section>
+
+        <!-- 工具搜尋和篩選區域 (原本的程式碼) -->
+        <div class="flex justify-between items-center my-8">
+            <h2 class="text-3xl font-bold text-cyan-300 flex items-center">
+                <i class="ri-search-line mr-3"></i>
+                網路安全工具
+            </h2>
+            <div class="flex items-center">
+                <input type="text" id="tool-search" placeholder="搜尋工具..." class="mr-4 bg-gray-800 text-white px-4 py-2 rounded-lg">
+            </div>
+        </div>
+
+        <div class="flex justify-center mb-6 space-x-4 flex-wrap">
+            <div id="category-filters" class="flex space-x-4">
+                <span class="category-filter active" data-category="all">全部工具</span>
+                <span class="category-filter" data-category="網路掃描">網路掃描</span>
+                <span class="category-filter" data-category="封包分析">封包分析</span>
+                <span class="category-filter" data-category="滲透測試">滲透測試</span>
+                <span class="category-filter" data-category="無線攻擊">無線攻擊</span>
+                <span class="category-filter" data-category="資料庫滲透">資料庫滲透</span>
+            </div>
+        </div>
+        
+        <div id="tools" class="grid md:grid-cols-3 gap-6"><div class="tool-card p-6 rounded-lg text-center group">
+                        <i class="ri-terminal-line text-4xl mb-4 text-cyan-300 group-hover:text-white transition"></i>
+                        <h3 class="text-xl font-semibold text-cyan-300 mb-2">Netcat</h3>
+                        <p class="text-gray-400 mb-2">網路掃描</p>
+                        <span class="difficulty-badge">
+                            中等
+                        </span>
+                    </div><div class="tool-card p-6 rounded-lg text-center group">
+                        <i class="ri-search-eye-line text-4xl mb-4 text-cyan-300 group-hover:text-white transition"></i>
+                        <h3 class="text-xl font-semibold text-cyan-300 mb-2">Masscan</h3>
+                        <p class="text-gray-400 mb-2">網路掃描</p>
+                        <span class="difficulty-badge">
+                            困難
+                        </span>
+                    </div><div class="tool-card p-6 rounded-lg text-center group">
+                        <i class="ri-radar-line text-4xl mb-4 text-cyan-300 group-hover:text-white transition"></i>
+                        <h3 class="text-xl font-semibold text-cyan-300 mb-2">Nessus</h3>
+                        <p class="text-gray-400 mb-2">網路掃描</p>
+                        <span class="difficulty-badge">
+                            中等
+                        </span>
+                    </div><div class="tool-card p-6 rounded-lg text-center group">
+                        <i class="ri-group-2-line text-4xl mb-4 text-cyan-300 group-hover:text-white transition"></i>
+                        <h3 class="text-xl font-semibold text-cyan-300 mb-2">Ettercap</h3>
+                        <p class="text-gray-400 mb-2">封包分析</p>
+                        <span class="difficulty-badge">
+                            困難
+                        </span>
+                    </div><div class="tool-card p-6 rounded-lg text-center group">
+                        <i class="ri-code-line text-4xl mb-4 text-cyan-300 group-hover:text-white transition"></i>
+                        <h3 class="text-xl font-semibold text-cyan-300 mb-2">Scapy</h3>
+                        <p class="text-gray-400 mb-2">封包分析</p>
+                        <span class="difficulty-badge">
+                            困難
+                        </span>
+                    </div><div class="tool-card p-6 rounded-lg text-center group">
+                        <i class="ri-window-line text-4xl mb-4 text-cyan-300 group-hover:text-white transition"></i>
+                        <h3 class="text-xl font-semibold text-cyan-300 mb-2">Cain &amp; Abel</h3>
+                        <p class="text-gray-400 mb-2">封包分析</p>
+                        <span class="difficulty-badge">
+                            中等
+                        </span>
+                    </div><div class="tool-card p-6 rounded-lg text-center group">
+                        <i class="ri-user-voice-line text-4xl mb-4 text-cyan-300 group-hover:text-white transition"></i>
+                        <h3 class="text-xl font-semibold text-cyan-300 mb-2">Social-Engineer Toolkit</h3>
+                        <p class="text-gray-400 mb-2">滲透測試</p>
+                        <span class="difficulty-badge">
+                            困難
+                        </span>
+                    </div><div class="tool-card p-6 rounded-lg text-center group">
+                        <i class="ri-browser-line text-4xl mb-4 text-cyan-300 group-hover:text-white transition"></i>
+                        <h3 class="text-xl font-semibold text-cyan-300 mb-2">BeEF</h3>
+                        <p class="text-gray-400 mb-2">滲透測試</p>
+                        <span class="difficulty-badge">
+                            困難
+                        </span>
+                    </div><div class="tool-card p-6 rounded-lg text-center group">
+                        <i class="ri-command-line text-4xl mb-4 text-cyan-300 group-hover:text-white transition"></i>
+                        <h3 class="text-xl font-semibold text-cyan-300 mb-2">Powersploit</h3>
+                        <p class="text-gray-400 mb-2">滲透測試</p>
+                        <span class="difficulty-badge">
+                            困難
+                        </span>
+                    </div><div class="tool-card p-6 rounded-lg text-center group">
+                        <i class="ri-wifi-line text-4xl mb-4 text-cyan-300 group-hover:text-white transition"></i>
+                        <h3 class="text-xl font-semibold text-cyan-300 mb-2">Wifite</h3>
+                        <p class="text-gray-400 mb-2">無線攻擊</p>
+                        <span class="difficulty-badge">
+                            中等
+                        </span>
+                    </div><div class="tool-card p-6 rounded-lg text-center group">
+                        <i class="ri-wifi-fill text-4xl mb-4 text-cyan-300 group-hover:text-white transition"></i>
+                        <h3 class="text-xl font-semibold text-cyan-300 mb-2">WiFi-Pumpkin</h3>
+                        <p class="text-gray-400 mb-2">無線攻擊</p>
+                        <span class="difficulty-badge">
+                            困難
+                        </span>
+                    </div><div class="tool-card p-6 rounded-lg text-center group">
+                        <i class="ri-lock-unlock-line text-4xl mb-4 text-cyan-300 group-hover:text-white transition"></i>
+                        <h3 class="text-xl font-semibold text-cyan-300 mb-2">Reaver</h3>
+                        <p class="text-gray-400 mb-2">無線攻擊</p>
+                        <span class="difficulty-badge">
+                            中等
+                        </span>
+                    </div><div class="tool-card p-6 rounded-lg text-center group">
+                        <i class="ri-key-2-line text-4xl mb-4 text-cyan-300 group-hover:text-white transition"></i>
+                        <h3 class="text-xl font-semibold text-cyan-300 mb-2">John the Ripper</h3>
+                        <p class="text-gray-400 mb-2">密碼破解</p>
+                        <span class="difficulty-badge">
+                            困難
+                        </span>
+                    </div><div class="tool-card p-6 rounded-lg text-center group">
+                        <i class="ri-lock-password-line text-4xl mb-4 text-cyan-300 group-hover:text-white transition"></i>
+                        <h3 class="text-xl font-semibold text-cyan-300 mb-2">Hashcat</h3>
+                        <p class="text-gray-400 mb-2">密碼破解</p>
+                        <span class="difficulty-badge">
+                            困難
+                        </span>
+                    </div><div class="tool-card p-6 rounded-lg text-center group">
+                        <i class="ri-skull-line text-4xl mb-4 text-cyan-300 group-hover:text-white transition"></i>
+                        <h3 class="text-xl font-semibold text-cyan-300 mb-2">Hydra</h3>
+                        <p class="text-gray-400 mb-2">密碼破解</p>
+                        <span class="difficulty-badge">
+                            困難
+                        </span>
+                    </div><div class="tool-card p-6 rounded-lg text-center group">
+                        <i class="ri-search-line text-4xl mb-4 text-cyan-300 group-hover:text-white transition"></i>
+                        <h3 class="text-xl font-semibold text-cyan-300 mb-2">Nmap</h3>
+                        <p class="text-gray-400 mb-2">網路掃描</p>
+                        <span class="difficulty-badge">
+                            中等
+                        </span>
+                    </div><div class="tool-card p-6 rounded-lg text-center group">
+                        <i class="ri-mac-line text-4xl mb-4 text-cyan-300 group-hover:text-white transition"></i>
+                        <h3 class="text-xl font-semibold text-cyan-300 mb-2">Wireshark</h3>
+                        <p class="text-gray-400 mb-2">封包分析</p>
+                        <span class="difficulty-badge">
+                            困難
+                        </span>
+                    </div><div class="tool-card p-6 rounded-lg text-center group">
+                        <i class="ri-bug-line text-4xl mb-4 text-cyan-300 group-hover:text-white transition"></i>
+                        <h3 class="text-xl font-semibold text-cyan-300 mb-2">Metasploit</h3>
+                        <p class="text-gray-400 mb-2">滲透測試</p>
+                        <span class="difficulty-badge">
+                            困難
+                        </span>
+                    </div><div class="tool-card p-6 rounded-lg text-center group">
+                        <i class="ri-wifi-line text-4xl mb-4 text-cyan-300 group-hover:text-white transition"></i>
+                        <h3 class="text-xl font-semibold text-cyan-300 mb-2">Aircrack-ng</h3>
+                        <p class="text-gray-400 mb-2">無線攻擊</p>
+                        <span class="difficulty-badge">
+                            中等
+                        </span>
+                    </div><div class="tool-card p-6 rounded-lg text-center group">
+                        <i class="ri-database-line text-4xl mb-4 text-cyan-300 group-hover:text-white transition"></i>
+                        <h3 class="text-xl font-semibold text-cyan-300 mb-2">SQLMap</h3>
+                        <p class="text-gray-400 mb-2">資料庫滲透</p>
+                        <span class="difficulty-badge">
+                            中等
+                        </span>
+                    </div><div class="tool-card p-6 rounded-lg text-center group">
+                        <i class="ri-computer-line text-4xl mb-4 text-cyan-300 group-hover:text-white transition"></i>
+                        <h3 class="text-xl font-semibold text-cyan-300 mb-2">Zenmap</h3>
+                        <p class="text-gray-400 mb-2">網路掃描</p>
+                        <span class="difficulty-badge">
+                            簡單
+                        </span>
+                    </div><div class="tool-card p-6 rounded-lg text-center group">
+                        <i class="ri-radar-line text-4xl mb-4 text-cyan-300 group-hover:text-white transition"></i>
+                        <h3 class="text-xl font-semibold text-cyan-300 mb-2">Angry IP Scanner</h3>
+                        <p class="text-gray-400 mb-2">網路掃描</p>
+                        <span class="difficulty-badge">
+                            簡單
+                        </span>
+                    </div><div class="tool-card p-6 rounded-lg text-center group">
+                        <i class="ri-file-list-3-line text-4xl mb-4 text-cyan-300 group-hover:text-white transition"></i>
+                        <h3 class="text-xl font-semibold text-cyan-300 mb-2">tcpdump</h3>
+                        <p class="text-gray-400 mb-2">封包分析</p>
+                        <span class="difficulty-badge">
+                            困難
+                        </span>
+                    </div><div class="tool-card p-6 rounded-lg text-center group">
+                        <i class="ri-look-line text-4xl mb-4 text-cyan-300 group-hover:text-white transition"></i>
+                        <h3 class="text-xl font-semibold text-cyan-300 mb-2">NetworkMiner</h3>
+                        <p class="text-gray-400 mb-2">封包分析</p>
+                        <span class="difficulty-badge">
+                            中等
+                        </span>
+                    </div><div class="tool-card p-6 rounded-lg text-center group">
+                        <i class="ri-key-line text-4xl mb-4 text-cyan-300 group-hover:text-white transition"></i>
+                        <h3 class="text-xl font-semibold text-cyan-300 mb-2">Burp Suite</h3>
+                        <p class="text-gray-400 mb-2">滲透測試</p>
+                        <span class="difficulty-badge">
+                            困難
+                        </span>
+                    </div><div class="tool-card p-6 rounded-lg text-center group">
+                        <i class="ri-shield-check-line text-4xl mb-4 text-cyan-300 group-hover:text-white transition"></i>
+                        <h3 class="text-xl font-semibold text-cyan-300 mb-2">OWASP ZAP</h3>
+                        <p class="text-gray-400 mb-2">滲透測試</p>
+                        <span class="difficulty-badge">
+                            中等
+                        </span>
+                    </div><div class="tool-card p-6 rounded-lg text-center group">
+                        <i class="ri-signal-wifi-line text-4xl mb-4 text-cyan-300 group-hover:text-white transition"></i>
+                        <h3 class="text-xl font-semibold text-cyan-300 mb-2">Kismet</h3>
+                        <p class="text-gray-400 mb-2">無線攻擊</p>
+                        <span class="difficulty-badge">
+                            中等
+                        </span>
+                    </div><div class="tool-card p-6 rounded-lg text-center group">
+                        <i class="ri-wifi-fill text-4xl mb-4 text-cyan-300 group-hover:text-white transition"></i>
+                        <h3 class="text-xl font-semibold text-cyan-300 mb-2">WiFi Pineapple</h3>
+                        <p class="text-gray-400 mb-2">無線攻擊</p>
+                        <span class="difficulty-badge">
+                            困難
+                        </span>
+                    </div><div class="tool-card p-6 rounded-lg text-center group">
+                        <i class="ri-database-2-line text-4xl mb-4 text-cyan-300 group-hover:text-white transition"></i>
+                        <h3 class="text-xl font-semibold text-cyan-300 mb-2">SQLNinja</h3>
+                        <p class="text-gray-400 mb-2">資料庫滲透</p>
+                        <span class="difficulty-badge">
+                            困難
+                        </span>
+                    </div><div class="tool-card p-6 rounded-lg text-center group">
+                        <i class="ri-server-line text-4xl mb-4 text-cyan-300 group-hover:text-white transition"></i>
+                        <h3 class="text-xl font-semibold text-cyan-300 mb-2">NoSQLMap</h3>
+                        <p class="text-gray-400 mb-2">資料庫滲透</p>
+                        <span class="difficulty-badge">
+                            中等
+                        </span>
+                    </div></div>
+
+        <!-- 工具詳細彈窗 -->
+        <div id="tool-modal" class="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50 hidden">
+            <div class="bg-gray-900 rounded-xl p-8 max-w-2xl w-full relative border border-cyan-600 tool-modal">
+                <button id="close-modal" class="absolute top-4 right-4 text-white text-3xl hover:text-cyan-300">×</button>
+                <div class="flex items-center mb-6">
+                    <i id="modal-icon" class="text-4xl mr-4 text-cyan-300"></i>
+                    <h2 id="modal-title" class="text-3xl font-bold text-cyan-300"></h2>
+                </div>
+                <p id="modal-description" class="mb-4 text-gray-300 text-lg"></p>
+                <div class="grid grid-cols-2 gap-4 mb-4">
+                    <div>
+                        <h3 class="font-semibold text-xl mb-2 text-cyan-300">難度</h3>
+                        <div id="modal-difficulty" class="mb-2"></div>
+                    </div>
+                    <div>
+                        <h3 class="font-semibold text-xl mb-2 text-cyan-300">學習資源</h3>
+                        <div id="modal-resources" class="text-gray-300"></div>
+                    </div>
+                </div>
+                <h3 class="font-semibold text-xl mb-3 text-cyan-300">主要功能</h3>
+                <ul id="modal-features" class="space-y-2 text-gray-300"></ul>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 數位雨效果函數
+        function createDigitalRain() {
+            const canvas = document.getElementById('digital-rain');
+            const ctx = canvas.getContext('2d');
+            
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+
+            const chars = 'アァカサタナハマヤャラワガザダバパイィキシチニヒミリヰギジヂビピウゥクスツヌフムユュルグズブヅプエェケセテネヘメレヱゲゼデベペオォコソトノホモヨョロワゴゾドボポ0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+            const fontSize = 10;
+            const columns = canvas.width / fontSize;
+            const drops = [];
+
+            for (let x = 0; x < columns; x++) {
+                drops[x] = 1;
+            }
+
+            function draw() {
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                
+                ctx.fillStyle = '#0F0';
+                ctx.font = fontSize + 'px arial';
+                
+                for (let i = 0; i < drops.length; i++) {
+                    const text = chars.charAt(Math.floor(Math.random() * chars.length));
+                    ctx.fillText(text, i * fontSize, drops[i] * fontSize);
+                    
+                    if (drops[i] * fontSize > canvas.height && Math.random() > 0.975)
+                        drops[i] = 0;
+                    
+                    drops[i]++;
+                }
+            }
+
+            setInterval(draw, 33);
+
+            window.addEventListener('resize', () => {
+                canvas.width = window.innerWidth;
+                canvas.height = window.innerHeight;
+            });
+        }
+
+        // 安全工具數據
+const securityTools = [
+{ 
+    name: 'Netcat', 
+    icon: 'ri-terminal-line',
+    category: '網路掃描',
+    difficulty: 'medium',
+    description: '功能強大的網路工具，可進行端口掃描、監聽和數據傳輸',
+    features: [
+        '支援TCP和UDP協議',
+        '可建立端口監聽',
+        '實現網路通信和數據傳輸',
+        '滲透測試和網路調試'
+    ],
+    resources: [
+        { name: 'Netcat教學', url: 'https://www.computerhope.com/unix/nc.htm' },
+        { name: '網路工具實戰', url: 'https://example.com/network-tools' }
+    ]
+},
+{ 
+    name: 'Masscan', 
+    icon: 'ri-search-eye-line',
+    category: '網路掃描',
+    difficulty: 'hard',
+    description: '高速大規模IP端口掃描工具，可快速探測大型網路',
+    features: [
+        '每秒可掃描數百萬個IP',
+        '支援多種掃描技術',
+        '可自定義掃描範圍',
+        '輸出多種格式報告'
+    ],
+    resources: [
+        { name: 'Masscan官方文檔', url: 'https://github.com/robertdavidgraham/masscan' },
+        { name: '大規模網路掃描課程', url: 'https://example.com/massive-scanning' }
+    ]
+},
+{ 
+    name: 'Nessus', 
+    icon: 'ri-radar-line',
+    category: '網路掃描',
+    difficulty: 'medium',
+    description: '世界最廣泛使用的漏洞掃描與評估工具',
+    features: [
+        '全面的漏洞掃描',
+        '支援多種作業系統',
+        '生成詳細安全報告',
+        '可自訂掃描策略'
+    ],
+    resources: [
+        { name: 'Nessus官網', url: 'https://www.tenable.com/products/nessus' },
+        { name: '漏洞評估實務', url: 'https://example.com/vulnerability-assessment' }
+    ]
+},
+{ 
+    name: 'Ettercap', 
+    icon: 'ri-group-2-line',
+    category: '封包分析',
+    difficulty: 'hard',
+    description: '綜合的中間人攻擊和網路嗅探工具',
+    features: [
+        '即時網路流量攔截',
+        '支援多種協議',
+        '密碼嗅探和重放攻擊',
+        '圖形化和命令行介面'
+    ],
+    resources: [
+        { name: 'Ettercap官方文檔', url: 'https://www.ettercap-project.org/' },
+        { name: '網路攻擊技術', url: 'https://example.com/network-attack-techniques' }
+    ]
+},
+{ 
+    name: 'Scapy', 
+    icon: 'ri-code-line',
+    category: '封包分析',
+    difficulty: 'hard',
+    description: '強大的Python數據包處理庫，用於網路掃描和數據包操作',
+    features: [
+        '數據包製作和發送',
+        '支援複雜的網路協議',
+        '可進行數據包嗅探',
+        '自定義封包行為'
+    ],
+    resources: [
+        { name: 'Scapy官方文檔', url: 'https://scapy.net/' },
+        { name: 'Python網路編程', url: 'https://example.com/python-network-programming' }
+    ]
+},
+{ 
+    name: 'Cain & Abel', 
+    icon: 'ri-window-line',
+    category: '封包分析',
+    difficulty: 'medium',
+    description: 'Windows平台上著名的網路嗅探和密碼破解工具',
+    features: [
+        '密碼恢復',
+        '網路嗅探',
+        '路由協議分析',
+        '應用層密碼破解'
+    ],
+    resources: [
+        { name: 'Cain & Abel教學', url: 'https://sectools.org/tool/cain/' },
+        { name: '密碼安全課程', url: 'https://example.com/password-security' }
+    ]
+},
+{ 
+    name: 'Social-Engineer Toolkit', 
+    icon: 'ri-user-voice-line',
+    category: '滲透測試',
+    difficulty: 'hard',
+    description: '社交工程攻擊框架，模擬真實社交工程滲透',
+    features: [
+        '網路釣魚頁面生成',
+        '偽造網站攻擊',
+        '多種社交工程模式',
+        '跨平台支持'
+    ],
+    resources: [
+        { name: 'SET官方文檔', url: 'https://github.com/trustedsec/social-engineer-toolkit' },
+        { name: '社交工程實戰', url: 'https://example.com/social-engineering' }
+    ]
+},
+{ 
+    name: 'BeEF', 
+    icon: 'ri-browser-line',
+    category: '滲透測試',
+    difficulty: 'hard',
+    description: '瀏覽器滲透框架，用於測試瀏覽器安全',
+    features: [
+        '跨瀏覽器攻擊',
+        '模組化攻擊框架',
+        '客戶端側滲透',
+        'JavaScript攻擊向量'
+    ],
+    resources: [
+        { name: 'BeEF官方文檔', url: 'https://beefproject.com/' },
+        { name: '瀏覽器安全測試', url: 'https://example.com/browser-security' }
+    ]
+},
+{ 
+    name: 'Powersploit', 
+    icon: 'ri-command-line',
+    category: '滲透測試',
+    difficulty: 'hard',
+    description: 'PowerShell滲透測試框架，用於Windows環境',
+    features: [
+        'Windows滲透模組',
+        '繞過安全防護',
+        '遠程命令執行',
+        '滲透後利用'
+    ],
+    resources: [
+        { name: 'Powersploit文檔', url: 'https://github.com/PowerShellMafia/PowerSploit' },
+        { name: 'Windows安全測試', url: 'https://example.com/windows-security' }
+    ]
+},
+{ 
+    name: 'Wifite', 
+    icon: 'ri-wifi-line',
+    category: '無線攻擊',
+    difficulty: 'medium',
+    description: '自動化無線網路破解工具，簡化WiFi安全測試',
+    features: [
+        '自動破解WEP/WPA',
+        '支援多種無線攻擊',
+        '篩選和排序網路',
+        '多線程破解'
+    ],
+    resources: [
+        { name: 'Wifite文檔', url: 'https://github.com/derv82/wifite2' },
+        { name: '無線網路安全', url: 'https://example.com/wireless-security' }
+    ]
+},
+{ 
+    name: 'WiFi-Pumpkin', 
+    icon: 'ri-wifi-fill',
+    category: '無線攻擊',
+    difficulty: 'hard',
+    description: '無線攻擊和社交工程框架，模擬惡意熱點',
+    features: [
+        '建立惡意熱點',
+        '流量攔截',
+        '憑證竊取',
+        '遠程控制'
+    ],
+    resources: [
+        { name: 'WiFi-Pumpkin項目', url: 'https://github.com/P0cL4bs/WiFi-Pumpkin' },
+        { name: '無線攻擊技術', url: 'https://example.com/wireless-attack' }
+    ]
+},
+{ 
+    name: 'Reaver', 
+    icon: 'ri-lock-unlock-line',
+    category: '無線攻擊',
+    difficulty: 'medium',
+    description: 'WPS PIN暴力破解工具，針對無線路由器安全',
+    features: [
+        'WPS破解',
+        '暴力破解PIN碼',
+        '支援多種無線協議',
+        '詳細破解日誌'
+    ],
+    resources: [
+        { name: 'Reaver文檔', url: 'https://github.com/t6x/reaver-wps-fork-t6x' },
+        { name: '無線安全實踐', url: 'https://example.com/wireless-practice' }
+    ]
+},
+{ 
+    name: 'John the Ripper', 
+    icon: 'ri-key-2-line',
+    category: '密碼破解',
+    difficulty: 'hard',
+    description: '開源密碼破解工具，支持多種加密算法',
+    features: [
+        '多種密碼破解模式',
+        '支援多種加密類型',
+        '高性能破解引擎',
+        '自定義破解規則'
+    ],
+    resources: [
+        { name: 'John官方文檔', url: 'https://www.openwall.com/john/' },
+        { name: '密碼安全實戰', url: 'https://example.com/password-cracking' }
+    ]
+},
+{ 
+    name: 'Hashcat', 
+    icon: 'ri-lock-password-line',
+    category: '密碼破解',
+    difficulty: 'hard',
+    description: '世界上最快的密碼破解工具，支持GPU加速',
+    features: [
+        '支援600多種雜湊類型',
+        'GPU/CPU並行破解',
+        '高度可定製',
+        '大規模破解'
+    ],
+    resources: [
+        { name: 'Hashcat官網', url: 'https://hashcat.net/hashcat/' },
+        { name: '密碼安全課程', url: 'https://example.com/password-security' }
+    ]
+},
+{ 
+    name: 'Hydra', 
+    icon: 'ri-skull-line',
+    category: '密碼破解',
+    difficulty: 'hard',
+    description: '支持多協議的網路登錄破解工具',
+    features: [
+        '支援多種協議',
+        '並行登錄嘗試',
+        '可自定義攻擊模式',
+        '豐富的驗證模組'
+    ],
+    resources: [
+        { name: 'Hydra文檔', url: 'https://github.com/vanhauser-thc/thc-hydra' },
+        { name: '網路安全滲透', url: 'https://example.com/network-penetration' }
+    ]
+},
+    { 
+        name: 'Nmap', 
+        icon: 'ri-search-line',
+        category: '網路掃描',
+        difficulty: 'medium',
+        description: '全球最著名的網路掃描和偵測工具，用於識別網路架構和安全評估',
+        features: [
+            '識別網路上的主機和開放端埠',
+            '偵測作業系統類型',
+            '執行服務版本偵測',
+            '支援多種掃描技術和腳本'
+        ],
+        resources: [
+            { name: 'Nmap官方教學', url: 'https://nmap.org/docs.html' },
+            { name: '網路安全入門課程', url: 'https://example.com/network-security' }
+        ]
+    },
+    { 
+        name: 'Wireshark', 
+        icon: 'ri-mac-line',
+        category: '封包分析',
+        difficulty: 'hard',
+        description: '全球最廣泛使用的網路協定分析器，提供深入的網路流量洞察',
+        features: [
+            '即時封包擷取和分析',
+            '支援超過2,000種協定',
+            '提供深入的網路流量視覺化',
+            '匯出和儲存分析結果'
+        ],
+        resources: [
+            { name: 'Wireshark官方教學', url: 'https://www.wireshark.org/docs/' },
+            { name: '封包分析實務課程', url: 'https://example.com/packet-analysis' }
+        ]
+    },
+    { 
+        name: 'Metasploit', 
+        icon: 'ri-bug-line',
+        category: '滲透測試',
+        difficulty: 'hard',
+        description: '最強大的滲透測試框架，協助安全專業人員評估系統弱點',
+        features: [
+            '包含大量滲透利用模組',
+            '可自動化滲透測試流程',
+            '支援弱點驗證',
+            '可生成後滲透腳本'
+        ],
+        resources: [
+            { name: 'Metasploit教學', url: 'https://www.metasploit.com/docs/' },
+            { name: '滲透測試實戰課程', url: 'https://example.com/penetration-testing' }
+        ]
+    },
+    { 
+        name: 'Aircrack-ng', 
+        icon: 'ri-wifi-line',
+        category: '無線攻擊',
+        difficulty: 'medium',
+        description: '無線網路安全評估套件，專門用於測試無線網路安全性',
+        features: [
+            '破解WEP/WPA無線加密',
+            '執行無線網路封包擷取',
+            '支援多種攻擊模式',
+            '可進行WiFi滲透測試'
+        ],
+        resources: [
+            { name: 'Aircrack-ng官方指南', url: 'https://www.aircrack-ng.org/doku.php' },
+            { name: '無線網路安全課程', url: 'https://example.com/wireless-security' }
+        ]
+    },
+    { 
+        name: 'SQLMap', 
+        icon: 'ri-database-line',
+        category: '資料庫滲透',
+        difficulty: 'medium',
+        description: '自動化SQL注入工具，幫助發現和利用資料庫安全弱點',
+        features: [
+            '偵測SQL注入弱點',
+            '支援多種資料庫管理系統',
+            '可直接讀取和寫入資料庫',
+            '提供詳細的弱點報告'
+        ],
+        resources: [
+            { name: 'SQLMap官方文件', url: 'http://sqlmap.org/' },
+            { name: '資料庫安全課程', url: 'https://example.com/database-security' }
+        ]
+    },
+    // 新增工具
+    { 
+        name: 'Zenmap', 
+        icon: 'ri-computer-line',
+        category: '網路掃描',
+        difficulty: 'easy',
+        description: 'Nmap的官方圖形化介面，簡化網路探測和安全掃描',
+        features: [
+            '直觀的圖形使用者介面',
+            '支援複雜的網路拓撲掃描',
+            '結果可視覺化顯示',
+            '儲存和比較掃描結果'
+        ],
+        resources: [
+            { name: 'Zenmap官方文檔', url: 'https://nmap.org/zenmap/' },
+            { name: '網路映射教學', url: 'https://example.com/network-mapping' }
+        ]
+    },
+    { 
+        name: 'Angry IP Scanner', 
+        icon: 'ri-radar-line',
+        category: '網路掃描',
+        difficulty: 'easy',
+        description: '快速、輕量的IP和端口掃描工具，支持多平台',
+        features: [
+            '快速掃描大型網段',
+            '多線程掃描技術',
+            '導出掃描結果',
+            '支援IP範圍和隨機掃描'
+        ],
+        resources: [
+            { name: 'Angry IP Scanner官網', url: 'https://angryip.org/' },
+            { name: '網路資產發現課程', url: 'https://example.com/network-discovery' }
+        ]
+    },
+    { 
+        name: 'tcpdump', 
+        icon: 'ri-file-list-3-line',
+        category: '封包分析',
+        difficulty: 'hard',
+        description: '功能強大的命令行網路封包分析工具，用於網路除錯和安全分析',
+        features: [
+            '即時封包擷取',
+            '支援複雜的封包過濾規則',
+            '可儲存封包到文件',
+            '低系統資源佔用'
+        ],
+        resources: [
+            { name: 'tcpdump官方手冊', url: 'https://www.tcpdump.org/' },
+            { name: '網路協議分析實戰', url: 'https://example.com/packet-analysis-pro' }
+        ]
+    },
+    { 
+        name: 'NetworkMiner', 
+        icon: 'ri-look-line',
+        category: '封包分析',
+        difficulty: 'medium',
+        description: '網路取證分析工具，提供圖形化介面的網路流量解析',
+        features: [
+            '自動解析網路會話',
+            '提取檔案和憑證',
+            '支援離線PCAP分析',
+            '跨平台支援'
+        ],
+        resources: [
+            { name: 'NetworkMiner官網', url: 'https://www.netresec.com/' },
+            { name: '網路取證課程', url: 'https://example.com/network-forensics' }
+        ]
+    },
+    { 
+        name: 'Burp Suite', 
+        icon: 'ri-key-line',
+        category: '滲透測試',
+        difficulty: 'hard',
+        description: 'Web應用安全測試的專業工具，被安全研究者廣泛使用',
+        features: [
+            '攔截和修改HTTP/HTTPS請求',
+            '自動化漏洞掃描',
+            '暴力破解密碼',
+            '豐富的擴展插件'
+        ],
+        resources: [
+            { name: 'Burp Suite教學', url: 'https://portswigger.net/burp' },
+            { name: 'Web安全實戰課程', url: 'https://example.com/web-security' }
+        ]
+    },
+    { 
+        name: 'OWASP ZAP', 
+        icon: 'ri-shield-check-line',
+        category: '滲透測試',
+        difficulty: 'medium',
+        description: '開源的Web應用安全掃描器，由OWASP社群維護',
+        features: [
+            '自動化安全漏洞掃描',
+            '支援爬蟲和被動掃描',
+            '可進行主動滲透測試',
+            '豐富的報告生成'
+        ],
+        resources: [
+            { name: 'OWASP ZAP官方文檔', url: 'https://www.zaproxy.org/' },
+            { name: 'Web應用安全測試', url: 'https://example.com/web-app-security' }
+        ]
+    },
+    { 
+        name: 'Kismet', 
+        icon: 'ri-signal-wifi-line',
+        category: '無線攻擊',
+        difficulty: 'medium',
+        description: '無線網路監控和偵測工具，可識別隱藏網路',
+        features: [
+            '即時無線網路偵測',
+            'GPS定位無線設備',
+            '支援多種無線協議',
+            '詳細的網路流量分析'
+        ],
+        resources: [
+            { name: 'Kismet官方指南', url: 'https://www.kismetwireless.net/' },
+            { name: '無線網路安全進階', url: 'https://example.com/wireless-security-advanced' }
+        ]
+    },
+    { 
+        name: 'WiFi Pineapple', 
+        icon: 'ri-wifi-fill',
+        category: '無線攻擊',
+        difficulty: 'hard',
+        description: '專業的無線審計和社交工程滲透測試平台',
+        features: [
+            '輕鬆建立惡意熱點',
+            '攔截和分析無線流量',
+            '支援多種滲透模組',
+            '遠程控制'
+        ],
+        resources: [
+            { name: 'WiFi Pineapple官網', url: 'https://shop.hak5.org/products/wifi-pineapple' },
+            { name: '無線攻擊技術', url: 'https://example.com/wireless-attack-techniques' }
+        ]
+    },
+    { 
+        name: 'SQLNinja', 
+        icon: 'ri-database-2-line',
+        category: '資料庫滲透',
+        difficulty: 'hard',
+        description: '專門針對Microsoft SQL Server的滲透測試工具',
+        features: [
+            '自動SQL伺服器滲透',
+            '支援命令執行',
+            '可建立反向shell',
+            '繞過安全限制'
+        ],
+        resources: [
+            { name: 'SQLNinja項目', url: 'http://sqlninja.sourceforge.net/' },
+            { name: '資料庫安全實戰', url: 'https://example.com/database-security-practice' }
+        ]
+    },
+    { 
+        name: 'NoSQLMap', 
+        icon: 'ri-server-line',
+        category: '資料庫滲透',
+        difficulty: 'medium',
+        description: '專門針對NoSQL資料庫的自動化滲透測試工具',
+        features: [
+            '支援多種NoSQL資料庫',
+            '自動化漏洞掃描',
+            '可執行注入攻擊',
+            '生成滲透報告'
+        ],
+        resources: [
+            { name: 'NoSQLMap項目', url: 'https://github.com/codingo/NoSQLMap' },
+            { name: 'NoSQL安全課程', url: 'https://example.com/nosql-security' }
+        ]
+    }
+];
+
+        // 初始化函數
+        document.addEventListener('DOMContentLoaded', () => {
+            createDigitalRain();
+            
+            const toolContainer = document.getElementById('tools');
+            const modal = document.getElementById('tool-modal');
+            const closeModalBtn = document.getElementById('close-modal');
+            const searchInput = document.getElementById('tool-search');
+            const categoryFilters = document.getElementById('category-filters');
+
+            // 渲染工具卡片
+            function renderTools(tools) {
+                toolContainer.innerHTML = '';
+                tools.forEach(tool => {
+                    const toolCard = document.createElement('div');
+                    toolCard.classList.add('tool-card', 'p-6', 'rounded-lg', 'text-center', 'group');
+                    
+                    toolCard.innerHTML = `
+                        <i class="${tool.icon} text-4xl mb-4 text-cyan-300 group-hover:text-white transition"></i>
+                        <h3 class="text-xl font-semibold text-cyan-300 mb-2">${tool.name}</h3>
+                        <p class="text-gray-400 mb-2">${tool.category}</p>
+                        <span class="difficulty-badge">
+                            ${tool.difficulty === 'easy' ? '簡單' : 
+                               tool.difficulty === 'medium' ? '中等' : '困難'}
+                        </span>
+                    `;
+
+                    // 點擊卡片顯示詳細資訊
+                    toolCard.addEventListener('click', () => {
+                        document.getElementById('modal-title').textContent = tool.name;
+                        document.getElementById('modal-description').textContent = tool.description;
+                        document.getElementById('modal-icon').className = `${tool.icon} text-4xl text-cyan-300`;
+                        
+                        const modalDifficulty = document.getElementById('modal-difficulty');
+                        modalDifficulty.innerHTML = `
+                            <span class="difficulty-badge">
+                                ${tool.difficulty === 'easy' ? '簡單' : 
+                                   tool.difficulty === 'medium' ? '中等' : '困難'}
+                            </span>
+                        `;
+
+                        const modalResources = document.getElementById('modal-resources');
+                        modalResources.innerHTML = tool.resources.map(resource => 
+                            `<a href="${resource.url}" target="_blank" class="text-cyan-300 hover:underline block">${resource.name}</a>`
+                        ).join('');
+
+                        const featuresList = document.getElementById('modal-features');
+                        featuresList.innerHTML = tool.features.map(feature => 
+                            `<li class="flex items-center">
+                                <i class="ri-check-line text-cyan-300 mr-2"></i>
+                                ${feature}
+                            </li>`
+                        ).join('');
+
+                        modal.classList.remove('hidden');
+                    });
+
+                    toolContainer.appendChild(toolCard);
+                });
+            }
+
+            // 搜尋功能
+            searchInput.addEventListener('input', (e) => {
+                const searchTerm = e.target.value.toLowerCase();
+                const currentCategory = document.querySelector('.category-filter.active').dataset.category;
+                const filteredTools = securityTools.filter(tool => 
+                    (currentCategory === 'all' || tool.category === currentCategory) &&
+                    (tool.name.toLowerCase().includes(searchTerm) || 
+                     tool.category.toLowerCase().includes(searchTerm))
+                );
+                renderTools(filteredTools);
+            });
+
+            // 分類篩選
+            categoryFilters.addEventListener('click', (e) => {
+                if (e.target.classList.contains('category-filter')) {
+                    document.querySelectorAll('.category-filter').forEach(filter => {
+                        filter.classList.remove('active');
+                    });
+                    e.target.classList.add('active');
+
+                    const category = e.target.dataset.category;
+                    const filteredTools = category === 'all' 
+                        ? securityTools 
+                        : securityTools.filter(tool => tool.category === category);
+                    
+                    renderTools(filteredTools);
+                }
+            });
+
+            // 彈窗關閉邏輯
+            closeModalBtn.addEventListener('click', () => {
+                modal.classList.add('hidden');
+            });
+
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) {
+                    modal.classList.add('hidden');
+                }
+            });
+
+            // 初始渲染工具
+            renderTools(securityTools);
+        });
+    </script>
+
+<footer class="text-center py-6 text-gray-400">
+    <div class="container mx-auto px-4">
+        <div class="mb-4">
+            <p class="text-cyan-300 font-bold">
+                <i class="ri-shield-star-line mr-2"></i>
+                Kali Linux 網路安全工具指南
+            </p>
+        </div>
+        <div class="mb-4">
+            © 2025 網路安全技術專題 | 指導教授：王德譽 | 學生：陳家茂、劉昱均
+        </div>
+        <div class="text-sm">
+            本專題致力於推廣網路安全教育與道德黑客精神
+        </div>
+    </div>
+</footer>
+
+
+
+</body></html>
