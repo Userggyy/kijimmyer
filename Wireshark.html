@@ -344,7 +344,7 @@
                             <pre class="text-gray-300 text-sm">
         $ tshark -i wlan0 -f "port 53" -T fields \
         -e frame.time -e ip.src -e dns.qry.name \
-        -e dns.resp.addr -c 10
+        -e dns.a -c 10
 
         "2025-04-13 14:35:01" 192.168.1.50 www.google.com 142.250.190.46
         "2025-04-13 14:35:03" 192.168.1.50 api.github.com 140.82.121.6
