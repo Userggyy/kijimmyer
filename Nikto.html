@@ -231,143 +231,144 @@
         </section>
 
         
+        <section id="usage" class="section-card p-8 rounded-lg mb-12">
+            <div class="mt-12">
+                <h3 class="text-2xl font-semibold text-cyan-300 mb-6 flex items-center">
+                    <i class="ri-code-line mr-3"></i>
+                    命令範例與詳細解析 
+                </h3>
 
-        <div class="mt-12">
-            <h3 class="text-2xl font-semibold text-cyan-300 mb-6 flex items-center">
-                <i class="ri-code-line mr-3"></i>
-                命令範例與詳細解析
-            </h3>
+                <!-- 範例 1：基本掃描 -->
+                <div class="command-box p-6 rounded-lg mb-8">
+                    <h4 class="font-mono text-green-400 text-xl mb-3">1. 基本網站掃描</h4>
+                    <div class="bg-black p-4 rounded mb-4 overflow-x-auto">
+                        <pre class="text-gray-300 text-sm">
+            $ nikto -h example.com
 
-            <!-- 範例 1：基本掃描 -->
-            <div class="command-box p-6 rounded-lg mb-8">
-                <h4 class="font-mono text-green-400 text-xl mb-3">1. 基本網站掃描</h4>
-                <div class="bg-black p-4 rounded mb-4 overflow-x-auto">
-                    <pre class="text-gray-300 text-sm">
-        $ nikto -h example.com
-
-        - Nikto v2.5.0
-        - Target IP:          93.184.216.34
-        - Target Hostname:    example.com
-        - Target Port:        80
-        - Start Time:         2025-04-13 14:30:00 (GMT8)
-        + Server: nginx/1.25.3
-        + Retrieved x-powered-by header: PHP/8.2.8
-        + /config.php: PHP config file found
-        + 6544 items checked: 3 item(s) reported
-        + End Time:           2025-04-13 14:32:15 (GMT8)</pre>
+            - Nikto v2.5.0
+            - Target IP:          93.184.216.34
+            - Target Hostname:    example.com
+            - Target Port:        80
+            - Start Time:         2025-04-13 14:30:00 (GMT8)
+            + Server: nginx/1.25.3
+            + Retrieved x-powered-by header: PHP/8.2.8
+            + /config.php: PHP config file found
+            + 6544 items checked: 3 item(s) reported
+            + End Time:           2025-04-13 14:32:15 (GMT8)</pre>
+                    </div>
+                    <div class="p-4 bg-gray-900 rounded">
+                        <h5 class="font-semibold text-cyan-300 mb-2">參數解釋：</h5>
+                        <ul class="space-y-2 text-sm">
+                            <li><span class="font-mono text-green-400">-h example.com</span> - 指定要掃描的主機名稱或IP地址</li>
+                            <li><span class="text-yellow-400">(默認端口80)</span> - 未指定端口時自動掃描HTTP默認端口</li>
+                            <li><span class="text-blue-400">輸出解讀：</span> 發現PHP配置文件和伺服器版本信息，可能導致信息洩露</li>
+                        </ul>
+                    </div>
                 </div>
-                <div class="p-4 bg-gray-900 rounded">
-                    <h5 class="font-semibold text-cyan-300 mb-2">參數解釋：</h5>
-                    <ul class="space-y-2 text-sm">
-                        <li><span class="font-mono text-green-400">-h example.com</span> - 指定要掃描的主機名稱或IP地址</li>
-                        <li><span class="text-yellow-400">(默認端口80)</span> - 未指定端口時自動掃描HTTP默認端口</li>
-                        <li><span class="text-blue-400">輸出解讀：</span> 發現PHP配置文件和伺服器版本信息，可能導致信息洩露</li>
-                    </ul>
+
+                <!-- 範例 2：SSL掃描 -->
+                <div class="command-box p-6 rounded-lg mb-8">
+                    <h4 class="font-mono text-green-400 text-xl mb-3">2. SSL網站掃描</h4>
+                    <div class="bg-black p-4 rounded mb-4 overflow-x-auto">
+                        <pre class="text-gray-300 text-sm">
+            $ nikto -h example.com -ssl -port 443
+
+            - Nikto v2.5.0
+            - SSL Enabled
+            - Target IP:          93.184.216.34
+            - Target Port:        443
+            + SSL Certificate: Self-Signed, Expires: 2026-01-01
+            + TLSv1.0 Enabled (INSECURE)
+            + /admin/login.php: Admin login page found
+            + 7233 items checked: 2 item(s) reported</pre>
+                    </div>
+                    <div class="p-4 bg-gray-900 rounded">
+                        <h5 class="font-semibold text-cyan-300 mb-2">參數解釋：</h5>
+                        <ul class="space-y-2 text-sm">
+                            <li><span class="font-mono text-green-400">-ssl</span> - 啟用SSL/TLS加密連接</li>
+                            <li><span class="font-mono text-green-400">-port 443</span> - 指定HTTPS默認端口</li>
+                            <li><span class="text-yellow-400">安全警告：</span> 檢測到不安全的TLSv1.0協議和自簽名證書</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- 範例 3：指定掃描項目 -->
+                <div class="command-box p-6 rounded-lg mb-8">
+                    <h4 class="font-mono text-green-400 text-xl mb-3">3. 針對性漏洞掃描</h4>
+                    <div class="bg-black p-4 rounded mb-4 overflow-x-auto">
+                        <pre class="text-gray-300 text-sm">
+            $ nikto -h example.com -Tuning 58 -Display V
+
+            - Scan Type: Tuning 58 (File Uploads, Remote File Retrieval)
+            - Target IP:          93.184.216.34
+            + /upload.php: Potentially vulnerable to file upload
+            + /include.php?file=http://evil.com: RFI detected
+            + 4231 items checked: 2 high-risk item(s) reported</pre>
+                    </div>
+                    <div class="p-4 bg-gray-900 rounded">
+                        <h5 class="font-semibold text-cyan-300 mb-2">參數解釋：</h5>
+                        <ul class="space-y-2 text-sm">
+                            <li><span class="font-mono text-green-400">-Tuning 58</span> - 專注掃描文件上傳(32)+遠程文件包含(16)+命令執行(8)+配置文件(2)漏洞</li>
+                            <li><span class="font-mono text-green-400">-Display V</span> - 只顯示漏洞級別問題</li>
+                            <li><span class="text-red-400">高危漏洞：</span> 發現文件上傳和遠程文件包含漏洞</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- 範例 4：身份驗證掃描 -->
+                <div class="command-box p-6 rounded-lg mb-8">
+                    <h4 class="font-mono text-green-400 text-xl mb-3">4. 帶身份驗證的掃描</h4>
+                    <div class="bg-black p-4 rounded mb-4 overflow-x-auto">
+                        <pre class="text-gray-300 text-sm">
+            $ nikto -h intranet.example.com -id admin:Password123
+
+            - Authenticated scan as: admin:********
+            - Target IP:          192.168.1.100
+            + /admin/dashboard.php: XSS in 'search' parameter
+            + /db_backup.zip: Database backup file found
+            + 5421 items checked: 2 item(s) reported</pre>
+                    </div>
+                    <div class="p-4 bg-gray-900 rounded">
+                        <h5 class="font-semibold text-cyan-300 mb-2">參數解釋：</h5>
+                        <ul class="space-y-2 text-sm">
+                            <li><span class="font-mono text-green-400">-id admin:Password123</span> - 使用基本身份驗證(Basic Auth)</li>
+                            <li><span class="text-blue-400">注意：</span> 密碼在命令歷史中可能洩露，建議使用後清除</li>
+                            <li><span class="text-yellow-400">發現問題：</span> 需登入才能訪問的後台頁面存在XSS漏洞</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- 範例 5：生成XML報告 -->
+                <div class="command-box p-6 rounded-lg">
+                    <h4 class="font-mono text-green-400 text-xl mb-3">5. 生成XML格式報告</h4>
+                    <div class="bg-black p-4 rounded mb-4 overflow-x-auto">
+                        <pre class="text-gray-300 text-sm">
+            $ nikto -h example.com -Format xml -output scan_result.xml
+
+            - Report format: XML
+            - Target IP:          93.184.216.34
+            - Scan saved to: scan_result.xml
+            &lt;?xml version="1.0"?&gt;
+            &lt;nikto&gt;
+            &lt;scandetails&gt;
+                &lt;item id="1"&gt;
+                &lt;description&gt;Server: nginx/1.25.3&lt;/description&gt;
+                &lt;uri&gt;/&lt;/uri&gt;
+                &lt;/item&gt;
+            &lt;/scandetails&gt;
+            &lt;/nikto&gt;</pre>
+                    </div>
+                    <div class="p-4 bg-gray-900 rounded">
+                        <h5 class="font-semibold text-cyan-300 mb-2">參數解釋：</h5>
+                        <ul class="space-y-2 text-sm">
+                            <li><span class="font-mono text-green-400">-Format xml</span> - 指定XML輸出格式</li>
+                            <li><span class="font-mono text-green-400">-output scan_result.xml</span> - 將結果保存到文件</li>
+                            <li><span class="text-blue-400">整合應用：</span> XML報告可導入其他安全工具進一步分析</li>
+                        </ul>
+                    </div>
                 </div>
             </div>
-
-            <!-- 範例 2：SSL掃描 -->
-            <div class="command-box p-6 rounded-lg mb-8">
-                <h4 class="font-mono text-green-400 text-xl mb-3">2. SSL網站掃描</h4>
-                <div class="bg-black p-4 rounded mb-4 overflow-x-auto">
-                    <pre class="text-gray-300 text-sm">
-        $ nikto -h example.com -ssl -port 443
-
-        - Nikto v2.5.0
-        - SSL Enabled
-        - Target IP:          93.184.216.34
-        - Target Port:        443
-        + SSL Certificate: Self-Signed, Expires: 2026-01-01
-        + TLSv1.0 Enabled (INSECURE)
-        + /admin/login.php: Admin login page found
-        + 7233 items checked: 2 item(s) reported</pre>
-                </div>
-                <div class="p-4 bg-gray-900 rounded">
-                    <h5 class="font-semibold text-cyan-300 mb-2">參數解釋：</h5>
-                    <ul class="space-y-2 text-sm">
-                        <li><span class="font-mono text-green-400">-ssl</span> - 啟用SSL/TLS加密連接</li>
-                        <li><span class="font-mono text-green-400">-port 443</span> - 指定HTTPS默認端口</li>
-                        <li><span class="text-yellow-400">安全警告：</span> 檢測到不安全的TLSv1.0協議和自簽名證書</li>
-                    </ul>
-                </div>
-            </div>
-
-            <!-- 範例 3：指定掃描項目 -->
-            <div class="command-box p-6 rounded-lg mb-8">
-                <h4 class="font-mono text-green-400 text-xl mb-3">3. 針對性漏洞掃描</h4>
-                <div class="bg-black p-4 rounded mb-4 overflow-x-auto">
-                    <pre class="text-gray-300 text-sm">
-        $ nikto -h example.com -Tuning 58 -Display V
-
-        - Scan Type: Tuning 58 (File Uploads, Remote File Retrieval)
-        - Target IP:          93.184.216.34
-        + /upload.php: Potentially vulnerable to file upload
-        + /include.php?file=http://evil.com: RFI detected
-        + 4231 items checked: 2 high-risk item(s) reported</pre>
-                </div>
-                <div class="p-4 bg-gray-900 rounded">
-                    <h5 class="font-semibold text-cyan-300 mb-2">參數解釋：</h5>
-                    <ul class="space-y-2 text-sm">
-                        <li><span class="font-mono text-green-400">-Tuning 58</span> - 專注掃描文件上傳(32)+遠程文件包含(16)+命令執行(8)+配置文件(2)漏洞</li>
-                        <li><span class="font-mono text-green-400">-Display V</span> - 只顯示漏洞級別問題</li>
-                        <li><span class="text-red-400">高危漏洞：</span> 發現文件上傳和遠程文件包含漏洞</li>
-                    </ul>
-                </div>
-            </div>
-
-            <!-- 範例 4：身份驗證掃描 -->
-            <div class="command-box p-6 rounded-lg mb-8">
-                <h4 class="font-mono text-green-400 text-xl mb-3">4. 帶身份驗證的掃描</h4>
-                <div class="bg-black p-4 rounded mb-4 overflow-x-auto">
-                    <pre class="text-gray-300 text-sm">
-        $ nikto -h intranet.example.com -id admin:Password123
-
-        - Authenticated scan as: admin:********
-        - Target IP:          192.168.1.100
-        + /admin/dashboard.php: XSS in 'search' parameter
-        + /db_backup.zip: Database backup file found
-        + 5421 items checked: 2 item(s) reported</pre>
-                </div>
-                <div class="p-4 bg-gray-900 rounded">
-                    <h5 class="font-semibold text-cyan-300 mb-2">參數解釋：</h5>
-                    <ul class="space-y-2 text-sm">
-                        <li><span class="font-mono text-green-400">-id admin:Password123</span> - 使用基本身份驗證(Basic Auth)</li>
-                        <li><span class="text-blue-400">注意：</span> 密碼在命令歷史中可能洩露，建議使用後清除</li>
-                        <li><span class="text-yellow-400">發現問題：</span> 需登入才能訪問的後台頁面存在XSS漏洞</li>
-                    </ul>
-                </div>
-            </div>
-
-            <!-- 範例 5：生成XML報告 -->
-            <div class="command-box p-6 rounded-lg">
-                <h4 class="font-mono text-green-400 text-xl mb-3">5. 生成XML格式報告</h4>
-                <div class="bg-black p-4 rounded mb-4 overflow-x-auto">
-                    <pre class="text-gray-300 text-sm">
-        $ nikto -h example.com -Format xml -output scan_result.xml
-
-        - Report format: XML
-        - Target IP:          93.184.216.34
-        - Scan saved to: scan_result.xml
-        &lt;?xml version="1.0"?&gt;
-        &lt;nikto&gt;
-        &lt;scandetails&gt;
-            &lt;item id="1"&gt;
-            &lt;description&gt;Server: nginx/1.25.3&lt;/description&gt;
-            &lt;uri&gt;/&lt;/uri&gt;
-            &lt;/item&gt;
-        &lt;/scandetails&gt;
-        &lt;/nikto&gt;</pre>
-                </div>
-                <div class="p-4 bg-gray-900 rounded">
-                    <h5 class="font-semibold text-cyan-300 mb-2">參數解釋：</h5>
-                    <ul class="space-y-2 text-sm">
-                        <li><span class="font-mono text-green-400">-Format xml</span> - 指定XML輸出格式</li>
-                        <li><span class="font-mono text-green-400">-output scan_result.xml</span> - 將結果保存到文件</li>
-                        <li><span class="text-blue-400">整合應用：</span> XML報告可導入其他安全工具進一步分析</li>
-                    </ul>
-                </div>
-            </div>
-        </div>
+        </section>
         <!-- 學習資源 -->
         <section id="resources" class="section-card p-8 rounded-lg">
             <h2 class="text-3xl font-bold text-cyan-300 mb-6 flex items-center">
