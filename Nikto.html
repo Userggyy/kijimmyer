@@ -1,0 +1,559 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nikto Web 掃描工具詳解 | Kali Linux 工具指南</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@2.5.0/fonts/remixicon.css" rel="stylesheet">
+    <style>
+        body { 
+            background-color: #000; 
+            color: #e6f1ff;
+            font-family: 'Inter', 'Noto Sans TC', sans-serif;
+            margin: 0;
+            overflow-x: hidden;
+        }
+        #digital-rain {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            opacity: 0.5;
+        }
+        .content {
+            position: relative;
+            z-index: 10;
+        }
+        .section-card {
+            background: rgba(15, 25, 50, 0.7);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(0, 255, 255, 0.2);
+            transition: all 0.3s ease;
+        }
+        .section-card:hover {
+            box-shadow: 0 10px 30px rgba(0,255,255,0.3);
+        }
+        .command-box {
+            background: rgba(0, 20, 40, 0.8);
+            border-left: 3px solid #00ffff;
+        }
+        .feature-item {
+            border-left: 2px solid #00ffff;
+            transition: all 0.3s ease;
+        }
+        .feature-item:hover {
+            background: rgba(0, 255, 255, 0.1);
+        }
+        .nav-button {
+            transition: all 0.3s ease;
+            opacity: 0.8;
+        }
+        .nav-button:hover {
+            opacity: 1;
+            text-shadow: 0 0 10px rgba(0, 255, 255, 0.7);
+        }
+        .difficulty-badge {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.875rem;
+            font-weight: 500;
+        }
+        .difficulty-badge.medium {
+            background-color: rgba(250, 204, 21, 0.2);
+            color: #facc15;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="digital-rain"></canvas>
+    <div class="container mx-auto px-4 py-8 content">
+        <!-- 導航按鈕 -->
+        <div class="flex justify-between mb-8">
+            <a href="index.html" class="nav-button flex items-center text-cyan-300">
+                <i class="ri-arrow-left-line mr-2"></i> 返回工具列表
+            </a>
+            <span class="difficulty-badge medium">中等難度</span>
+        </div>
+
+        <!-- 標題區 -->
+        <header class="text-center mb-12">
+            <div class="flex justify-center items-center mb-4">
+                <i class="ri-shield-cross-line text-5xl text-cyan-300 mr-4"></i>
+                <h1 class="text-4xl font-bold text-cyan-300">Nikto Web 掃描工具</h1>
+            </div>
+            <p class="text-xl max-w-3xl mx-auto">
+                開源的Web伺服器漏洞掃描工具，用於全面檢測Web應用程式的安全問題
+            </p>
+        </header>
+
+        <!-- 快速導航 -->
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-12">
+            <a href="#intro" class="section-card p-4 text-center rounded-lg">
+                <i class="ri-information-line text-2xl text-cyan-300 mb-2"></i>
+                <h3 class="font-semibold">工具介紹</h3>
+            </a>
+            <a href="#features" class="section-card p-4 text-center rounded-lg">
+                <i class="ri-star-line text-2xl text-cyan-300 mb-2"></i>
+                <h3 class="font-semibold">主要功能</h3>
+            </a>
+            <a href="#usage" class="section-card p-4 text-center rounded-lg">
+                <i class="ri-terminal-line text-2xl text-cyan-300 mb-2"></i>
+                <h3 class="font-semibold">使用示例</h3>
+            </a>
+            <a href="#resources" class="section-card p-4 text-center rounded-lg">
+                <i class="ri-book-line text-2xl text-cyan-300 mb-2"></i>
+                <h3 class="font-semibold">學習資源</h3>
+            </a>
+        </div>
+
+        <!-- 工具介紹 -->
+        <section id="intro" class="section-card p-8 rounded-lg mb-12">
+            <h2 class="text-3xl font-bold text-cyan-300 mb-6 flex items-center">
+                <i class="ri-information-line mr-3"></i>
+                工具介紹
+            </h2>
+            <div class="grid md:grid-cols-2 gap-8">
+                <div>
+                    <p class="mb-4">
+                        Nikto 是一個開源的Web伺服器掃描工具，由Chris Sullo和David Lodge開發，現由Netsparker維護。
+                    </p>
+                    <p class="mb-4">
+                        Nikto 可以掃描Web伺服器並檢測多種潛在的安全問題，包括伺服器設定錯誤、過時的伺服器軟體、潛在的危險文件和程序等。它能夠檢查超過6700種已知的危險文件/程序，檢查1250多個伺服器的過時版本，以及270多個伺服器上的特定問題。
+                    </p>
+                    <p>
+                        Nikto 被廣泛用於Web應用程式的滲透測試和安全評估，是Kali Linux中重要的Web安全工具之一。
+                    </p>
+                </div>
+                <div class="bg-gray-900 p-6 rounded-lg">
+                    <h3 class="text-xl font-semibold text-cyan-300 mb-4 flex items-center">
+                        <i class="ri-lightbulb-flash-line mr-2"></i>
+                        技術亮點
+                    </h3>
+                    <ul class="space-y-3">
+                        <li class="flex items-start">
+                            <i class="ri-checkbox-circle-line text-cyan-300 mt-1 mr-2"></i>
+                            <span>全面的Web伺服器安全檢查</span>
+                        </li>
+                        <li class="flex items-start">
+                            <i class="ri-checkbox-circle-line text-cyan-300 mt-1 mr-2"></i>
+                            <span>支援SSL加密連接掃描</span>
+                        </li>
+                        <li class="flex items-start">
+                            <i class="ri-checkbox-circle-line text-cyan-300 mt-1 mr-2"></i>
+                            <span>可自定義掃描項目和插件</span>
+                        </li>
+                        <li class="flex items-start">
+                            <i class="ri-checkbox-circle-line text-cyan-300 mt-1 mr-2"></i>
+                            <span>支援代理和身份驗證</span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- 主要功能 -->
+        <section id="features" class="section-card p-8 rounded-lg mb-12">
+            <h2 class="text-3xl font-bold text-cyan-300 mb-6 flex items-center">
+                <i class="ri-star-line mr-3"></i>
+                主要功能
+            </h2>
+            <div class="grid md:grid-cols-2 gap-6">
+                <!-- 功能 1 -->
+                <div class="feature-item p-4 rounded">
+                    <h3 class="text-xl font-semibold text-cyan-300 mb-2 flex items-center">
+                        <i class="ri-server-line mr-2"></i>
+                        伺服器識別
+                    </h3>
+                    <p>
+                        識別Web伺服器軟體及其版本，檢測過時或易受攻擊的伺服器版本，包括Apache、IIS、Nginx等常見Web伺服器。
+                    </p>
+                </div>
+                
+                <!-- 功能 2 -->
+                <div class="feature-item p-4 rounded">
+                    <h3 class="text-xl font-semibold text-cyan-300 mb-2 flex items-center">
+                        <i class="ri-bug-line mr-2"></i>
+                        漏洞檢測
+                    </h3>
+                    <p>
+                        檢測已知的Web伺服器漏洞和設定錯誤，包括目錄遍歷、文件洩露、XSS漏洞、SQL注入等常見Web安全問題。
+                    </p>
+                </div>
+                
+                <!-- 功能 3 -->
+                <div class="feature-item p-4 rounded">
+                    <h3 class="text-xl font-semibold text-cyan-300 mb-2 flex items-center">
+                        <i class="ri-folder-line mr-2"></i>
+                        危險檔案檢測
+                    </h3>
+                    <p>
+                        檢查Web伺服器上是否存在潛在的危險文件，如備份文件、設定文件、管理界面、測試腳本等可能洩露敏感信息的文件。
+                    </p>
+                </div>
+                
+                <!-- 功能 4 -->
+                <div class="feature-item p-4 rounded">
+                    <h3 class="text-xl font-semibold text-cyan-300 mb-2 flex items-center">
+                        <i class="ri-shield-keyhole-line mr-2"></i>
+                        SSL/TLS檢查
+                    </h3>
+                    <p>
+                        檢查SSL/TLS設定問題，包括弱加密算法、過期證書、不安全的協議版本等可能導致中間人攻擊的安全問題。
+                    </p>
+                </div>
+                
+                <!-- 功能 5 -->
+                <div class="feature-item p-4 rounded">
+                    <h3 class="text-xl font-semibold text-cyan-300 mb-2 flex items-center">
+                        <i class="ri-settings-3-line mr-2"></i>
+                        設定檢查
+                    </h3>
+                    <p>
+                        檢查常見的伺服器設定錯誤，如目錄列表啟用、不安全的HTTP方法(如PUT、DELETE)、不正確的MIME類型設置等。
+                    </p>
+                </div>
+                
+                <!-- 功能 6 -->
+                <div class="feature-item p-4 rounded">
+                    <h3 class="text-xl font-semibold text-cyan-300 mb-2 flex items-center">
+                        <i class="ri-file-text-line mr-2"></i>
+                        報告產生
+                    </h3>
+                    <p>
+                        支援多種格式的報告輸出(如TXT、CSV、XML等)，便於結果分析和報告整理，可整合到其他安全評估工具中。
+                    </p>
+                </div>
+            </div>
+        </section>
+
+        
+
+        <div class="mt-12">
+            <h3 class="text-2xl font-semibold text-cyan-300 mb-6 flex items-center">
+                <i class="ri-code-line mr-3"></i>
+                命令範例與詳細解析
+            </h3>
+
+            <!-- 範例 1：基本掃描 -->
+            <div class="command-box p-6 rounded-lg mb-8">
+                <h4 class="font-mono text-green-400 text-xl mb-3">1. 基本網站掃描</h4>
+                <div class="bg-black p-4 rounded mb-4 overflow-x-auto">
+                    <pre class="text-gray-300 text-sm">
+        $ nikto -h example.com
+
+        - Nikto v2.5.0
+        - Target IP:          93.184.216.34
+        - Target Hostname:    example.com
+        - Target Port:        80
+        - Start Time:         2025-04-13 14:30:00 (GMT8)
+        + Server: nginx/1.25.3
+        + Retrieved x-powered-by header: PHP/8.2.8
+        + /config.php: PHP config file found
+        + 6544 items checked: 3 item(s) reported
+        + End Time:           2025-04-13 14:32:15 (GMT8)</pre>
+                </div>
+                <div class="p-4 bg-gray-900 rounded">
+                    <h5 class="font-semibold text-cyan-300 mb-2">參數解釋：</h5>
+                    <ul class="space-y-2 text-sm">
+                        <li><span class="font-mono text-green-400">-h example.com</span> - 指定要掃描的主機名稱或IP地址</li>
+                        <li><span class="text-yellow-400">(默認端口80)</span> - 未指定端口時自動掃描HTTP默認端口</li>
+                        <li><span class="text-blue-400">輸出解讀：</span> 發現PHP配置文件和伺服器版本信息，可能導致信息洩露</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- 範例 2：SSL掃描 -->
+            <div class="command-box p-6 rounded-lg mb-8">
+                <h4 class="font-mono text-green-400 text-xl mb-3">2. SSL網站掃描</h4>
+                <div class="bg-black p-4 rounded mb-4 overflow-x-auto">
+                    <pre class="text-gray-300 text-sm">
+        $ nikto -h example.com -ssl -port 443
+
+        - Nikto v2.5.0
+        - SSL Enabled
+        - Target IP:          93.184.216.34
+        - Target Port:        443
+        + SSL Certificate: Self-Signed, Expires: 2026-01-01
+        + TLSv1.0 Enabled (INSECURE)
+        + /admin/login.php: Admin login page found
+        + 7233 items checked: 2 item(s) reported</pre>
+                </div>
+                <div class="p-4 bg-gray-900 rounded">
+                    <h5 class="font-semibold text-cyan-300 mb-2">參數解釋：</h5>
+                    <ul class="space-y-2 text-sm">
+                        <li><span class="font-mono text-green-400">-ssl</span> - 啟用SSL/TLS加密連接</li>
+                        <li><span class="font-mono text-green-400">-port 443</span> - 指定HTTPS默認端口</li>
+                        <li><span class="text-yellow-400">安全警告：</span> 檢測到不安全的TLSv1.0協議和自簽名證書</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- 範例 3：指定掃描項目 -->
+            <div class="command-box p-6 rounded-lg mb-8">
+                <h4 class="font-mono text-green-400 text-xl mb-3">3. 針對性漏洞掃描</h4>
+                <div class="bg-black p-4 rounded mb-4 overflow-x-auto">
+                    <pre class="text-gray-300 text-sm">
+        $ nikto -h example.com -Tuning 58 -Display V
+
+        - Scan Type: Tuning 58 (File Uploads, Remote File Retrieval)
+        - Target IP:          93.184.216.34
+        + /upload.php: Potentially vulnerable to file upload
+        + /include.php?file=http://evil.com: RFI detected
+        + 4231 items checked: 2 high-risk item(s) reported</pre>
+                </div>
+                <div class="p-4 bg-gray-900 rounded">
+                    <h5 class="font-semibold text-cyan-300 mb-2">參數解釋：</h5>
+                    <ul class="space-y-2 text-sm">
+                        <li><span class="font-mono text-green-400">-Tuning 58</span> - 專注掃描文件上傳(32)+遠程文件包含(16)+命令執行(8)+配置文件(2)漏洞</li>
+                        <li><span class="font-mono text-green-400">-Display V</span> - 只顯示漏洞級別問題</li>
+                        <li><span class="text-red-400">高危漏洞：</span> 發現文件上傳和遠程文件包含漏洞</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- 範例 4：身份驗證掃描 -->
+            <div class="command-box p-6 rounded-lg mb-8">
+                <h4 class="font-mono text-green-400 text-xl mb-3">4. 帶身份驗證的掃描</h4>
+                <div class="bg-black p-4 rounded mb-4 overflow-x-auto">
+                    <pre class="text-gray-300 text-sm">
+        $ nikto -h intranet.example.com -id admin:Password123
+
+        - Authenticated scan as: admin:********
+        - Target IP:          192.168.1.100
+        + /admin/dashboard.php: XSS in 'search' parameter
+        + /db_backup.zip: Database backup file found
+        + 5421 items checked: 2 item(s) reported</pre>
+                </div>
+                <div class="p-4 bg-gray-900 rounded">
+                    <h5 class="font-semibold text-cyan-300 mb-2">參數解釋：</h5>
+                    <ul class="space-y-2 text-sm">
+                        <li><span class="font-mono text-green-400">-id admin:Password123</span> - 使用基本身份驗證(Basic Auth)</li>
+                        <li><span class="text-blue-400">注意：</span> 密碼在命令歷史中可能洩露，建議使用後清除</li>
+                        <li><span class="text-yellow-400">發現問題：</span> 需登入才能訪問的後台頁面存在XSS漏洞</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- 範例 5：生成XML報告 -->
+            <div class="command-box p-6 rounded-lg">
+                <h4 class="font-mono text-green-400 text-xl mb-3">5. 生成XML格式報告</h4>
+                <div class="bg-black p-4 rounded mb-4 overflow-x-auto">
+                    <pre class="text-gray-300 text-sm">
+        $ nikto -h example.com -Format xml -output scan_result.xml
+
+        - Report format: XML
+        - Target IP:          93.184.216.34
+        - Scan saved to: scan_result.xml
+        &lt;?xml version="1.0"?&gt;
+        &lt;nikto&gt;
+        &lt;scandetails&gt;
+            &lt;item id="1"&gt;
+            &lt;description&gt;Server: nginx/1.25.3&lt;/description&gt;
+            &lt;uri&gt;/&lt;/uri&gt;
+            &lt;/item&gt;
+        &lt;/scandetails&gt;
+        &lt;/nikto&gt;</pre>
+                </div>
+                <div class="p-4 bg-gray-900 rounded">
+                    <h5 class="font-semibold text-cyan-300 mb-2">參數解釋：</h5>
+                    <ul class="space-y-2 text-sm">
+                        <li><span class="font-mono text-green-400">-Format xml</span> - 指定XML輸出格式</li>
+                        <li><span class="font-mono text-green-400">-output scan_result.xml</span> - 將結果保存到文件</li>
+                        <li><span class="text-blue-400">整合應用：</span> XML報告可導入其他安全工具進一步分析</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        <!-- 學習資源 -->
+        <section id="resources" class="section-card p-8 rounded-lg">
+            <h2 class="text-3xl font-bold text-cyan-300 mb-6 flex items-center">
+                <i class="ri-book-line mr-3"></i>
+                學習資源
+            </h2>
+            
+            <div class="grid md:grid-cols-2 gap-6">
+                <!-- 資源 1 -->
+                <div class="feature-item p-4 rounded">
+                    <h3 class="text-xl font-semibold text-cyan-300 mb-2 flex items-center">
+                        <i class="ri-global-line mr-2"></i>
+                        官方資源
+                    </h3>
+                    <ul class="space-y-2">
+                        <li>
+                            <a href="https://cirt.net/Nikto2" target="_blank" class="text-cyan-300 hover:underline">
+                                Nikto 官方網站
+                            </a>
+                        </li>
+                        <li>
+                            <a href="https://github.com/sullo/nikto" target="_blank" class="text-cyan-300 hover:underline">
+                                Nikto GitHub 倉庫
+                            </a>
+                        </li>
+                        <li>
+                            <a href="https://cirt.net/Nikto2-docs/" target="_blank" class="text-cyan-300 hover:underline">
+                                官方文檔
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+                
+                <!-- 資源 2 -->
+                <div class="feature-item p-4 rounded">
+                    <h3 class="text-xl font-semibold text-cyan-300 mb-2 flex items-center">
+                        <i class="ri-video-line mr-2"></i>
+                        影片教學
+                    </h3>
+                    <ul class="space-y-2">
+                        <li>
+                            <a href="https://www.youtube.com/watch?v=ZqikTqX6Gx0" target="_blank" class="text-cyan-300 hover:underline">
+                                Nikto 初學者指南
+                            </a>
+                        </li>
+                        <li>
+                            <a href="https://www.youtube.com/watch?v=1jX49TdZMc8" target="_blank" class="text-cyan-300 hover:underline">
+                                Nikto 進階掃描技術
+                            </a>
+                        </li>
+                        <li>
+                            <a href="https://www.youtube.com/watch?v=0k8IjD4W4o4" target="_blank" class="text-cyan-300 hover:underline">
+                                Kali Linux 中的 Nikto 使用
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+                
+                <!-- 資源 3 -->
+                <div class="feature-item p-4 rounded">
+                    <h3 class="text-xl font-semibold text-cyan-300 mb-2 flex items-center">
+                        <i class="ri-article-line mr-2"></i>
+                        文章與指南
+                    </h3>
+                    <ul class="space-y-2">
+                        <li>
+                            <a href="https://www.hackingarticles.in/comprehensive-guide-on-nikto/" target="_blank" class="text-cyan-300 hover:underline">
+                                Nikto 綜合指南
+                            </a>
+                        </li>
+                        <li>
+                            <a href="https://www.kalilinux.in/2020/12/nikto-web-vulnerability-scanner-in-kali.html" target="_blank" class="text-cyan-300 hover:underline">
+                                Kali Linux 中的 Nikto 使用指南
+                            </a>
+                        </li>
+                        <li>
+                            <a href="https://www.acunetix.com/blog/web-security-zone/nikto-web-scanner/" target="_blank" class="text-cyan-300 hover:underline">
+                                Nikto Web 掃描器詳解
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+                
+                <!-- 資源 4 -->
+                <div class="feature-item p-4 rounded">
+                    <h3 class="text-xl font-semibold text-cyan-300 mb-2 flex items-center">
+                        <i class="ri-community-line mr-2"></i>
+                        社群與論壇
+                    </h3>
+                    <ul class="space-y-2">
+                        <li>
+                            <a href="https://security.stackexchange.com/questions/tagged/nikto" target="_blank" class="text-cyan-300 hover:underline">
+                                Security StackExchange
+                            </a>
+                        </li>
+                        <li>
+                            <a href="https://www.reddit.com/r/AskNetsec/search?q=nikto" target="_blank" class="text-cyan-300 hover:underline">
+                                Reddit NetSec 社區
+                            </a>
+                        </li>
+                        <li>
+                            <a href="https://www.kali.org/forums/" target="_blank" class="text-cyan-300 hover:underline">
+                                Kali Linux 官方論壇
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <footer class="text-center py-8 text-gray-400">
+        <div class="container mx-auto px-4">
+            <div class="mb-4">
+                <p class="text-cyan-300 font-bold">
+                    <i class="ri-shield-star-line mr-2"></i>
+                    Kali Linux 網路安全工具指南
+                </p>
+            </div>
+            <div class="mb-4">
+                © 2025 網路安全技術專題 | 指導教授：王德譽 | 學生：陳家茂、劉昱均
+            </div>
+            <div class="text-sm">
+                本專題致力於推廣網路安全教育與道德駭客精神
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // 數字雨效果函數
+        function createDigitalRain() {
+            const canvas = document.getElementById('digital-rain');
+            const ctx = canvas.getContext('2d');
+            
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+
+            const chars = 'アァカサタナハマヤャラワガザダバパイィキシチニヒミリヰギジヂビピウゥクスツヌフムユュルグズブヅプエェケセテネヘメレヱゲゼデベペオォコソトノホモヨョロワゴゾドボポ0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+            const fontSize = 10;
+            const columns = canvas.width / fontSize;
+            const drops = [];
+
+            for (let x = 0; x < columns; x++) {
+                drops[x] = 1;
+            }
+
+            function draw() {
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                
+                ctx.fillStyle = '#0F0';
+                ctx.font = fontSize + 'px arial';
+                
+                for (let i = 0; i < drops.length; i++) {
+                    const text = chars.charAt(Math.floor(Math.random() * chars.length));
+                    ctx.fillText(text, i * fontSize, drops[i] * fontSize);
+                    
+                    if (drops[i] * fontSize > canvas.height && Math.random() > 0.975)
+                        drops[i] = 0;
+                    
+                    drops[i]++;
+                }
+            }
+
+            setInterval(draw, 33);
+
+            window.addEventListener('resize', () => {
+                canvas.width = window.innerWidth;
+                canvas.height = window.innerHeight;
+            });
+        }
+
+        // 初始化函數
+        document.addEventListener('DOMContentLoaded', () => {
+            createDigitalRain();
+            
+            // 平滑滾動
+            document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+                anchor.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    document.querySelector(this.getAttribute('href')).scrollIntoView({
+                        behavior: 'smooth'
+                    });
+                });
+            });
+        });
+    </script>
+</body>
+</html>
