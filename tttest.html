@@ -230,121 +230,142 @@
             </div>
         </section>
 
-        <!-- 使用範例 -->
         <section id="usage" class="section-card p-8 rounded-lg mb-12">
             <h2 class="text-3xl font-bold text-cyan-300 mb-6 flex items-center">
                 <i class="ri-terminal-line mr-3"></i>
-                使用範例
+                使用範例詳解
             </h2>
-            
-            <div class="mb-8">
-                <h3 class="text-2xl font-semibold text-cyan-300 mb-4">基本掃描命令</h3>
-                <div class="grid md:grid-cols-2 gap-6">
-                    <!-- 命令 1 -->
-                    <div class="command-box p-4 rounded">
-                        <h4 class="font-mono text-green-400 mb-2">nmap 192.168.1.1</h4>
-                        <p class="text-gray-400">
-                            掃描單一主機的常用端口
-                        </p>
-                    </div>
-                    
-                    <!-- 命令 2 -->
-                    <div class="command-box p-4 rounded">
-                        <h4 class="font-mono text-green-400 mb-2">nmap 192.168.1.0/24</h4>
-                        <p class="text-gray-400">
-                            掃描整個子網的所有主機
-                        </p>
-                    </div>
-                    
-                    <!-- 命令 3 -->
-                    <div class="command-box p-4 rounded">
-                        <h4 class="font-mono text-green-400 mb-2">nmap -p 80,443 192.168.1.1</h4>
-                        <p class="text-gray-400">
-                            掃描特定端口 (HTTP 和 HTTPS)
-                        </p>
-                    </div>
-                    
-                    <!-- 命令 4 -->
-                    <div class="command-box p-4 rounded">
-                        <h4 class="font-mono text-green-400 mb-2">nmap -p- 192.168.1.1</h4>
-                        <p class="text-gray-400">
-                            掃描所有端口 (1-65535)
-                        </p>
-                    </div>
+        
+            <!-- 範例1：基本掃描 -->
+            <div class="command-box p-6 rounded-lg mb-8">
+                <h3 class="text-xl font-semibold text-cyan-300 mb-4">1. 基本主機掃描</h3>
+                <div class="bg-gray-900 p-4 rounded mb-4">
+                    <h4 class="font-mono text-green-400 mb-2">$ nmap 192.168.1.1</h4>
+                    <pre class="text-gray-300 overflow-x-auto">
+        Starting Nmap 7.92 ( https://nmap.org )
+        Nmap scan report for router.local (192.168.1.1)
+        Host is up (0.0025s latency).
+        Not shown: 997 closed ports
+        PORT    STATE SERVICE
+        22/tcp  open  ssh
+        80/tcp  open  http
+        443/tcp open  https</pre>
+                </div>
+                <div class="bg-gray-800 p-4 rounded">
+                    <h4 class="font-semibold text-orange-300 mb-2">參數解釋：</h4>
+                    <ul class="text-gray-300 space-y-2">
+                        <li><span class="text-cyan-300">無參數</span>：預設掃描1000個最常用的TCP端口</li>
+                        <li><span class="text-cyan-300">PORT</span>：發現的開放端口號</li>
+                        <li><span class="text-cyan-300">STATE</span>：端口狀態 (open=開放, filtered=被過濾, closed=關閉)</li>
+                        <li><span class="text-cyan-300">SERVICE</span>：端口對應的標準服務名稱</li>
+                    </ul>
                 </div>
             </div>
-            
-            <div class="mb-8">
-                <h3 class="text-2xl font-semibold text-cyan-300 mb-4">進階掃描技術</h3>
-                <div class="grid md:grid-cols-2 gap-6">
-                    <!-- 命令 5 -->
-                    <div class="command-box p-4 rounded">
-                        <h4 class="font-mono text-green-400 mb-2">nmap -sS 192.168.1.1</h4>
-                        <p class="text-gray-400">
-                            SYN 掃描 (隱蔽掃描，不完成 TCP 握手)
-                        </p>
-                    </div>
-                    
-                    <!-- 命令 6 -->
-                    <div class="command-box p-4 rounded">
-                        <h4 class="font-mono text-green-400 mb-2">nmap -sU 192.168.1.1</h4>
-                        <p class="text-gray-400">
-                            UDP 端口掃描
-                        </p>
-                    </div>
-                    
-                    <!-- 命令 7 -->
-                    <div class="command-box p-4 rounded">
-                        <h4 class="font-mono text-green-400 mb-2">nmap -O 192.168.1.1</h4>
-                        <p class="text-gray-400">
-                            啟用作業系統檢測
-                        </p>
-                    </div>
-                    
-                    <!-- 命令 8 -->
-                    <div class="command-box p-4 rounded">
-                        <h4 class="font-mono text-green-400 mb-2">nmap -sV 192.168.1.1</h4>
-                        <p class="text-gray-400">
-                            啟用服務版本檢測
-                        </p>
-                    </div>
+        
+            <!-- 範例2：端口指定掃描 -->
+            <div class="command-box p-6 rounded-lg mb-8">
+                <h3 class="text-xl font-semibold text-cyan-300 mb-4">2. 指定端口掃描</h3>
+                <div class="bg-gray-900 p-4 rounded mb-4">
+                    <h4 class="font-mono text-green-400 mb-2">$ nmap -p 22,80,443 192.168.1.1</h4>
+                    <pre class="text-gray-300 overflow-x-auto">
+        Starting Nmap 7.92 ( https://nmap.org )
+        Nmap scan report for router.local (192.168.1.1)
+        Host is up (0.0025s latency).
+        PORT    STATE SERVICE
+        22/tcp  open  ssh
+        80/tcp  open  http
+        443/tcp open  https</pre>
+                </div>
+                <div class="bg-gray-800 p-4 rounded">
+                    <h4 class="font-semibold text-orange-300 mb-2">參數解釋：</h4>
+                    <ul class="text-gray-300 space-y-2">
+                        <li><span class="text-cyan-300">-p</span>：指定要掃描的端口，可用逗號分隔多個端口</li>
+                        <li><span class="text-cyan-300">-p 1-100</span>：掃描端口範圍</li>
+                        <li><span class="text-cyan-300">-p-</span>：掃描所有65535個端口</li>
+                        <li><span class="text-cyan-300">-p U:53,111,137,T:21-25,80,139,8080</span>：同時指定TCP和UDP端口</li>
+                    </ul>
                 </div>
             </div>
-            
-            <div>
-                <h3 class="text-2xl font-semibold text-cyan-300 mb-4">Nmap 腳本引擎 (NSE)</h3>
-                <div class="grid md:grid-cols-2 gap-6">
-                    <!-- 命令 9 -->
-                    <div class="command-box p-4 rounded">
-                        <h4 class="font-mono text-green-400 mb-2">nmap --script=http-title 192.168.1.1</h4>
-                        <p class="text-gray-400">
-                            獲取網頁標題
-                        </p>
-                    </div>
-                    
-                    <!-- 命令 10 -->
-                    <div class="command-box p-4 rounded">
-                        <h4 class="font-mono text-green-400 mb-2">nmap --script=ssl-cert 192.168.1.1</h4>
-                        <p class="text-gray-400">
-                            檢查 SSL 證書信息
-                        </p>
-                    </div>
-                    
-                    <!-- 命令 11 -->
-                    <div class="command-box p-4 rounded">
-                        <h4 class="font-mono text-green-400 mb-2">nmap --script=vuln 192.168.1.1</h4>
-                        <p class="text-gray-400">
-                            執行漏洞檢測腳本
-                        </p>
-                    </div>
-                    
-                    <!-- 命令 12 -->
-                    <div class="command-box p-4 rounded">
-                        <h4 class="font-mono text-green-400 mb-2">nmap --script=safe 192.168.1.1</h4>
-                        <p class="text-gray-400">
-                            執行安全檢測腳本
-                        </p>
-                    </div>
+        
+            <!-- 範例3：服務版本檢測 -->
+            <div class="command-box p-6 rounded-lg mb-8">
+                <h3 class="text-xl font-semibold text-cyan-300 mb-4">3. 服務版本檢測</h3>
+                <div class="bg-gray-900 p-4 rounded mb-4">
+                    <h4 class="font-mono text-green-400 mb-2">$ nmap -sV 192.168.1.1</h4>
+                    <pre class="text-gray-300 overflow-x-auto">
+        Starting Nmap 7.92 ( https://nmap.org )
+        Nmap scan report for router.local (192.168.1.1)
+        Host is up (0.0025s latency).
+        PORT    STATE SERVICE VERSION
+        22/tcp  open  ssh     OpenSSH 7.9p1 Debian 10
+        80/tcp  open  http    nginx 1.18.0
+        443/tcp open  ssl/    nginx 1.18.0</pre>
+                </div>
+                <div class="bg-gray-800 p-4 rounded">
+                    <h4 class="font-semibold text-orange-300 mb-2">參數解釋：</h4>
+                    <ul class="text-gray-300 space-y-2">
+                        <li><span class="text-cyan-300">-sV</span>：啟用服務版本檢測</li>
+                        <li><span class="text-cyan-300">VERSION</span>：檢測到的服務名稱和版本號</li>
+                        <li><span class="text-cyan-300">--version-intensity</span>：設置檢測強度 (0-9)</li>
+                        <li><span class="text-cyan-300">--version-light</span>：輕量級檢測 (強度2)</li>
+                        <li><span class="text-cyan-300">--version-all</span>：嘗試所有檢測 (強度9)</li>
+                    </ul>
+                </div>
+            </div>
+        
+            <!-- 範例4：操作系統檢測 -->
+            <div class="command-box p-6 rounded-lg mb-8">
+                <h3 class="text-xl font-semibold text-cyan-300 mb-4">4. 操作系統檢測</h3>
+                <div class="bg-gray-900 p-4 rounded mb-4">
+                    <h4 class="font-mono text-green-400 mb-2">$ nmap -O 192.168.1.100</h4>
+                    <pre class="text-gray-300 overflow-x-auto">
+        Starting Nmap 7.92 ( https://nmap.org )
+        Nmap scan report for desktop.local (192.168.1.100)
+        Host is up (0.0005s latency).
+        Not shown: 998 closed ports
+        PORT    STATE SERVICE
+        135/tcp open  msrpc
+        445/tcp open  microsoft-ds
+        MAC Address: 00:1A:2B:3C:4D:5E (Intel)
+        Device type: general purpose
+        Running: Microsoft Windows 10|8.1|7
+        OS details: Microsoft Windows 10 1803 - 1909</pre>
+                </div>
+                <div class="bg-gray-800 p-4 rounded">
+                    <h4 class="font-semibold text-orange-300 mb-2">參數解釋：</h4>
+                    <ul class="text-gray-300 space-y-2">
+                        <li><span class="text-cyan-300">-O</span>：啟用作業系統檢測</li>
+                        <li><span class="text-cyan-300">Running</span>：推測的操作系統類型</li>
+                        <li><span class="text-cyan-300">OS details</span>：更詳細的版本信息</li>
+                        <li><span class="text-cyan-300">--osscan-limit</span>：只對有希望的目標進行OS檢測</li>
+                        <li><span class="text-cyan-300">--osscan-guess</span>：更積極的猜測</li>
+                    </ul>
+                </div>
+            </div>
+        
+            <!-- 範例5：NSE腳本掃描 -->
+            <div class="command-box p-6 rounded-lg">
+                <h3 class="text-xl font-semibold text-cyan-300 mb-4">5. NSE腳本使用</h3>
+                <div class="bg-gray-900 p-4 rounded mb-4">
+                    <h4 class="font-mono text-green-400 mb-2">$ nmap --script=http-title 192.168.1.1</h4>
+                    <pre class="text-gray-300 overflow-x-auto">
+        Starting Nmap 7.92 ( https://nmap.org )
+        Nmap scan report for router.local (192.168.1.1)
+        Host is up (0.0025s latency).
+        PORT   STATE SERVICE
+        80/tcp open  http
+        | http-title: Router Admin Panel
+        |_Requested resource was /login.html</pre>
+                </div>
+                <div class="bg-gray-800 p-4 rounded">
+                    <h4 class="font-semibold text-orange-300 mb-2">參數解釋：</h4>
+                    <ul class="text-gray-300 space-y-2">
+                        <li><span class="text-cyan-300">--script</span>：指定要運行的NSE腳本</li>
+                        <li><span class="text-cyan-300">http-title</span>：獲取網頁標題的腳本</li>
+                        <li><span class="text-cyan-300">--script-args</span>：傳遞參數給腳本</li>
+                        <li><span class="text-cyan-300">--script-help</span>：顯示腳本幫助信息</li>
+                        <li><span class="text-cyan-300">--script=vuln</span>：運行漏洞檢測類腳本</li>
+                    </ul>
                 </div>
             </div>
         </section>
