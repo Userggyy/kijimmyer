@@ -1,0 +1,629 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wireshark 網路封包分析 | Kali Linux 工具指南</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@2.5.0/fonts/remixicon.css" rel="stylesheet">
+    <style>
+        body { 
+            background-color: #000; 
+            color: #e6f1ff;
+            font-family: 'Inter', 'Noto Sans TC', sans-serif;
+            margin: 0;
+            overflow-x: hidden;
+        }
+        #digital-rain {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            opacity: 0.5;
+        }
+        .content {
+            position: relative;
+            z-index: 10;
+        }
+        .section-card {
+            background: rgba(15, 25, 50, 0.7);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(100, 200, 255, 0.2);
+            transition: all 0.3s ease;
+        }
+        .section-card:hover {
+            box-shadow: 0 10px 30px rgba(100, 200, 255, 0.3);
+        }
+        .command-box {
+            background: rgba(0, 20, 40, 0.8);
+            border-left: 3px solid #64c8ff;
+        }
+        .feature-item {
+            border-left: 2px solid #64c8ff;
+            transition: all 0.3s ease;
+        }
+        .feature-item:hover {
+            background: rgba(100, 200, 255, 0.1);
+        }
+        .nav-button {
+            transition: all 0.3s ease;
+            opacity: 0.8;
+        }
+        .nav-button:hover {
+            opacity: 1;
+            text-shadow: 0 0 10px rgba(100, 200, 255, 0.7);
+        }
+        .difficulty-badge {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.875rem;
+            font-weight: 500;
+        }
+        .difficulty-badge.medium {
+            background-color: rgba(250, 204, 21, 0.2);
+            color: #facc15;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="digital-rain"></canvas>
+    <div class="container mx-auto px-4 py-8 content">
+        <!-- 導航按鈕 -->
+        <div class="flex justify-between mb-8">
+            <a href="index.html" class="nav-button flex items-center text-blue-300">
+                <i class="ri-arrow-left-line mr-2"></i> 返回工具列表
+            </a>
+            <span class="difficulty-badge medium">中等難度</span>
+        </div>
+
+        <!-- 標題區 -->
+        <header class="text-center mb-12">
+            <div class="flex justify-center items-center mb-4">
+                <i class="ri-eye-line text-5xl text-blue-300 mr-4"></i>
+                <h1 class="text-4xl font-bold text-blue-300">Wireshark 封包分析工具</h1>
+            </div>
+            <p class="text-xl max-w-3xl mx-auto">
+                開源的網路協定分析工具，用於捕獲和分析網路流量
+            </p>
+        </header>
+
+        <!-- 快速導航 -->
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-12">
+            <a href="#intro" class="section-card p-4 text-center rounded-lg">
+                <i class="ri-information-line text-2xl text-blue-300 mb-2"></i>
+                <h3 class="font-semibold">工具介紹</h3>
+            </a>
+            <a href="#features" class="section-card p-4 text-center rounded-lg">
+                <i class="ri-star-line text-2xl text-blue-300 mb-2"></i>
+                <h3 class="font-semibold">主要功能</h3>
+            </a>
+            <a href="#usage" class="section-card p-4 text-center rounded-lg">
+                <i class="ri-terminal-line text-2xl text-blue-300 mb-2"></i>
+                <h3 class="font-semibold">使用示例</h3>
+            </a>
+            <a href="#resources" class="section-card p-4 text-center rounded-lg">
+                <i class="ri-book-line text-2xl text-blue-300 mb-2"></i>
+                <h3 class="font-semibold">學習資源</h3>
+            </a>
+        </div>
+
+        <!-- 工具介紹 -->
+        <section id="intro" class="section-card p-8 rounded-lg mb-12">
+            <h2 class="text-3xl font-bold text-blue-300 mb-6 flex items-center">
+                <i class="ri-information-line mr-3"></i>
+                工具介紹
+            </h2>
+            <div class="grid md:grid-cols-2 gap-8">
+                <div>
+                    <p class="mb-4">
+                        Wireshark 是世界上最廣泛使用的網路協定分析工具，原名 Ethereal，由 Gerald Combs 開發並於1998年首次發布。
+                    </p>
+                    <p class="mb-4">
+                        Wireshark 可以實時捕獲網路數據包，並詳細解析超過2000種網路協定。它能深入分析網路流量，幫助診斷網路問題、檢測安全威脅和分析應用程序行為。
+                    </p>
+                    <p>
+                        Wireshark 被網路管理員、安全專家和開發人員廣泛使用，是 Kali Linux 中重要的網路分析工具之一。
+                    </p>
+                </div>
+                <div class="bg-gray-900 p-6 rounded-lg">
+                    <h3 class="text-xl font-semibold text-blue-300 mb-4 flex items-center">
+                        <i class="ri-lightbulb-flash-line mr-2"></i>
+                        技術亮點
+                    </h3>
+                    <ul class="space-y-3">
+                        <li class="flex items-start">
+                            <i class="ri-checkbox-circle-line text-blue-300 mt-1 mr-2"></i>
+                            <span>支援多種捕獲接口（有線、無線、虛擬）</span>
+                        </li>
+                        <li class="flex items-start">
+                            <i class="ri-checkbox-circle-line text-blue-300 mt-1 mr-2"></i>
+                            <span>強大的過濾系統（BPF 和顯示過濾器）</span>
+                        </li>
+                        <li class="flex items-start">
+                            <i class="ri-checkbox-circle-line text-blue-300 mt-1 mr-2"></i>
+                            <span>豐富的協定解析和解密功能</span>
+                        </li>
+                        <li class="flex items-start">
+                            <i class="ri-checkbox-circle-line text-blue-300 mt-1 mr-2"></i>
+                            <span>跨平台支援（Windows、Linux、macOS）</span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- 主要功能 -->
+        <section id="features" class="section-card p-8 rounded-lg mb-12">
+            <h2 class="text-3xl font-bold text-blue-300 mb-6 flex items-center">
+                <i class="ri-star-line mr-3"></i>
+                主要功能
+            </h2>
+            <div class="grid md:grid-cols-2 gap-6">
+                <!-- 功能 1 -->
+                <div class="feature-item p-4 rounded">
+                    <h3 class="text-xl font-semibold text-blue-300 mb-2 flex items-center">
+                        <i class="ri-radio-line mr-2"></i>
+                        實時流量捕獲
+                    </h3>
+                    <p>
+                        從網路接口卡(NIC)直接捕獲數據包，支援有線和無線網路，包括Wi-Fi監聽模式。
+                    </p>
+                </div>
+                
+                <!-- 功能 2 -->
+                <div class="feature-item p-4 rounded">
+                    <h3 class="text-xl font-semibold text-blue-300 mb-2 flex items-center">
+                        <i class="ri-filter-line mr-2"></i>
+                        進階過濾
+                    </h3>
+                    <p>
+                        使用BPF(伯克利包過濾器)和顯示過濾器精確定位特定流量，如按IP、端口、協定等條件過濾。
+                    </p>
+                </div>
+                
+                <!-- 功能 3 -->
+                <div class="feature-item p-4 rounded">
+                    <h3 class="text-xl font-semibold text-blue-300 mb-2 flex items-center">
+                        <i class="ri-git-merge-line mr-2"></i>
+                        協定解析
+                    </h3>
+                    <p>
+                        深度解析2000+網路協定，包括HTTP、DNS、TCP/IP、TLS等，可查看各層協定詳細信息。
+                    </p>
+                </div>
+                
+                <!-- 功能 4 -->
+                <div class="feature-item p-4 rounded">
+                    <h3 class="text-xl font-semibold text-blue-300 mb-2 flex items-center">
+                        <i class="ri-shield-keyhole-line mr-2"></i>
+                        安全分析
+                    </h3>
+                    <p>
+                        檢測異常流量模式，識別掃描行為、DoS攻擊、ARP欺騙等安全威脅。
+                    </p>
+                </div>
+                
+                <!-- 功能 5 -->
+                <div class="feature-item p-4 rounded">
+                    <h3 class="text-xl font-semibold text-blue-300 mb-2 flex items-center">
+                        <i class="ri-file-chart-line mr-2"></i>
+                        流量統計
+                    </h3>
+                    <p>
+                        提供會話統計、端點分析、IO圖表等高級統計功能，幫助分析網路性能。
+                    </p>
+                </div>
+                
+                <!-- 功能 6 -->
+                <div class="feature-item p-4 rounded">
+                    <h3 class="text-xl font-semibold text-blue-300 mb-2 flex items-center">
+                        <i class="ri-database-line mr-2"></i>
+                        文件匯出
+                    </h3>
+                    <p>
+                        支援多種格式的捕獲文件匯出(PCAP, CSV, XML等)，便於與其他工具整合分析。
+                    </p>
+                </div>
+            </div>
+        </section>
+
+        <!-- 使用示例 -->
+        <section id="usage" class="section-card p-8 rounded-lg mb-12">
+            <h2 class="text-3xl font-bold text-blue-300 mb-6 flex items-center">
+                <i class="ri-terminal-line mr-3"></i>
+                使用示例
+            </h2>
+            
+            <div class="mb-8">
+                <h3 class="text-2xl font-semibold text-blue-300 mb-4">基本捕獲命令</h3>
+                <div class="grid md:grid-cols-2 gap-6">
+                    <!-- 命令 1 -->
+                    <div class="command-box p-4 rounded">
+                        <h4 class="font-mono text-green-400 mb-2">wireshark -i eth0 -k</h4>
+                        <p class="text-gray-400">
+                            在eth0接口上啟動實時捕獲
+                        </p>
+                    </div>
+                    
+                    <!-- 命令 2 -->
+                    <div class="command-box p-4 rounded">
+                        <h4 class="font-mono text-green-400 mb-2">tshark -i wlan0 -w capture.pcap</h4>
+                        <p class="text-gray-400">
+                            使用命令行版本捕獲並保存到文件
+                        </p>
+                    </div>
+                    
+                    <!-- 命令 3 -->
+                    <div class="command-box p-4 rounded">
+                        <h4 class="font-mono text-green-400 mb-2">wireshark -r capture.pcap -Y "http"</h4>
+                        <p class="text-gray-400">
+                            讀取捕獲文件並過濾HTTP流量
+                        </p>
+                    </div>
+                    
+                    <!-- 命令 4 -->
+                    <div class="command-box p-4 rounded">
+                        <h4 class="font-mono text-green-400 mb-2">tshark -i any -f "port 53" -c 100</h4>
+                        <p class="text-gray-400">
+                            捕獲前100個DNS數據包
+                        </p>
+                    </div>
+                </div>
+            </div>
+            
+            
+
+        <div class="mt-12">
+            <h3 class="text-2xl font-semibold text-blue-300 mb-6 flex items-center">
+                <i class="ri-code-line mr-3"></i>
+                實戰命令解析
+            </h3>
+
+            <!-- 範例 1：HTTP流量分析 - 改進版 -->
+            <div class="command-box p-6 rounded-lg mb-8">
+                <div class="flex flex-col md:flex-row gap-6">
+                    <div class="flex-1">
+                        <h4 class="font-mono text-green-400 text-xl mb-3">🔍 分析網站訪問記錄</h4>
+                        <div class="bg-black p-4 rounded mb-4 overflow-x-auto">
+                            <pre class="text-gray-300 text-sm">
+        $ tshark -i eth0 -Y "http" -T fields \
+        -e frame.time -e ip.src -e ip.dst \
+        -e http.host -e http.request.method \
+        -e http.response.code
+
+        "2025-04-13 14:30:01" 192.168.1.100 93.184.216.34 example.com GET
+        "2025-04-13 14:30:02" 93.184.216.34 192.168.1.100 example.com 200
+        "2025-04-13 14:30:05" 192.168.1.100 93.184.216.34 api.example.com POST
+        "2025-04-13 14:30:06" 93.184.216.34 192.168.1.100 api.example.com 404</pre>
+                        </div>
+                    </div>
+                    <div class="flex-1">
+                        <div class="p-4 bg-gray-900 rounded-lg h-full">
+                            <h5 class="font-semibold text-blue-300 mb-3 border-b border-blue-300 pb-2">🧠 這樣理解：</h5>
+                            <div class="space-y-4">
+                                <div>
+                                    <h6 class="text-green-400 mb-1">▸ 命令用途：</h6>
+                                    <p class="text-sm">監控誰訪問了哪些網站，以及網站的反應狀態</p>
+                                </div>
+                                <div>
+                                    <h6 class="text-green-400 mb-1">▸ 參數拆解：</h6>
+                                    <ul class="text-sm space-y-1 pl-2">
+                                        <li><span class="font-mono">-i eth0</span> → 監聽乙太網卡</li>
+                                        <li><span class="font-mono">-Y "http"</span> → 只顯示網頁流量</li>
+                                        <li><span class="font-mono">-e ip.src</span> → 顯示來源IP</li>
+                                        <li><span class="font-mono">-e http.response.code</span> → 顯示網站回應狀態碼</li>
+                                    </ul>
+                                </div>
+                                <div>
+                                    <h6 class="text-green-400 mb-1">▸ 輸出解讀：</h6>
+                                    <ul class="text-sm space-y-1 pl-2">
+                                        <li>第一行：192.168.1.100 訪問了 example.com 首頁 (GET)</li>
+                                        <li>第二行：example.com 回應「成功」(200)</li>
+                                        <li>第四行：api.example.com 回應「找不到頁面」(404)</li>
+                                    </ul>
+                                </div>
+                                <div class="p-2 bg-blue-900 bg-opacity-30 rounded">
+                                    <h6 class="text-yellow-400 text-xs mb-1">💡 安全小知識：</h6>
+                                    <p class="text-xs">狀態碼404頻繁出現可能是掃描行為，200狀態的POST請求需檢查是否傳輸敏感資料</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 範例 2：DNS查詢分析 - 改進版 -->
+            <div class="command-box p-6 rounded-lg mb-8">
+                <div class="flex flex-col md:flex-row gap-6">
+                    <div class="flex-1">
+                        <h4 class="font-mono text-green-400 text-xl mb-3">🕵️ 監控DNS查詢記錄</h4>
+                        <div class="bg-black p-4 rounded mb-4 overflow-x-auto">
+                            <pre class="text-gray-300 text-sm">
+        $ tshark -i wlan0 -f "port 53" -T fields \
+        -e frame.time -e ip.src -e dns.qry.name \
+        -e dns.resp.addr -c 10
+
+        "2025-04-13 14:35:01" 192.168.1.50 www.google.com 142.250.190.46
+        "2025-04-13 14:35:03" 192.168.1.50 api.github.com 140.82.121.6
+        "2025-04-13 14:35:05" 192.168.1.50 tracking.ad.com 
+        "2025-04-13 14:35:07" 192.168.1.50 malware.com</pre>
+                        </div>
+                    </div>
+                    <div class="flex-1">
+                        <div class="p-4 bg-gray-900 rounded-lg h-full">
+                            <h5 class="font-semibold text-blue-300 mb-3 border-b border-blue-300 pb-2">🧠 這樣理解：</h5>
+                            <div class="space-y-4">
+                                <div>
+                                    <h6 class="text-green-400 mb-1">▸ 命令用途：</h6>
+                                    <p class="text-sm">查看網路中所有設備訪問了哪些網站域名</p>
+                                </div>
+                                <div>
+                                    <h6 class="text-green-400 mb-1">▸ 關鍵參數：</h6>
+                                    <ul class="text-sm space-y-1 pl-2">
+                                        <li><span class="font-mono">-f "port 53"</span> → 只抓DNS查詢封包</li>
+                                        <li><span class="font-mono">-e dns.qry.name</span> → 顯示查詢的域名</li>
+                                        <li><span class="font-mono">-c 10</span> → 只抓10個包就停止</li>
+                                    </ul>
+                                </div>
+                                <div>
+                                    <h6 class="text-green-400 mb-1">▸ 發現問題：</h6>
+                                    <ul class="text-sm space-y-1 pl-2">
+                                        <li>tracking.ad.com → 可能是廣告追蹤</li>
+                                        <li>malware.com <span class="text-red-400">→ 無解析結果，可能是惡意域名</span></li>
+                                    </ul>
+                                </div>
+                                <div class="p-2 bg-blue-900 bg-opacity-30 rounded">
+                                    <h6 class="text-yellow-400 text-xs mb-1">🛡️ 實戰技巧：</h6>
+                                    <p class="text-xs">將此命令與惡意域名黑名單比對，可快速發現內網感染設備</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 範例 3：異常流量檢測 - 改進版 -->
+            <div class="command-box p-6 rounded-lg">
+                <div class="flex flex-col md:flex-row gap-6">
+                    <div class="flex-1">
+                        <h4 class="font-mono text-green-400 text-xl mb-3">🚨 檢測端口掃描攻擊</h4>
+                        <div class="bg-black p-4 rounded mb-4 overflow-x-auto">
+                            <pre class="text-gray-300 text-sm">
+        $ tshark -i any -Y "tcp.flags.syn==1 and tcp.flags.ack==0" \
+        -T fields -e ip.src -e tcp.dstport \
+        -c 20 -q | sort | uniq -c
+
+        3 192.168.1.200 22
+        5 192.168.1.200 80
+        2 192.168.1.200 443
+        4 192.168.1.200 3389
+        6 192.168.1.200 8080</pre>
+                        </div>
+                    </div>
+                    <div class="flex-1">
+                        <div class="p-4 bg-gray-900 rounded-lg h-full">
+                            <h5 class="font-semibold text-blue-300 mb-3 border-b border-blue-300 pb-2">🧠 這樣理解：</h5>
+                            <div class="space-y-4">
+                                <div>
+                                    <h6 class="text-green-400 mb-1">▸ 偵測原理：</h6>
+                                    <p class="text-sm">識別只發送SYN標誌的TCP封包（這是端口掃描的特徵）</p>
+                                </div>
+                                <div>
+                                    <h6 class="text-green-400 mb-1">▸ 關鍵過濾：</h6>
+                                    <ul class="text-sm space-y-1 pl-2">
+                                        <li><span class="font-mono">tcp.flags.syn==1</span> → SYN封包</li>
+                                        <li><span class="font-mono">tcp.flags.ack==0</span> → 非ACK回應</li>
+                                        <li><span class="font-mono">-q</span> → 安靜模式（只顯示結果）</li>
+                                    </ul>
+                                </div>
+                                <div>
+                                    <h6 class="text-green-400 mb-1">▸ 攻擊分析：</h6>
+                                    <ul class="text-sm space-y-1 pl-2">
+                                        <li>來源IP <span class="font-mono">192.168.1.200</span> 正在掃描</li>
+                                        <li>主要目標：網頁服務(80/443)和遠端桌面(3389)</li>
+                                        <li>前20個包中對8080端口掃描最多(6次)</li>
+                                    </ul>
+                                </div>
+                                <div class="p-2 bg-blue-900 bg-opacity-30 rounded">
+                                    <h6 class="text-yellow-400 text-xs mb-1">⚡ 應急處理：</h6>
+                                    <p class="text-xs">立即封鎖此IP，並檢查目標端口服務是否有未修補漏洞</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 學習資源 -->
+        <section id="resources" class="section-card p-8 rounded-lg">
+            <h2 class="text-3xl font-bold text-blue-300 mb-6 flex items-center">
+                <i class="ri-book-line mr-3"></i>
+                學習資源
+            </h2>
+            
+            <div class="grid md:grid-cols-2 gap-6">
+                <!-- 資源 1 -->
+                <div class="feature-item p-4 rounded">
+                    <h3 class="text-xl font-semibold text-blue-300 mb-2 flex items-center">
+                        <i class="ri-global-line mr-2"></i>
+                        官方資源
+                    </h3>
+                    <ul class="space-y-2">
+                        <li>
+                            <a href="https://www.wireshark.org/" target="_blank" class="text-blue-300 hover:underline">
+                                Wireshark 官方網站
+                            </a>
+                        </li>
+                        <li>
+                            <a href="https://wiki.wireshark.org/" target="_blank" class="text-blue-300 hover:underline">
+                                Wireshark 維基
+                            </a>
+                        </li>
+                        <li>
+                            <a href="https://www.wireshark.org/docs/" target="_blank" class="text-blue-300 hover:underline">
+                                官方文檔
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+                
+                <!-- 資源 2 -->
+                <div class="feature-item p-4 rounded">
+                    <h3 class="text-xl font-semibold text-blue-300 mb-2 flex items-center">
+                        <i class="ri-video-line mr-2"></i>
+                        影片教學
+                    </h3>
+                    <ul class="space-y-2">
+                        <li>
+                            <a href="https://www.youtube.com/watch?v=lb1Dw0elw0Q" target="_blank" class="text-blue-300 hover:underline">
+                                Wireshark 入門教程
+                            </a>
+                        </li>
+                        <li>
+                            <a href="https://www.youtube.com/watch?v=6Dc3xY3ed_c" target="_blank" class="text-blue-300 hover:underline">
+                                網路安全分析實戰
+                            </a>
+                        </li>
+                        <li>
+                            <a href="https://www.youtube.com/watch?v=4SYUf8k5gg4" target="_blank" class="text-blue-300 hover:underline">
+                                TShark 命令行高級用法
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+                
+                <!-- 資源 3 -->
+                <div class="feature-item p-4 rounded">
+                    <h3 class="text-xl font-semibold text-blue-300 mb-2 flex items-center">
+                        <i class="ri-article-line mr-2"></i>
+                        文章與指南
+                    </h3>
+                    <ul class="space-y-2">
+                        <li>
+                            <a href="https://www.wireshark.org/docs/wsug_html_chunked/" target="_blank" class="text-blue-300 hover:underline">
+                                Wireshark 用戶指南
+                            </a>
+                        </li>
+                        <li>
+                            <a href="https://unit42.paloaltonetworks.com/using-wireshark-display-filter-expressions/" target="_blank" class="text-blue-300 hover:underline">
+                                過濾器表達式指南
+                            </a>
+                        </li>
+                        <li>
+                            <a href="https://www.kalilinux.in/2021/01/wireshark-tutorial-in-kali-linux.html" target="_blank" class="text-blue-300 hover:underline">
+                                Kali Linux 中的 Wireshark 使用
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+                
+                <!-- 資源 4 -->
+                <div class="feature-item p-4 rounded">
+                    <h3 class="text-xl font-semibold text-blue-300 mb-2 flex items-center">
+                        <i class="ri-community-line mr-2"></i>
+                        社群與論壇
+                    </h3>
+                    <ul class="space-y-2">
+                        <li>
+                            <a href="https://ask.wireshark.org/" target="_blank" class="text-blue-300 hover:underline">
+                                Wireshark Q&A 論壇
+                            </a>
+                        </li>
+                        <li>
+                            <a href="https://security.stackexchange.com/questions/tagged/wireshark" target="_blank" class="text-blue-300 hover:underline">
+                                Security StackExchange
+                            </a>
+                        </li>
+                        <li>
+                            <a href="https://www.reddit.com/r/wireshark/" target="_blank" class="text-blue-300 hover:underline">
+                                Wireshark Reddit 社群
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <footer class="text-center py-8 text-gray-400">
+        <div class="container mx-auto px-4">
+            <div class="mb-4">
+                <p class="text-blue-300 font-bold">
+                    <i class="ri-shield-star-line mr-2"></i>
+                    Kali Linux 網路安全工具指南
+                </p>
+            </div>
+            <div class="mb-4">
+                © 2025 網路安全技術專題 | 指導教授：王德譽 | 學生：陳家茂、劉昱均
+            </div>
+            <div class="text-sm">
+                本專題致力於推廣網路安全教育與道德駭客精神
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // 數字雨效果函數
+        function createDigitalRain() {
+            const canvas = document.getElementById('digital-rain');
+            const ctx = canvas.getContext('2d');
+            
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+
+            const chars = '01アァカサタナハマヤャラワガザダバパイィキシチニヒミリヰギジヂビピウゥクスツヌフムユュルグズブヅプエェケセテネヘメレヱゲゼデベペオォコソトノホモヨョロワゴゾドボポ';
+            const fontSize = 10;
+            const columns = canvas.width / fontSize;
+            const drops = [];
+
+            for (let x = 0; x < columns; x++) {
+                drops[x] = 1;
+            }
+
+            function draw() {
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                
+                ctx.fillStyle = '#0F0';
+                ctx.font = fontSize + 'px arial';
+                
+                for (let i = 0; i < drops.length; i++) {
+                    const text = chars.charAt(Math.floor(Math.random() * chars.length));
+                    ctx.fillText(text, i * fontSize, drops[i] * fontSize);
+                    
+                    if (drops[i] * fontSize > canvas.height && Math.random() > 0.975)
+                        drops[i] = 0;
+                    
+                    drops[i]++;
+                }
+            }
+
+            setInterval(draw, 33);
+
+            window.addEventListener('resize', () => {
+                canvas.width = window.innerWidth;
+                canvas.height = window.innerHeight;
+            });
+        }
+
+        // 初始化函數
+        document.addEventListener('DOMContentLoaded', () => {
+            createDigitalRain();
+            
+            // 平滑滾動
+            document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+                anchor.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    document.querySelector(this.getAttribute('href')).scrollIntoView({
+                        behavior: 'smooth'
+                    });
+                });
+            });
+        });
+    </script>
+</body>
+</html>
