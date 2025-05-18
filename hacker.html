@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>黑客知識百科 | 網路安全世界</title>
+  <link rel="stylesheet" href="https://public.codepenassets.com/css/normalize-5.0.0.min.css">
+  <link rel="stylesheet" href="./style.css">
+  <link href="https://fonts.googleapis.com/css2?family=Martian+Mono:wght@100..800&display=swap" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/remixicon@2.5.0/fonts/remixicon.css" rel="stylesheet">
+  <style>
+    body {
+      margin: 0;
+      overflow-x: hidden;
+      font-family: 'Martian Mono', monospace;
+      color: #e6f1ff;
+    }
+    
+    a-hole {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: -1;
+    }
+    
+    .content {
+      position: relative;
+      z-index: 10;
+      min-height: 100vh;
+    }
+    
+    header {
+      text-align: center;
+      padding: 5rem 1rem 3rem;
+      backdrop-filter: blur(5px);
+      background: rgba(0, 0, 0, 0.5);
+      border-bottom: 1px solid rgba(0, 255, 255, 0.2);
+    }
+    
+    h1 {
+      font-size: 3.5rem;
+      margin: 0;
+      background: linear-gradient(90deg, #00ffff, #00ffaa);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+    }
+    
+    .subtitle {
+      font-size: 1.3rem;
+      margin-top: 1rem;
+      opacity: 0.8;
+      max-width: 800px;
+      margin-left: auto;
+      margin-right: auto;
+      line-height: 1.6;
+    }
+    
+    nav {
+      display: flex;
+      justify-content: center;
+      gap: 1.5rem;
+      margin-top: 2rem;
+      flex-wrap: wrap;
+    }
+    
+    .nav-link {
+      color: #00ffff;
+      text-decoration: none;
+      font-size: 1.1rem;
+      padding: 0.5rem 1rem;
+      border: 1px solid rgba(0, 255, 255, 0.3);
+      border-radius: 4px;
+      transition: all 0.3s ease;
+    }
+    
+    .nav-link:hover {
+      background: rgba(0, 255, 255, 0.1);
+      box-shadow: 0 0 15px rgba(0, 255, 255, 0.3);
+    }
+    
+    .main-content {
+      max-width: 1000px;
+      margin: 0 auto;
+      padding: 2rem;
+    }
+    
+    .section {
+      background: rgba(15, 25, 50, 0.7);
+      border: 1px solid rgba(0, 255, 255, 0.2);
+      border-radius: 8px;
+      padding: 2rem;
+      margin-bottom: 3rem;
+      backdrop-filter: blur(10px);
+      transition: all 0.3s ease;
+    }
+    
+    .section:hover {
+      box-shadow: 0 10px 30px rgba(0, 255, 255, 0.2);
+    }
+    
+    .section-title {
+      font-size: 2rem;
+      margin-top: 0;
+      margin-bottom: 1.5rem;
+      color: #00ffff;
+      display: flex;
+      align-items: center;
+    }
+    
+    .section-title i {
+      margin-right: 1rem;
+    }
+    
+    .hacker-type {
+      margin-bottom: 2rem;
+    }
+    
+    .hacker-type h3 {
+      color: #00ffaa;
+      font-size: 1.5rem;
+      margin-bottom: 0.5rem;
+      display: flex;
+      align-items: center;
+    }
+    
+    .hacker-type h3 i {
+      margin-right: 0.8rem;
+    }
+    
+    .hacker-type p {
+      line-height: 1.8;
+      margin-bottom: 0.5rem;
+    }
+    
+    .term-card {
+      background: rgba(0, 20, 40, 0.8);
+      border-left: 3px solid #00ffff;
+      padding: 1.2rem;
+      margin-bottom: 1.5rem;
+      border-radius: 0 4px 4px 0;
+    }
+    
+    .term-card h4 {
+      margin-top: 0;
+      color: #00ffff;
+      font-size: 1.3rem;
+    }
+    
+    .term-card p {
+      line-height: 1.7;
+    }
+    
+    footer {
+      text-align: center;
+      padding: 2rem;
+      backdrop-filter: blur(5px);
+      background: rgba(0, 0, 0, 0.5);
+      border-top: 1px solid rgba(0, 255, 255, 0.2);
+      margin-top: 3rem;
+    }
+    
+    .disclaimer {
+      font-size: 0.9rem;
+      opacity: 0.7;
+      max-width: 800px;
+      margin: 0 auto;
+    }
+  </style>
+</head>
+<body>
+<!-- partial:index.partial.html -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Martian+Mono:wght@100..800&display=swap" rel="stylesheet">
+
+<a-hole>
+  <canvas class="js-canvas"></canvas>
+  <div class="aura"></div>
+  <div class="overlay"></div>
+</a-hole><!-- .a-hole -->
+<!-- partial -->
+
+<div class="content">
+  <header>
+    <h1>黑客知識百科</h1>
+    <p class="subtitle">探索網路安全世界的奧秘 - 了解黑客文化、技術分類與防禦策略</p>
+    <nav>
+      <a href="#types" class="nav-link">黑客類型</a>
+      <a href="#techniques" class="nav-link">攻擊技術</a>
+      <a href="#defense" class="nav-link">防禦策略</a>
+      <a href="#ethics" class="nav-link">黑客倫理</a>
+      <a href="#history" class="nav-link">歷史事件</a>
+    </nav>
+  </header>
+
+  <main class="main-content">
+    <section id="types" class="section">
+      <h2 class="section-title"><i class="ri-user-star-line"></i>黑客類型分類</h2>
+      
+      <div class="hacker-type">
+        <h3><i class="ri-shield-star-line"></i>白帽黑客 (White Hat)</h3>
+        <p>白帽黑客是網路安全領域的"好人"，他們使用黑客技術來幫助組織發現和修復安全漏洞。許多白帽黑客是專業的網路安全專家，受僱於企業或作為獨立顧問工作。</p>
+        <p>典型活動包括滲透測試、漏洞評估和安全審計。白帽黑客遵循嚴格的道德準則，總是在獲得授權後才進行測試。</p>
+      </div>
+      
+      <div class="hacker-type">
+        <h3><i class="ri-skull-line"></i>黑帽黑客 (Black Hat)</h3>
+        <p>黑帽黑客是傳統意義上的"壞黑客"，他們利用技術專長進行非法活動，如資料竊取、系統破壞或金融詐欺。他們的動機可能包括經濟利益、政治目的或個人娛樂。</p>
+        <p>黑帽黑客經常開發惡意軟體、利用零日漏洞，並參與有組織的網路犯罪活動。他們的行為可能導致企業和個人遭受重大損失。</p>
+      </div>
+      
+      <div class="hacker-type">
+        <h3><i class="ri-user-voice-line"></i>灰帽黑客 (Grey Hat)</h3>
+        <p>灰帽黑客介於白帽和黑帽之間，他們可能未經授權就侵入系統，但通常不是為了惡意目的。一些灰帽黑客會公開他們發現的漏洞，有時會引發道德爭議。</p>
+        <p>雖然他們的意圖可能不是惡意的，但灰帽黑客的行為仍然可能違法，並可能無意中造成系統損壞或資料外洩。</p>
+      </div>
+    </section>
+
+    <section id="techniques" class="section">
+      <h2 class="section-title"><i class="ri-bug-line"></i>常見黑客攻擊技術</h2>
+      
+      <div class="term-card">
+        <h4>社交工程攻擊</h4>
+        <p>通過操縱人類心理而非技術漏洞來獲取資訊或訪問權限。包括釣魚郵件、偽裝電話、誘餌USB等手法。社交工程之所以有效，是因為它利用了人類的天性——樂於助人、信任權威或害怕麻煩。</p>
+      </div>
+      
+      <div class="term-card">
+        <h4>SQL注入</h4>
+        <p>通過在Web應用程式的輸入欄位中插入惡意SQL代碼，攻擊者可以操縱資料庫查詢，從而訪問、修改或刪除資料庫中的敏感資料。這是最古老但仍廣泛存在的Web漏洞之一。</p>
+      </div>
+      
+      <div class="term-card">
+        <h4>中間人攻擊 (MITM)</h4>
+        <p>攻擊者秘密攔截並可能改變雙方之間的通信。常見於不安全的Wi-Fi網路中，攻擊者可以竊取登入憑證、會話cookie或其他敏感資訊。</p>
+      </div>
+      
+      <div class="term-card">
+        <h4>分散式阻斷服務 (DDoS)</h4>
+        <p>通過大量受控設備(通常是殭屍網路)同時向目標發送請求，使其服務不可用。DDoS攻擊常用於敲詐勒索、政治抗議或作為其他攻擊的掩護。</p>
+      </div>
+    </section>
+
+    <section id="defense" class="section">
+      <h2 class="section-title"><i class="ri-shield-check-line"></i>網路安全防禦策略</h2>
+      
+      <div class="term-card">
+        <h4>多層防禦 (Defense in Depth)</h4>
+        <p>採用多層次的防禦措施，確保即使一層防禦被突破，其他層仍能提供保護。包括網路防火牆、終端保護、入侵檢測系統、資料加密和員工培訓等。</p>
+      </div>
+      
+      <div class="term-card">
+        <h4>最小權限原則</h4>
+        <p>使用者和系統元件只應獲得執行其功能所需的最小權限。這限制了潛在攻擊者在突破一個帳戶後能夠進行的操作範圍。</p>
+      </div>
+      
+      <div class="term-card">
+        <h4>定期安全審計</h4>
+        <p>定期檢查系統配置、日誌和使用者活動，以識別潛在的安全問題。包括漏洞掃描、滲透測試和代碼審查等多種形式。</p>
+      </div>
+      
+      <div class="term-card">
+        <h4>安全意識培訓</h4>
+        <p>教育員工識別釣魚嘗試、安全處理資料和遵循最佳實踐。人是安全鏈中最薄弱的環節，培訓可以顯著降低社交工程攻擊的成功率。</p>
+      </div>
+    </section>
+
+    <section id="ethics" class="section">
+      <h2 class="section-title"><i class="ri-scale-line"></i>黑客倫理與法律</h2>
+      <p>黑客倫理是一個複雜的話題，不同文化和技術社區有不同的看法。一些普遍接受的原則包括：</p>
+      
+      <div class="term-card">
+        <h4>授權測試原則</h4>
+        <p>永遠不要在未經明確授權的情況下測試或攻擊系統。即使是出於好意，未經授權的訪問也可能構成犯罪。</p>
+      </div>
+      
+      <div class="term-card">
+        <h4>負責任披露</h4>
+        <p>發現漏洞後，應首先私下通知相關組織，給予合理時間修復，然後才考慮公開披露。公開漏洞細節時應謹慎，避免提供攻擊代碼。</p>
+      </div>
+      
+      <div class="term-card">
+        <h4>知識共享</h4>
+        <p>許多黑客社區推崇知識自由共享的理念，認為安全資訊應該公開，以便每個人都能從中學習和改進防禦。</p>
+      </div>
+      
+      <div class="term-card">
+        <h4>法律邊界</h4>
+        <p>不同國家和地區對黑客活動的法律規定差異很大。即使是白帽黑客，也必須了解並遵守相關法律，如《電腦詐欺和濫用法》(CFAA)等。</p>
+      </div>
+    </section>
+
+    <section id="history" class="section">
+      <h2 class="section-title"><i class="ri-history-line"></i>黑客歷史重大事件</h2>
+      
+      <div class="term-card">
+        <h4>Morris蠕蟲 (1988)</h4>
+        <p>由康乃爾大學研究生Robert Tappan Morris創建的第一個重大網際網路蠕蟲，感染了約6000台電腦(當時網際網路的10%)。這一事件導致了對電腦濫用的更嚴格立法。</p>
+      </div>
+      
+      <div class="term-card">
+        <h4>Anonymous集體行動</h4>
+        <p>始於2003年的去中心化黑客活動團體，參與了從反對山達基教會到支持阿拉伯之春的各種行動，展示了黑客活動的政治潛力。</p>
+      </div>
+      
+      <div class="term-card">
+        <h4>Stuxnet蠕蟲 (2010)</h4>
+        <p>被認為是首個針對工業控制系統的網路武器，專門設計用於破壞伊朗的核濃縮離心機。這一事件標誌著網路戰時代的開始。</p>
+      </div>
+      
+      <div class="term-card">
+        <h4>Equifax資料外洩 (2017)</h4>
+        <p>信用報告機構Equifax遭黑客攻擊，暴露了1.47億消費者的敏感資訊。這一事件凸顯了大規模資料收集的風險和安全漏洞的嚴重後果。</p>
+      </div>
+    </section>
+  </main>
+
+  <footer class="text-center py-8 text-gray-400">
+    <div class="container mx-auto px-4">
+      <div class="mb-4">
+        <p class="text-cyan-300 font-bold">
+          <i class="ri-shield-star-line mr-2"></i>
+          Kali Linux 網路安全工具指南
+        </p>
+      </div>
+      <div class="mb-4">
+        © 2025 網路安全技術專題 | 指導教授：王德譽 | 學生：陳家茂、劉昱均
+      </div>
+      <div class="text-sm">
+        本專題致力於推廣網路安全教育與道德黑客精神
+      </div>
+    </div>
+  </footer>
+</div>
+
+<script type="module" src="./script.js"></script>
+</body>
+</html>
