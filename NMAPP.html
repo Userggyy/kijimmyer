@@ -1,0 +1,1364 @@
+<!DOCTYPE html>
+
+<html><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Nmap 新手教學 | 資安學習平台</title>
+<meta content="Nmap 網路掃描工具完整教學，從基礎到進階使用技巧" name="description"/>
+<style>
+        :root {
+            --primary: #2a3b4d;
+            --secondary: #3a6ea5;
+            --accent: #ff7f50;
+            --light: #ffffff;
+            --dark: #1a2a3a;
+            --success: #4CAF50;
+            --warning: #FFC107;
+            --danger: #F44336;
+            --text-primary: #ffffff;
+            --text-secondary: #e0e0e0;
+            --bg-gradient: radial-gradient(ellipse at bottom, #1B2735 0%, #090A0F 100%);
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background: var(--bg-gradient);
+            color: var(--text-primary);
+            line-height: 1.6;
+            min-height: 100vh;
+        }
+        
+        .skip-link {
+            position: absolute;
+            top: -40px;
+            left: 0;
+            background: var(--secondary);
+            color: white;
+            padding: 8px;
+            z-index: 100;
+            transition: top 0.3s;
+        }
+        
+        .skip-link:focus {
+            top: 0;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        header {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            padding: 2rem 0;
+            text-align: center;
+            border-bottom: 4px solid var(--accent);
+            margin-bottom: 2rem;
+            border-radius: 0 0 10px 10px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+            position: relative;
+        }
+        
+        header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+            color: white;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+        }
+        
+        header p {
+            font-size: 1.1rem;
+            color: rgba(255, 255, 255, 0.9);
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        
+        nav {
+            background-color: var(--dark);
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 2rem;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+        }
+        
+        nav ul {
+            display: flex;
+            justify-content: center;
+            list-style: none;
+            flex-wrap: wrap;
+        }
+        
+        nav li {
+            margin: 0 15px;
+        }
+        
+        nav a {
+            color: var(--light);
+            text-decoration: none;
+            font-weight: 500;
+            padding: 5px 10px;
+            border-radius: 4px;
+            transition: all 0.3s ease;
+        }
+        
+        nav a:hover, nav a:focus {
+            background-color: var(--secondary);
+            color: white;
+            outline: none;
+        }
+        
+        section {
+            background: rgba(30, 30, 30, 0.8);
+            backdrop-filter: blur(10px);
+            border-radius: 8px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.25);
+            border-left: 4px solid var(--secondary);
+            border: 1px solid rgba(58, 110, 165, 0.3);
+        }
+        
+        h2 {
+            color: var(--accent);
+            margin-bottom: 1.5rem;
+            font-size: 1.8rem;
+            border-bottom: 2px solid var(--secondary);
+            padding-bottom: 0.5rem;
+            display: inline-block;
+        }
+        
+        h3 {
+            color: var(--light);
+            margin: 1.5rem 0 1rem;
+            font-size: 1.4rem;
+        }
+        
+        p {
+            margin-bottom: 1rem;
+            color: var(--text-secondary);
+        }
+        
+        .terminal {
+            background-color: #000000;
+            color: #00ff00;
+            padding: 1.5rem;
+            border-radius: 8px;
+            font-family: 'Courier New', Courier, monospace;
+            margin: 1.5rem 0;
+            position: relative;
+            border: 1px solid #333;
+            box-shadow: inset 0 0 10px rgba(0, 255, 0, 0.1);
+            overflow-x: auto;
+        }
+        
+        .terminal:before {
+            content: "Terminal";
+            position: absolute;
+            top: -10px;
+            left: 15px;
+            background-color: #000;
+            color: #00ff00;
+            padding: 0 10px;
+            font-size: 0.8rem;
+            border: 1px solid #333;
+            border-bottom: none;
+            border-radius: 5px 5px 0 0;
+        }
+        
+        .command {
+            color: #00ffff;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            display: inline-block;
+            padding: 2px 5px;
+            border-radius: 3px;
+        }
+        
+        .command:hover {
+            text-shadow: 0 0 8px rgba(0, 255, 255, 0.7);
+        }
+        
+        .command:after {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: 0;
+            width: 0;
+            height: 2px;
+            background: var(--accent);
+            transition: width 0.3s;
+        }
+        
+        .command:hover:after {
+            width: 100%;
+        }
+        
+        .option {
+            color: #ffa500;
+        }
+        
+        .comment {
+            color: #888;
+            font-style: italic;
+        }
+        
+        .note {
+            background-color: rgba(58, 110, 165, 0.2);
+            border-left: 4px solid var(--secondary);
+            padding: 1rem;
+            margin: 1.5rem 0;
+            border-radius: 0 4px 4px 0;
+        }
+        
+        .warning {
+            background-color: rgba(255, 193, 7, 0.2);
+            border-left: 4px solid var(--warning);
+            padding: 1rem;
+            margin: 1.5rem 0;
+            border-radius: 0 4px 4px 0;
+        }
+        
+        .danger {
+            background-color: rgba(244, 67, 54, 0.2);
+            border-left: 4px solid var(--danger);
+            padding: 1rem;
+            margin: 1.5rem 0;
+            border-radius: 0 4px 4px 0;
+        }
+        
+        .example {
+            background-color: rgba(42, 59, 77, 0.3);
+            padding: 1.5rem;
+            border-radius: 8px;
+            margin: 1.5rem 0;
+            border: 1px dashed var(--secondary);
+        }
+        
+        .example h4 {
+            color: var(--accent);
+            margin-bottom: 1rem;
+        }
+        
+        .quiz {
+            background-color: rgba(42, 59, 77, 0.5);
+            padding: 1.5rem;
+            border-radius: 8px;
+            margin: 1.5rem 0;
+            border: 1px solid var(--secondary);
+        }
+        
+        .quiz h4 {
+            color: var(--accent);
+            margin-bottom: 1rem;
+        }
+        
+        .quiz-option {
+            display: block;
+            margin: 0.5rem 0;
+            padding: 0.5rem;
+            background-color: rgba(255, 255, 255, 0.1);
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .quiz-option:hover, .quiz-option:focus {
+            background-color: rgba(255, 255, 255, 0.2);
+            outline: 2px solid var(--accent);
+        }
+        
+        .btn {
+            display: inline-block;
+            background-color: var(--secondary);
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            text-decoration: none;
+            font-weight: bold;
+            transition: all 0.3s;
+            border: none;
+            cursor: pointer;
+            margin-top: 0.5rem;
+        }
+        
+        .btn:hover, .btn:focus {
+            background-color: var(--accent);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            outline: none;
+        }
+        
+        .btn:active {
+            transform: translateY(0);
+        }
+        
+        footer {
+            text-align: center;
+            padding: 2rem 0;
+            margin-top: 2rem;
+            color: #888;
+            font-size: 0.9rem;
+            border-top: 1px solid #333;
+        }
+        
+        .progress-tracker {
+            background: rgba(30, 30, 30, 0.8);
+            padding: 1.5rem;
+            border-radius: 8px;
+            margin-bottom: 2rem;
+            border-left: 4px solid var(--accent);
+        }
+        
+        .progress-tracker h3 {
+            margin-top: 0;
+            color: var(--accent);
+        }
+        
+        .progress-bar {
+            height: 10px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 5px;
+            margin: 1rem 0;
+            overflow: hidden;
+        }
+        
+        .progress {
+            height: 100%;
+            background: linear-gradient(90deg, var(--secondary), var(--accent));
+            width: 20%;
+            transition: width 0.5s ease;
+        }
+        
+        .progress-steps {
+            display: flex;
+            justify-content: space-between;
+            list-style: none;
+            padding: 0;
+        }
+        
+        .progress-steps li {
+            text-align: center;
+            position: relative;
+            flex: 1;
+            padding-top: 25px;
+            color: #888;
+        }
+        
+        .progress-steps li:before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #333;
+            border: 3px solid #333;
+        }
+        
+        .progress-steps li.completed:before {
+            background: var(--success);
+            border-color: var(--success);
+        }
+        
+        .progress-steps li.active:before {
+            background: var(--accent);
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px rgba(255, 127, 80, 0.3);
+        }
+        
+        .virtual-lab {
+            background: rgba(30, 30, 30, 0.9);
+            padding: 2rem;
+            border-radius: 8px;
+            margin-bottom: 2rem;
+            border: 1px solid var(--secondary);
+        }
+        
+        .lab-instructions {
+            margin-bottom: 1.5rem;
+        }
+        
+        .lab-instructions ol {
+            margin-left: 1.5rem;
+        }
+        
+        .btn-copy {
+            background: rgba(58, 110, 165, 0.3);
+            color: var(--light);
+            border: 1px solid var(--secondary);
+            border-radius: 4px;
+            padding: 0.2rem 0.5rem;
+            margin-left: 0.5rem;
+            font-size: 0.8rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .btn-copy:hover {
+            background: rgba(58, 110, 165, 0.5);
+        }
+        
+        .security-warning {
+            background-color: rgba(255, 0, 0, 0.1);
+            border: 1px solid var(--danger);
+            padding: 1rem;
+            border-radius: 8px;
+            margin: 1rem 0;
+            animation: pulse 2s infinite;
+        }
+        
+        .advanced-section {
+            background: rgba(42, 59, 77, 0.5);
+            border-left: 4px solid var(--accent);
+            padding: 1.5rem;
+            margin: 2rem 0;
+        }
+        
+        .tab-container {
+            display: flex;
+            margin-bottom: -1px;
+        }
+        
+        .tab {
+            padding: 0.8rem 1.5rem;
+            background: rgba(30, 30, 30, 0.7);
+            border: 1px solid #444;
+            border-bottom: none;
+            border-radius: 5px 5px 0 0;
+            cursor: pointer;
+            margin-right: 5px;
+        }
+        
+        .tab.active {
+            background: rgba(30, 30, 30, 0.9);
+            border-color: var(--secondary);
+            color: var(--accent);
+        }
+        
+        .tab-content {
+            display: none;
+            padding: 1.5rem;
+            background: rgba(30, 30, 30, 0.9);
+            border: 1px solid var(--secondary);
+            border-radius: 0 8px 8px 8px;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        .save-progress {
+            background-color: var(--success);
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-top: 1rem;
+            transition: all 0.3s;
+        }
+        
+        .save-progress:hover {
+            background-color: #3d8b40;
+        }
+        
+        .explanation {
+            background-color: rgba(58, 110, 165, 0.2);
+            padding: 1rem;
+            border-radius: 8px;
+            margin: 1rem 0;
+            display: none;
+        }
+        
+        .tag {
+            display: inline-block;
+            padding: 0.2rem 0.5rem;
+            border-radius: 3px;
+            font-size: 0.8rem;
+            font-weight: bold;
+            margin-left: 0.5rem;
+        }
+        
+        .tag-advanced {
+            background-color: rgba(255, 127, 80, 0.2);
+            color: var(--accent);
+            border: 1px solid var(--accent);
+        }
+        
+        .tag-warning {
+            background-color: rgba(255, 193, 7, 0.2);
+            color: var(--warning);
+            border: 1px solid var(--warning);
+        }
+        
+        .case-study {
+            background-color: rgba(42, 59, 77, 0.3);
+            padding: 1.5rem;
+            border-radius: 8px;
+            margin: 1.5rem 0;
+            border-left: 4px solid var(--accent);
+        }
+        
+        /* 響應式設計 */
+        @media (max-width: 768px) {
+            nav ul {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            nav li {
+                margin: 5px 0;
+            }
+            
+            header h1 {
+                font-size: 2rem;
+            }
+            
+            section, .virtual-lab, .progress-tracker {
+                padding: 1.5rem;
+            }
+            
+            .progress-steps {
+                flex-wrap: wrap;
+            }
+            
+            .progress-steps li {
+                flex: 0 0 50%;
+                margin-bottom: 1rem;
+            }
+            
+            .tab-container {
+                flex-wrap: wrap;
+            }
+            
+            .tab {
+                margin-bottom: 5px;
+                border-radius: 5px;
+                border: 1px solid #444;
+            }
+            
+            .tab-content {
+                border-radius: 0 0 8px 8px;
+            }
+        }
+        
+        @media (max-width: 576px) {
+            .terminal {
+                font-size: 0.9rem;
+                padding: 1rem;
+            }
+            
+            .command {
+                white-space: pre-wrap;
+                word-break: break-all;
+            }
+        }
+        
+        /* 焦點樣式 */
+        :focus-visible {
+            outline: 2px solid var(--accent);
+            outline-offset: 2px;
+        }
+        
+        /* 動畫效果 */
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(255, 127, 80, 0.7); }
+            70% { box-shadow: 0 0 0 10px rgba(255, 127, 80, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(255, 127, 80, 0); }
+        }
+        
+        .pulse {
+            animation: pulse 2s infinite;
+        }
+    </style>
+<link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet"/><link href="https://cdn.jsdelivr.net/npm/remixicon@2.5.0/fonts/remixicon.css" rel="stylesheet"/><style>
+        body { 
+            background-color: #000; 
+            color: #e6f1ff;
+            font-family: 'Inter', 'Noto Sans TC', sans-serif;
+            margin: 0;
+            overflow-x: hidden;
+        }
+        #digital-rain {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            opacity: 0.5;
+        }
+        .content {
+            position: relative;
+            z-index: 10;
+        }
+        .section-card {
+            background: rgba(15, 25, 50, 0.7);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(0, 255, 255, 0.2);
+            transition: all 0.3s ease;
+        }
+        .section-card:hover {
+            box-shadow: 0 10px 30px rgba(0,255,255,0.3);
+        }
+        .command-box {
+            background: rgba(0, 20, 40, 0.8);
+            border-left: 3px solid #00ffff;
+        }
+        .feature-item {
+            border-left: 2px solid #00ffff;
+            transition: all 0.3s ease;
+        }
+        .feature-item:hover {
+            background: rgba(0, 255, 255, 0.1);
+        }
+        .nav-button {
+            transition: all 0.3s ease;
+            opacity: 0.8;
+        }
+        .nav-button:hover {
+            opacity: 1;
+            text-shadow: 0 0 10px rgba(0, 255, 255, 0.7);
+        }
+        .difficulty-badge {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.875rem;
+            font-weight: 500;
+        }
+        .difficulty-badge.medium {
+            background-color: rgba(250, 204, 21, 0.2);
+            color: #facc15;
+        }
+        pre {
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+    </style><script>
+        // 數位雨效果函數
+        function createDigitalRain() {
+            const canvas = document.getElementById('digital-rain');
+            const ctx = canvas.getContext('2d');
+            
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+
+            const chars = 'アァカサタナハマヤャラワガザダバパイィキシチニヒミリヰギジヂビピウゥクスツヌフムユュルグズブヅプエェケセテネヘメレヱゲゼデベペオォコソトノホモヨョロワゴゾドボポ0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+            const fontSize = 10;
+            const columns = canvas.width / fontSize;
+            const drops = [];
+
+            for (let x = 0; x < columns; x++) {
+                drops[x] = 1;
+            }
+
+            function draw() {
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                
+                ctx.fillStyle = '#0F0';
+                ctx.font = fontSize + 'px arial';
+                
+                for (let i = 0; i < drops.length; i++) {
+                    const text = chars.charAt(Math.floor(Math.random() * chars.length));
+                    ctx.fillText(text, i * fontSize, drops[i] * fontSize);
+                    
+                    if (drops[i] * fontSize > canvas.height && Math.random() > 0.975)
+                        drops[i] = 0;
+                    
+                    drops[i]++;
+                }
+            }
+
+            setInterval(draw, 33);
+
+            window.addEventListener('resize', () => {
+                canvas.width = window.innerWidth;
+                canvas.height = window.innerHeight;
+            });
+        }
+
+        // 初始化函數
+        document.addEventListener('DOMContentLoaded', () => {
+            createDigitalRain();
+            
+            // 平滑滾動
+            document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+                anchor.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    document.querySelector(this.getAttribute('href')).scrollIntoView({
+                        behavior: 'smooth'
+                    });
+                });
+            });
+        });
+    </script></head><body>
+<canvas id="digital-rain"></canvas>
+<div class="container mx-auto px-4 py-8 content">
+<!-- 導航按鈕 -->
+<div class="flex justify-between mb-8">
+<a class="nav-button flex items-center text-cyan-300" href="index.html">
+<i class="ri-arrow-left-line mr-2"></i> 返回工具列表
+            </a>
+<span class="difficulty-badge medium">中等難度</span>
+</div>
+<!-- 標題區 -->
+<header class="text-center mb-8" style="background: transparent;">
+<div class="flex justify-center items-center mb-4">
+<i class="ri-search-line text-5xl text-cyan-300 mr-4"></i>
+<h1 class="text-4xl font-bold text-cyan-300">Nmap 新手教學</h1>
+</div>
+<p class="text-xl max-w-3xl mx-auto">
+                學習如何使用這款強大的網路掃描工具，並了解相關的防禦方法和法律規範
+            </p>
+</header>
+<nav aria-label="主要導航">
+<ul role="menubar">
+<li role="menuitem"><a href="#introduction">基本介紹</a></li>
+<li role="menuitem"><a href="#commands">基本指令</a></li>
+<li role="menuitem"><a href="#examples">實戰範例</a></li>
+<li role="menuitem"><a href="#advanced">進階技巧</a></li>
+<li role="menuitem"><a href="#defense">防禦方法</a></li>
+<li role="menuitem"><a href="#legal">法律規範</a></li>
+</ul>
+</nav>
+<div class="progress-tracker">
+<h3>您的學習進度</h3>
+<div class="progress-bar">
+<div class="progress" id="learning-progress" style="width: 20%"></div>
+</div>
+<ul class="progress-steps">
+<li class="completed">基本介紹</li>
+<li class="active">基本指令</li>
+<li>實戰範例</li>
+<li>進階技巧</li>
+<li>防禦方法</li>
+<li>法律規範</li>
+</ul>
+<button class="save-progress">保存進度</button>
+</div>
+<main id="main-content">
+<section id="introduction">
+<h2>Nmap 基本介紹</h2>
+<p>Nmap (Network Mapper) 是一款開源的網路探測和安全審計工具，用於網路探索和安全掃描。它可以發現網路上的主機和服務，並提供詳細的網路映射。</p>
+<div class="note">
+<p>Nmap 是資安專業人員和網路管理員常用的工具，但請注意僅在合法授權的情況下使用。</p>
+</div>
+<h3>主要特點</h3>
+<ul aria-label="Nmap主要特點">
+<li>主機發現 - 識別網路上的主機</li>
+<li>端口掃描 - 檢測開放端口和服務</li>
+<li>版本檢測 - 確定服務和應用程序版本</li>
+<li>OS 偵測 - 識別操作系統類型</li>
+<li>腳本掃描 - 使用 NSE (Nmap Scripting Engine) 進行進階檢測</li>
+</ul>
+<h3>安裝方法</h3>
+<p>在 Kali Linux 中，Nmap 通常已經預裝。如果沒有，可以使用以下指令安裝：</p>
+<div class="terminal">
+<span aria-label="更新套件列表，點擊複製命令" class="command" role="button" tabindex="0">sudo apt update</span><br/>
+<span aria-label="安裝Nmap，點擊複製命令" class="command" role="button" tabindex="0">sudo apt install nmap</span>
+</div>
+<p>若要確認安裝是否成功，可以執行：</p>
+<div class="terminal">
+<span aria-label="顯示Nmap版本，點擊複製命令" class="command" role="button" tabindex="0">nmap --version</span>
+</div>
+</section>
+<section id="commands">
+<h2>基本指令教學</h2>
+<p>以下是 Nmap 最常用的指令和選項：</p>
+<h3>基本掃描</h3>
+<div class="terminal">
+<span aria-label="對指定主機進行基本掃描，點擊複製命令" class="command" role="button" tabindex="0">nmap scanme.nmap.org</span>
+</div>
+<h3>掃描特定端口</h3>
+<div class="terminal">
+<span aria-label="掃描特定端口，點擊複製命令" class="command" role="button" tabindex="0">nmap -p 80,443,22 scanme.nmap.org</span>
+</div>
+<h3>快速掃描</h3>
+<div class="terminal">
+<span aria-label="快速掃描，點擊複製命令" class="command" role="button" tabindex="0">nmap -F scanme.nmap.org</span>
+</div>
+<h3>服務版本檢測</h3>
+<div class="terminal">
+<span aria-label="檢測服務版本，點擊複製命令" class="command" role="button" tabindex="0">nmap -sV scanme.nmap.org</span>
+</div>
+<div class="quiz">
+<h4>小測驗</h4>
+<p>哪個選項可以用來檢測服務版本？</p>
+<div class="quiz-option" onclick="checkAnswer(this, true)" role="button" tabindex="0">-sV</div>
+<div class="quiz-option" onclick="checkAnswer(this, false)" role="button" tabindex="0">-O</div>
+<div class="quiz-option" onclick="checkAnswer(this, false)" role="button" tabindex="0">-A</div>
+<div class="quiz-option" onclick="checkAnswer(this, false)" role="button" tabindex="0">-p</div>
+<p id="quiz-feedback" style="display:none; margin-top:10px; color:var(--accent);"></p>
+<div class="explanation">
+<p><strong>解析：</strong> -sV 選項用於檢測服務版本，這對於識別潛在漏洞非常重要。</p>
+</div>
+</div>
+</section>
+<section id="examples">
+<h2>實戰範例</h2>
+<div class="example">
+<h4>範例1: 掃描區域網路存活主機</h4>
+<div class="terminal">
+<span aria-label="掃描區域網路，點擊複製命令" class="command" role="button" tabindex="0">nmap -sn 192.168.1.0/24</span>
+</div>
+<p>這個指令會掃描192.168.1.0/24網段中的所有存活主機。</p>
+</div>
+<div class="example">
+<h4>範例2: 綜合掃描</h4>
+<div class="terminal">
+<span aria-label="綜合掃描，點擊複製命令" class="command" role="button" tabindex="0">nmap -A -T4 scanme.nmap.org</span>
+</div>
+<p>-A 啟用OS偵測、版本偵測、腳本掃描和路由追蹤，-T4 設定較快的掃描速度。</p>
+</div>
+<div class="case-study">
+<h4>企業網路安全評估流程</h4>
+<ol>
+<li>使用 <code>nmap -sn</code> 找出所有存活主機</li>
+<li>對關鍵伺服器執行 <code>nmap -sV -p-</code> 全面端口掃描</li>
+<li>使用 <code>nmap -A</code> 進行深度分析</li>
+<li>針對特定服務執行 NSE 腳本掃描</li>
+</ol>
+</div>
+<div class="warning">
+<p>注意：這些範例僅供學習使用。在未經授權的情況下掃描網路是違法的。</p>
+</div>
+<div class="quiz">
+<h4>小測驗</h4>
+<p>哪個指令適合快速找出網路中的存活主機？</p>
+<div class="quiz-option" onclick="checkAnswer(this, false)" role="button" tabindex="0">nmap -sS</div>
+<div class="quiz-option" onclick="checkAnswer(this, true)" role="button" tabindex="0">nmap -sn</div>
+<div class="quiz-option" onclick="checkAnswer(this, false)" role="button" tabindex="0">nmap -sV</div>
+<div class="quiz-option" onclick="checkAnswer(this, false)" role="button" tabindex="0">nmap -O</div>
+<p id="quiz-feedback2" style="display:none; margin-top:10px; color:var(--accent);"></p>
+<div class="explanation">
+<p><strong>解析：</strong> -sn 選項用於主機發現，只會檢測哪些主機在線，而不進行端口掃描。</p>
+</div>
+</div>
+</section>
+<section id="advanced">
+<h2>進階使用技巧</h2>
+<div class="security-warning">
+<p>⚠️ 以下進階技巧僅適用於合法授權的滲透測試，使用前務必取得書面許可</p>
+</div>
+<div class="tab-container">
+<div class="tab active" onclick="openTab(event, 'firewall')">繞過防火牆</div>
+<div class="tab" onclick="openTab(event, 'scripting')">NSE腳本</div>
+<div class="tab" onclick="openTab(event, 'output')">報表輸出</div>
+</div>
+<div class="tab-content active" id="firewall">
+<h3>繞過防火牆技巧</h3>
+<p>這些技巧可以幫助繞過常見的防火牆和IDS檢測：</p>
+<div class="terminal">
+<span class="comment"># 分片掃描 + 隨機延遲</span><br/>
+<span class="command" role="button" tabindex="0">nmap -f --scan-delay 500ms target.com</span><br/><br/>
+<span class="comment"># 使用誘餌IP</span><br/>
+<span class="command" role="button" tabindex="0">nmap -D RND:10 target.com</span><br/><br/>
+<span class="comment"># 隱蔽掃描 (需要root權限)</span><br/>
+<span class="command" role="button" tabindex="0">sudo nmap -sS -T2 target.com</span>
+</div>
+<div class="quiz">
+<h4>小測驗</h4>
+<p>哪個選項可以用來進行隱蔽的SYN掃描？</p>
+<div class="quiz-option" onclick="checkAnswer(this, true)" role="button" tabindex="0">-sS</div>
+<div class="quiz-option" onclick="checkAnswer(this, false)" role="button" tabindex="0">-sT</div>
+<div class="quiz-option" onclick="checkAnswer(this, false)" role="button" tabindex="0">-sU</div>
+<div class="quiz-option" onclick="checkAnswer(this, false)" role="button" tabindex="0">-sV</div>
+<p id="quiz-feedback4" style="display:none; margin-top:10px; color:var(--accent);"></p>
+<div class="explanation">
+<p><strong>解析：</strong> -sS 是SYN掃描，也稱為半開放掃描，因為它不完成TCP連接，因此比完全連接掃描(-sT)更隱蔽。</p>
+</div>
+</div>
+</div>
+<div class="tab-content" id="scripting">
+<h3>NSE 腳本使用</h3>
+<p>Nmap Scripting Engine (NSE) 提供了強大的擴展功能：</p>
+<div class="terminal">
+<span class="comment"># 執行特定類別的腳本</span><br/>
+<span class="command" role="button" tabindex="0">nmap --script vuln target.com</span><br/><br/>
+<span class="comment"># 執行單個腳本</span><br/>
+<span class="command" role="button" tabindex="0">nmap --script http-sql-injection target.com</span><br/><br/>
+<span class="comment"># 更新腳本資料庫</span><br/>
+<span class="command" role="button" tabindex="0">nmap --script-updatedb</span>
+</div>
+<p>常用腳本類別：</p>
+<ul>
+<li><strong>vuln</strong>: 漏洞檢測</li>
+<li><strong>exploit</strong>: 漏洞利用</li>
+<li><strong>auth</strong>: 身份驗證</li>
+<li><strong>discovery</strong>: 網路發現</li>
+</ul>
+</div>
+<div class="tab-content" id="output">
+<h3>報表輸出格式</h3>
+<p>Nmap 支持多種輸出格式：</p>
+<div class="terminal">
+<span class="comment"># 標準輸出</span><br/>
+<span class="command" role="button" tabindex="0">nmap -oN scan.txt target.com</span><br/><br/>
+<span class="comment"># XML 格式</span><br/>
+<span class="command" role="button" tabindex="0">nmap -oX scan.xml target.com</span><br/><br/>
+<span class="comment"># 所有格式</span><br/>
+<span class="command" role="button" tabindex="0">nmap -oA scan target.com</span>
+</div>
+<p>輸出格式說明：</p>
+<ul>
+<li><strong>-oN</strong>: 普通文本格式</li>
+<li><strong>-oX</strong>: XML格式，適合機器處理</li>
+<li><strong>-oG</strong>: Grepable格式</li>
+<li><strong>-oA</strong>: 輸出所有格式</li>
+</ul>
+</div>
+</section>
+<section id="defense">
+<h2>防禦方法</h2>
+<p>了解掃描技術的同時，我們也需要知道如何防禦未經授權的掃描：</p>
+<h3>1. 防火牆配置</h3>
+<p>正確配置防火牆規則，限制不必要的端口訪問：</p>
+<div class="terminal">
+<span class="comment"># 示例: 使用iptables限制Nmap掃描</span><br/>
+<span class="command">sudo iptables -A INPUT -p tcp --tcp-flags SYN,ACK SYN,ACK -m conntrack --ctstate NEW -j DROP</span><br/>
+<span class="command">sudo iptables -A INPUT -p tcp --tcp-flags ALL NONE -j DROP</span>
+</div>
+<h3>2. 端口敲擊 (Port Knocking)</h3>
+<p>隱藏服務端口，只有按特定順序訪問特定端口才會開放服務。</p>
+<h3>3. 入侵檢測系統 (IDS)</h3>
+<p>部署如Snort等IDS系統，檢測並阻止掃描行為。</p>
+<h3>4. 服務偽裝</h3>
+<p>修改服務banner，不暴露真實版本信息。</p>
+<div class="note">
+<p>防禦網路掃描需要多層次的安全措施，包括網路層和主機層的防護。</p>
+</div>
+<div class="quiz">
+<h4>小測驗</h4>
+<p>哪種方法可以有效隱藏服務端口，直到收到特定訪問順序？</p>
+<div class="quiz-option" onclick="checkAnswer(this, false)" role="button" tabindex="0">防火牆</div>
+<div class="quiz-option" onclick="checkAnswer(this, true)" role="button" tabindex="0">端口敲擊</div>
+<div class="quiz-option" onclick="checkAnswer(this, false)" role="button" tabindex="0">VPN</div>
+<div class="quiz-option" onclick="checkAnswer(this, false)" role="button" tabindex="0">代理伺服器</div>
+<p id="quiz-feedback5" style="display:none; margin-top:10px; color:var(--accent);"></p>
+<div class="explanation">
+<p><strong>解析：</strong> 端口敲擊(Port Knocking)是一種安全技術，通過按特定順序訪問一系列關閉的端口來觸發服務端口的開放。</p>
+</div>
+</div>
+</section>
+<section id="legal">
+<h2>法律與道德規範</h2>
+<div class="danger">
+<p>重要：未經授權的網路掃描是違法行為，可能導致嚴重的法律後果。</p>
+</div>
+<h3>合法使用原則</h3>
+<ul aria-label="合法使用原則">
+<li>僅掃描自己擁有或獲得明確授權的網路</li>
+<li>獲取書面授權後再進行掃描</li>
+<li>避免在生產環境進行高強度掃描</li>
+<li>遵守所有相關法律法規</li>
+</ul>
+<h3>道德黑客準則</h3>
+<ol aria-label="道德黑客準則">
+<li>取得明確授權</li>
+<li>不造成服務中斷</li>
+<li>尊重隱私</li>
+<li>負責任地披露發現的問題</li>
+</ol>
+<div class="warning">
+<p>本教學僅供教育目的，使用這些技術前請確保您了解並遵守當地法律。</p>
+</div>
+<div class="quiz">
+<h4>小測驗</h4>
+<p>在進行網路掃描前，最重要的是什麼？</p>
+<div class="quiz-option" onclick="checkAnswer(this, false)" role="button" tabindex="0">備份掃描結果</div>
+<div class="quiz-option" onclick="checkAnswer(this, true)" role="button" tabindex="0">取得網路擁有者的書面授權</div>
+<div class="quiz-option" onclick="checkAnswer(this, false)" role="button" tabindex="0">使用最新版Nmap</div>
+<div class="quiz-option" onclick="checkAnswer(this, false)" role="button" tabindex="0">關閉防病毒軟體</div>
+<p id="quiz-feedback3" style="display:none; margin-top:10px; color:var(--accent);"></p>
+<div class="explanation">
+<p><strong>解析：</strong> 書面授權是網路掃描的法律基礎，沒有授權的掃描無論目的如何都屬於非法行為。</p>
+</div>
+</div>
+</section>
+<div class="virtual-lab">
+<div class="security-warning">
+<p>⚠️ 注意：此虛擬實驗室僅使用測試網站 (scanme.nmap.org) 進行演示，實際測試必須在獲得授權的環境中進行</p>
+</div>
+<h3>Nmap 虛擬實驗室</h3>
+<div class="lab-instructions">
+<p>按照步驟完成實驗：</p>
+<ol>
+<li>掃描測試網站 <button class="btn-copy" data-cmd="nmap scanme.nmap.org">複製命令</button></li>
+<li>檢測服務版本 <button class="btn-copy" data-cmd="nmap -sV scanme.nmap.org">複製命令</button></li>
+<li>執行綜合掃描 <button class="btn-copy" data-cmd="nmap -A scanme.nmap.org">複製命令</button></li>
+<li>嘗試防火牆繞過技術 <button class="btn-copy" data-cmd="nmap -f scanme.nmap.org">複製命令</button></li>
+</ol>
+</div>
+<div class="terminal" id="virtual-terminal">
+<div class="terminal-header">
+<span class="terminal-title">Nmap Terminal</span>
+<span class="terminal-controls">○ □ ×</span>
+</div>
+<div class="terminal-body" id="terminal-output">
+<div class="welcome-message">
+<p>歡迎使用 Nmap 虛擬終端</p>
+<p>輸入 "help" 查看可用命令</p>
+<p>嘗試執行實驗室中的命令</p>
+</div>
+</div>
+<div class="terminal-input-line">
+<span class="prompt">nmap &gt; </span>
+<input aria-label="終端輸入" class="terminal-input" id="terminal-input" type="text"/>
+</div>
+</div>
+</div>
+</main>
+
+</div></div><div class="bg-black bg-opacity-50 rounded-2xl shadow-lg p-6 my-6"><script>
+        // 可訪問性: 頁面加載後設置焦點
+        window.onload = function() {
+            document.querySelector('.skip-link').addEventListener('blur', function() {
+                this.style.top = '-40px';
+            });
+            
+            // 初始化虛擬終端
+            initVirtualTerminal();
+            
+            // 設置命令複製按鈕
+            setupCopyButtons();
+            
+            // 恢復保存的進度
+            if (localStorage.getItem('nmapProgress')) {
+                document.getElementById('learning-progress').style.width = localStorage.getItem('nmapProgress');
+                updateProgress(); // 更新進度條狀態
+            }
+            
+            // 恢復完成的測驗
+            if (localStorage.getItem('completedQuizzes')) {
+                const completedQuizzes = JSON.parse(localStorage.getItem('completedQuizzes'));
+                document.querySelectorAll('.quiz-option').forEach(opt => {
+                    if (completedQuizzes.includes(opt.textContent.trim())) {
+                        opt.style.backgroundColor = 'rgba(76, 175, 80, 0.3)';
+                        opt.style.borderLeft = '4px solid var(--success)';
+                    }
+                });
+            }
+        };
+        
+        // 虛擬終端功能
+        function initVirtualTerminal() {
+            const terminalInput = document.getElementById('terminal-input');
+            const terminalOutput = document.getElementById('terminal-output');
+            
+            terminalInput.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter') {
+                    const command = this.value.trim();
+                    if (command) {
+                        // 添加命令到輸出
+                        const commandLine = document.createElement('div');
+                        commandLine.className = 'command-line';
+                        commandLine.innerHTML = `<span class="prompt">nmap > </span>${command}`;
+                        terminalOutput.appendChild(commandLine);
+                        
+                        // 處理命令
+                        let output = processCommand(command);
+                        
+                        // 添加輸出
+                        const outputDiv = document.createElement('div');
+                        outputDiv.className = 'command-output';
+                        outputDiv.innerHTML = output;
+                        terminalOutput.appendChild(outputDiv);
+                        
+                        // 滾動到底部
+                        terminalOutput.scrollTop = terminalOutput.scrollHeight;
+                        
+                        // 清空輸入
+                        this.value = '';
+                    }
+                }
+            });
+        }
+        
+        function processCommand(command) {
+            const lowerCmd = command.toLowerCase();
+            
+            if (lowerCmd === 'help') {
+                return `可用命令:
+help - 顯示此幫助信息
+scan - 掃描目標網站
+version - 檢測服務版本
+firewall - 防火牆繞過技術
+clear - 清除終端`;
+            } else if (lowerCmd === 'clear') {
+                document.getElementById('terminal-output').innerHTML = '';
+                return '';
+            } else if (lowerCmd.includes('nmap scanme.nmap.org')) {
+                return `Starting Nmap 7.92 ( https://nmap.org )
+Nmap scan report for scanme.nmap.org (45.33.32.156)
+Host is up (0.11s latency).
+Not shown: 996 closed tcp ports (conn-refused)
+PORT      STATE SERVICE
+22/tcp    open  ssh
+80/tcp    open  http
+9929/tcp  open  nping-echo
+31337/tcp open  Elite
+
+Nmap done: 1 IP address (1 host up) scanned in 1.32 seconds`;
+            } else if (lowerCmd.includes('nmap -sv scanme.nmap.org')) {
+                return `Starting Nmap 7.92 ( https://nmap.org )
+Nmap scan report for scanme.nmap.org (45.33.32.156)
+Host is up (0.11s latency).
+Not shown: 996 closed tcp ports (conn-refused)
+PORT      STATE SERVICE VERSION
+22/tcp    open  ssh     OpenSSH 6.6.1p1 Ubuntu 2ubuntu2.13 (Ubuntu Linux; protocol 2.0)
+80/tcp    open  http    Apache httpd 2.4.7 ((Ubuntu))
+9929/tcp  open  nping-echo Nping echo
+31337/tcp open  tcpwrapped
+
+Service detection performed. Please report any incorrect results at https://nmap.org/submit/ .
+Nmap done: 1 IP address (1 host up) scanned in 8.45 seconds`;
+            } else if (lowerCmd.includes('nmap -a scanme.nmap.org')) {
+                return `Starting Nmap 7.92 ( https://nmap.org )
+Nmap scan report for scanme.nmap.org (45.33.32.156)
+Host is up (0.11s latency).
+Not shown: 996 closed tcp ports (conn-refused)
+PORT      STATE SERVICE VERSION
+22/tcp    open  ssh     OpenSSH 6.6.1p1 Ubuntu 2ubuntu2.13 (Ubuntu Linux; protocol 2.0)
+| ssh-hostkey: 
+|   1024 ac:00:a0:1a:82:ff:cc:55:99:dc:67:2b:34:97:6b:75 (DSA)
+|   2048 20:3d:2d:44:62:2a:b0:5a:9d:b5:b3:05:14:c2:a6:b2 (RSA)
+|   256 96:02:bb:5e:57:54:1c:4e:45:2f:56:4c:4a:24:b2:57 (ECDSA)
+80/tcp    open  http    Apache httpd 2.4.7 ((Ubuntu))
+|_http-title: Go ahead and ScanMe!
+|_http-server-header: Apache/2.4.7 (Ubuntu)
+9929/tcp  open  nping-echo Nping echo
+31337/tcp open  tcpwrapped
+Warning: OSScan results may be unreliable because we could not find at least 1 open and 1 closed port
+Aggressive OS guesses: Linux 3.10 - 3.13 (95%), Linux 3.2 - 4.9 (95%), ASUS RT-N56U WAP (Linux 3.4) (95%), Linux 3.16 (95%), Linux 3.1 (93%), Linux 3.2 (93%), Linux 3.8 - 3.11 (93%), Linux 3.4 (93%), Linux 3.7 (93%), Linux 3.18 (93%)
+No exact OS matches for host (test conditions non-ideal).
+
+Nmap done: 1 IP address (1 host up) scanned in 15.32 seconds`;
+            } else if (lowerCmd.includes('nmap -f scanme.nmap.org')) {
+                return `Starting Nmap 7.92 ( https://nmap.org )
+Nmap scan report for scanme.nmap.org (45.33.32.156)
+Host is up (0.11s latency).
+Not shown: 996 closed tcp ports (conn-refused)
+PORT      STATE SERVICE
+22/tcp    open  ssh
+80/tcp    open  http
+9929/tcp  open  nping-echo
+31337/tcp open  Elite
+
+Nmap done: 1 IP address (1 host up) scanned in 1.45 seconds (分片掃描模式)`;
+            } else if (lowerCmd === 'scan') {
+                return `掃描命令範例: nmap scanme.nmap.org`;
+            } else if (lowerCmd === 'version') {
+                return `版本檢測命令範例: nmap -sV scanme.nmap.org`;
+            } else if (lowerCmd === 'firewall') {
+                return `防火牆繞過命令範例: nmap -f --scan-delay 500ms scanme.nmap.org`;
+            } else {
+                return `命令 "${command}" 未找到，輸入 "help" 查看可用命令`;
+            }
+        }
+        
+        // 設置命令複製按鈕
+        function setupCopyButtons() {
+            document.querySelectorAll('.command').forEach(cmd => {
+                cmd.addEventListener('click', function() {
+                    const commandText = this.textContent.trim();
+                    copyToClipboard(commandText);
+                    showTooltip(this, '已複製到剪貼簿!');
+                });
+                
+                // 添加鍵盤支持
+                cmd.addEventListener('keydown', function(e) {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                        const commandText = this.textContent.trim();
+                        copyToClipboard(commandText);
+                        showTooltip(this, '已複製到剪貼簿!');
+                    }
+                });
+            });
+            
+            document.querySelectorAll('.btn-copy').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const command = this.getAttribute('data-cmd');
+                    copyToClipboard(command);
+                    showTooltip(this, '命令已複製!');
+                });
+            });
+        }
+        
+        // 複製到剪貼簿
+        function copyToClipboard(text) {
+            const textarea = document.createElement('textarea');
+            textarea.value = text;
+            document.body.appendChild(textarea);
+            textarea.select();
+            document.execCommand('copy');
+            document.body.removeChild(textarea);
+        }
+        
+        // 顯示工具提示
+        function showTooltip(element, message) {
+            const tooltip = document.createElement('div');
+            tooltip.className = 'custom-tooltip';
+            tooltip.textContent = message;
+            tooltip.style.position = 'absolute';
+            tooltip.style.backgroundColor = 'rgba(0,0,0,0.9)';
+            tooltip.style.color = 'white';
+            tooltip.style.padding = '5px 10px';
+            tooltip.style.borderRadius = '4px';
+            tooltip.style.zIndex = '1000';
+            tooltip.style.fontSize = '0.9rem';
+            
+            const rect = element.getBoundingClientRect();
+            tooltip.style.left = `${rect.left}px`;
+            tooltip.style.top = `${rect.top - 35}px`;
+            
+            document.body.appendChild(tooltip);
+            
+            setTimeout(() => {
+                tooltip.style.opacity = '0';
+                tooltip.style.transition = 'opacity 0.5s';
+                setTimeout(() => tooltip.remove(), 500);
+            }, 1500);
+        }
+        
+        // 標籤頁切換功能
+        function openTab(evt, tabName) {
+            const tabContents = document.getElementsByClassName("tab-content");
+            for (let i = 0; i < tabContents.length; i++) {
+                tabContents[i].classList.remove("active");
+            }
+            
+            const tabs = document.getElementsByClassName("tab");
+            for (let i = 0; i < tabs.length; i++) {
+                tabs[i].classList.remove("active");
+            }
+            
+            document.getElementById(tabName).classList.add("active");
+            evt.currentTarget.classList.add("active");
+            
+            // 更新進度
+            updateProgress();
+        }
+        
+        // 測驗功能
+        function checkAnswer(selectedOption, isCorrect) {
+            const feedbackId = selectedOption.parentElement.querySelector('p[id^="quiz-feedback"]').id;
+            const feedbackElement = document.getElementById(feedbackId);
+            const explanation = selectedOption.parentElement.nextElementSibling;
+            
+            // 移除所有選項的高亮
+            selectedOption.parentElement.querySelectorAll('.quiz-option').forEach(opt => {
+                opt.style.backgroundColor = '';
+                opt.style.borderLeft = '';
+            });
+            
+            if (isCorrect) {
+                selectedOption.style.backgroundColor = 'rgba(76, 175, 80, 0.3)';
+                selectedOption.style.borderLeft = '4px solid var(--success)';
+                feedbackElement.textContent = '✓ 正確!';
+                
+                // 顯示解析
+                if (explanation && explanation.classList.contains('explanation')) {
+                    explanation.style.display = 'block';
+                }
+            } else {
+                selectedOption.style.backgroundColor = 'rgba(244, 67, 54, 0.3)';
+                selectedOption.style.borderLeft = '4px solid var(--danger)';
+                feedbackElement.textContent = '✗ 不正確，請再試一次。';
+            }
+            
+            feedbackElement.style.display = 'block';
+            
+            // 更新進度
+            if (isCorrect) {
+                updateProgress();
+            }
+        }
+        
+        // 保存進度功能
+        function saveProgress() {
+            const progress = document.getElementById('learning-progress').style.width;
+            localStorage.setItem('nmapProgress', progress);
+            
+            // 保存完成的測驗
+            const completedQuizzes = [];
+            document.querySelectorAll('.quiz-option[style*="background-color: rgba(76, 175, 80, 0.3)"]').forEach(opt => {
+                completedQuizzes.push(opt.textContent.trim());
+            });
+            localStorage.setItem('completedQuizzes', JSON.stringify(completedQuizzes));
+            
+            // 顯示保存反饋
+            const saveButton = document.querySelector('.save-progress');
+            const originalText = saveButton.textContent;
+            saveButton.textContent = '✓ 進度已保存';
+            saveButton.style.backgroundColor = '#3d8b40';
+            
+            setTimeout(() => {
+                saveButton.textContent = originalText;
+                saveButton.style.backgroundColor = '';
+            }, 2000);
+        }
+        
+        // 更新學習進度
+        function updateProgress() {
+            const completedQuizzes = document.querySelectorAll('.quiz-option[style*="background-color: rgba(76, 175, 80, 0.3)"]').length;
+            const progress = Math.min(100, 20 + (completedQuizzes * 15));
+            document.getElementById('learning-progress').style.width = `${progress}%`;
+            
+            // 更新進度步驟
+            const progressSteps = document.querySelectorAll('.progress-steps li');
+            
+            if (progress >= 30) {
+                progressSteps[2].classList.add('active');
+                progressSteps[1].classList.remove('active');
+                progressSteps[1].classList.add('completed');
+            }
+            if (progress >= 45) {
+                progressSteps[3].classList.add('active');
+                progressSteps[2].classList.remove('active');
+                progressSteps[2].classList.add('completed');
+            }
+            if (progress >= 60) {
+                progressSteps[4].classList.add('active');
+                progressSteps[3].classList.remove('active');
+                progressSteps[3].classList.add('completed');
+            }
+            if (progress >= 75) {
+                progressSteps[5].classList.add('active');
+                progressSteps[4].classList.remove('active');
+                progressSteps[4].classList.add('completed');
+            }
+        }
+        
+        // 添加保存進度按鈕事件監聽
+        document.querySelector('.save-progress').addEventListener('click', saveProgress);
+    </script></div>
+<footer class="text-center py-8 text-gray-400">
+<div class="container mx-auto px-4">
+<div class="mb-4">
+<p class="text-cyan-300 font-bold">
+<i class="ri-shield-star-line mr-2"></i>
+                    Kali Linux 網路安全工具指南
+                </p>
+</div>
+<div class="mb-4">
+                © 2025 網路安全技術專題 | 指導教授：王德譽 | 學生：陳家茂、劉昱均
+            </div>
+<div class="text-sm">
+                本專題致力於推廣網路安全教育與道德黑客精神
+            </div>
+</div>
+</footer>
+</body></html>
