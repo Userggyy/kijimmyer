@@ -1,0 +1,858 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gobuster 新手教學 | 資安學習平台</title>
+    <meta name="description" content="Gobuster 內容探測/字典暴力工具完整教學，從基礎到進階使用技巧">
+    <style>
+        :root {
+            --primary: #2a3b4d;
+            --secondary: #3a6ea5;
+            --accent: #ff7f50;
+            --light: #ffffff;
+            --dark: #1a2a3a;
+            --success: #4CAF50;
+            --warning: #FFC107;
+            --danger: #F44336;
+            --text-primary: #ffffff;
+            --text-secondary: #e0e0e0;
+            --bg-gradient: radial-gradient(ellipse at bottom, #1B2735 0%, #090A0F 100%);
+        }
+
+        * { margin:0; padding:0; box-sizing:border-box; font-family:'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body { background:var(--bg-gradient); color:var(--text-primary); line-height:1.6; min-height:100vh; }
+
+        .skip-link{ position:absolute; top:-40px; left:0; background:var(--secondary); color:#fff; padding:8px; z-index:100; transition:top .3s; }
+        .skip-link:focus{ top:0; }
+
+        .container{ max-width:1200px; margin:0 auto; padding:20px; }
+
+        header{
+            background:linear-gradient(135deg, var(--primary), var(--secondary));
+            padding:2rem 0; text-align:center; border-bottom:4px solid var(--accent);
+            margin-bottom:2rem; border-radius:0 0 10px 10px; box-shadow:0 4px 20px rgba(0,0,0,.3); position:relative;
+        }
+        header h1{ font-size:2.5rem; margin-bottom:.5rem; color:#fff; text-shadow:2px 2px 4px rgba(0,0,0,.5); }
+        header p{ font-size:1.1rem; color:rgba(255,255,255,.9); max-width:800px; margin:0 auto; }
+
+        nav{ background-color:var(--dark); padding:1rem; border-radius:8px; margin-bottom:2rem; box-shadow:0 2px 10px rgba(0,0,0,.2); }
+        nav ul{ display:flex; justify-content:center; list-style:none; flex-wrap:wrap; }
+        nav li{ margin:0 15px; }
+        nav a{ color:var(--light); text-decoration:none; font-weight:500; padding:5px 10px; border-radius:4px; transition:all .3s ease; }
+        nav a:hover, nav a:focus{ background-color:var(--secondary); color:#fff; outline:none; }
+
+        section{
+            background:rgba(30,30,30,.8); backdrop-filter:blur(10px); border-radius:8px; padding:2rem; margin-bottom:2rem;
+            box-shadow:0 4px 15px rgba(0,0,0,.25); border-left:4px solid var(--secondary); border:1px solid rgba(58,110,165,.3);
+        }
+        h2{ color:var(--accent); margin-bottom:1.5rem; font-size:1.8rem; border-bottom:2px solid var(--secondary); padding-bottom:.5rem; display:inline-block; }
+        h3{ color:var(--light); margin:1.5rem 0 1rem; font-size:1.4rem; }
+        p{ margin-bottom:1rem; color:var(--text-secondary); }
+
+        .terminal{
+            background-color:#000; color:#00ff00; padding:1.5rem; border-radius:8px; font-family:'Courier New', Courier, monospace;
+            margin:1.5rem 0; position:relative; border:1px solid #333; box-shadow:inset 0 0 10px rgba(0,255,0,.1); overflow-x:auto;
+        }
+        .terminal:before{
+            content:"Terminal"; position:absolute; top:-10px; left:15px; background-color:#000; color:#00ff00; padding:0 10px;
+            font-size:.8rem; border:1px solid #333; border-bottom:none; border-radius:5px 5px 0 0;
+        }
+        .command{ color:#00ffff; font-weight:bold; cursor:pointer; transition:all .3s ease; position:relative; display:inline-block; padding:2px 5px; border-radius:3px; }
+        .command:hover{ text-shadow:0 0 8px rgba(0,255,255,.7); }
+        .command:after{ content:''; position:absolute; bottom:-2px; left:0; width:0; height:2px; background:var(--accent); transition:width .3s; }
+        .command:hover:after{ width:100%; }
+        .option{ color:#ffa500; }
+        .comment{ color:#888; font-style:italic; }
+
+        .note{ background-color:rgba(58,110,165,.2); border-left:4px solid var(--secondary); padding:1rem; margin:1.5rem 0; border-radius:0 4px 4px 0; }
+        .warning{ background-color:rgba(255,193,7,.2); border-left:4px solid var(--warning); padding:1rem; margin:1.5rem 0; border-radius:0 4px 4px 0; }
+        .danger{ background-color:rgba(244,67,54,.2); border-left:4px solid var(--danger); padding:1rem; margin:1.5rem 0; border-radius:0 4px 4px 0; }
+
+        .example{ background-color:rgba(42,59,77,.3); padding:1.5rem; border-radius:8px; margin:1.5rem 0; border:1px dashed var(--secondary); }
+        .example h4{ color:var(--accent); margin-bottom:1rem; }
+
+        .quiz{ background-color:rgba(42,59,77,.5); padding:1.5rem; border-radius:8px; margin:1.5rem 0; border:1px solid var(--secondary); }
+        .quiz h4{ color:var(--accent); margin-bottom:1rem; }
+        .quiz-option{ display:block; margin:.5rem 0; padding:.5rem; background-color:rgba(255,255,255,.1); border-radius:4px; cursor:pointer; transition:all .2s; }
+        .quiz-option:hover, .quiz-option:focus{ background-color:rgba(255,255,255,.2); outline:2px solid var(--accent); }
+
+        .btn{ display:inline-block; background-color:var(--secondary); color:#fff; padding:.5rem 1rem; border-radius:4px; text-decoration:none; font-weight:bold; transition:all .3s; border:none; cursor:pointer; margin-top:.5rem; }
+        .btn:hover, .btn:focus{ background-color:var(--accent); transform:translateY(-2px); box-shadow:0 4px 8px rgba(0,0,0,.2); outline:none; }
+        .btn:active{ transform:translateY(0); }
+
+        footer{ text-align:center; padding:2rem 0; margin-top:2rem; color:#888; font-size:.9rem; border-top:1px solid #333; }
+
+        .progress-tracker{ background:rgba(30,30,30,.8); padding:1.5rem; border-radius:8px; margin-bottom:2rem; border-left:4px solid var(--accent); }
+        .progress-tracker h3{ margin-top:0; color:var(--accent); }
+        .progress-bar{ height:10px; background:rgba(255,255,255,.1); border-radius:5px; margin:1rem 0; overflow:hidden; }
+        .progress{ height:100%; background:linear-gradient(90deg, var(--secondary), var(--accent)); width:20%; transition:width .5s ease; }
+        .progress-steps{ display:flex; justify-content:space-between; list-style:none; padding:0; }
+        .progress-steps li{ text-align:center; position:relative; flex:1; padding-top:25px; color:#888; }
+        .progress-steps li:before{
+            content:''; position:absolute; top:0; left:50%; transform:translateX(-50%); width:20px; height:20px; border-radius:50%; background:#333; border:3px solid #333;
+        }
+        .progress-steps li.completed:before{ background:var(--success); border-color:var(--success); }
+        .progress-steps li.active:before{ background:var(--accent); border-color:var(--accent); box-shadow:0 0 0 3px rgba(255,127,80,.3); }
+
+        .virtual-lab{ background:rgba(30,30,30,.9); padding:2rem; border-radius:8px; margin-bottom:2rem; border:1px solid var(--secondary); }
+        .lab-instructions{ margin-bottom:1.5rem; }
+        .lab-instructions ol{ margin-left:1.5rem; }
+
+        .btn-copy{
+            background:rgba(58,110,165,.3); color:var(--light); border:1px solid var(--secondary);
+            border-radius:4px; padding:.2rem .5rem; margin-left:.5rem; font-size:.8rem; cursor:pointer; transition:all .2s;
+        }
+        .btn-copy:hover{ background:rgba(58,110,165,.5); }
+
+        .security-warning{ background-color:rgba(255,0,0,.1); border:1px solid var(--danger); padding:1rem; border-radius:8px; margin:1rem 0; animation:pulse 2s infinite; }
+
+        .advanced-section{ background:rgba(42,59,77,.5); border-left:4px solid var(--accent); padding:1.5rem; margin:2rem 0; }
+        .tab-container{ display:flex; margin-bottom:-1px; }
+        .tab{ padding:.8rem 1.5rem; background:rgba(30,30,30,.7); border:1px solid #444; border-bottom:none; border-radius:5px 5px 0 0; cursor:pointer; margin-right:5px; }
+        .tab.active{ background:rgba(30,30,30,.9); border-color:var(--secondary); color:var(--accent); }
+        .tab-content{ display:none; padding:1.5rem; background:rgba(30,30,30,.9); border:1px solid var(--secondary); border-radius:0 8px 8px 8px; }
+        .tab-content.active{ display:block; }
+
+        .save-progress{ background-color:var(--success); color:#fff; border:none; padding:.5rem 1rem; border-radius:4px; cursor:pointer; margin-top:1rem; transition:all .3s; }
+        .save-progress:hover{ background-color:#3d8b40; }
+
+        .explanation{ background-color:rgba(58,110,165,.2); padding:1rem; border-radius:8px; margin:1rem 0; display:none; }
+
+        .tag{ display:inline-block; padding:.2rem .5rem; border-radius:3px; font-size:.8rem; font-weight:bold; margin-left:.5rem; }
+        .tag-advanced{ background-color:rgba(255,127,80,.2); color:var(--accent); border:1px solid var(--accent); }
+        .tag-warning{ background-color:rgba(255,193,7,.2); color:var(--warning); border:1px solid var(--warning); }
+
+        .case-study{ background-color:rgba(42,59,77,.3); padding:1.5rem; border-radius:8px; margin:1.5rem 0; border-left:4px solid var(--accent); }
+
+        @media (max-width:768px){
+            nav ul{ flex-direction:column; align-items:center; }
+            nav li{ margin:5px 0; }
+            header h1{ font-size:2rem; }
+            section, .virtual-lab, .progress-tracker{ padding:1.5rem; }
+            .progress-steps{ flex-wrap:wrap; }
+            .progress-steps li{ flex:0 0 50%; margin-bottom:1rem; }
+            .tab-container{ flex-wrap:wrap; }
+            .tab{ margin-bottom:5px; border-radius:5px; border:1px solid #444; }
+            .tab-content{ border-radius:0 0 8px 8px; }
+        }
+        @media (max-width:576px){
+            .terminal{ font-size:.9rem; padding:1rem; }
+            .command{ white-space:pre-wrap; word-break:break-all; }
+        }
+
+        :focus-visible{ outline:2px solid var(--accent); outline-offset:2px; }
+
+        @keyframes pulse{
+            0%{ box-shadow:0 0 0 0 rgba(255,127,80,.7); }
+            70%{ box-shadow:0 0 0 10px rgba(255,127,80,0); }
+            100%{ box-shadow:0 0 0 0 rgba(255,127,80,0); }
+        }
+        .pulse{ animation:pulse 2s infinite; }
+    </style>
+</head>
+<body>
+    <a href="#main-content" class="skip-link">跳至主要內容</a>
+
+    <div class="container">
+        <header>
+            <h1>Gobuster 新手教學</h1>
+            <p>學習如何用字典爆破方式進行 <strong>目錄/檔案探測</strong>、<strong>子網域枚舉</strong>、<strong>虛擬主機偵測</strong> 與 <strong>通用模糊測試</strong>，並了解防禦與法規</p>
+        </header>
+
+        <nav aria-label="主要導航">
+            <ul role="menubar">
+                <li role="menuitem"><a href="#introduction">基本介紹</a></li>
+                <li role="menuitem"><a href="#commands">基本指令</a></li>
+                <li role="menuitem"><a href="#examples">實戰範例</a></li>
+                <li role="menuitem"><a href="#advanced">進階技巧</a></li>
+                <li role="menuitem"><a href="#defense">防禦方法</a></li>
+                <li role="menuitem"><a href="#legal">法律規範</a></li>
+            </ul>
+        </nav>
+
+        <div class="progress-tracker">
+            <h3>您的學習進度</h3>
+            <div class="progress-bar">
+                <div class="progress" id="learning-progress" style="width: 20%"></div>
+            </div>
+            <ul class="progress-steps">
+                <li class="completed">基本介紹</li>
+                <li class="active">基本指令</li>
+                <li>實戰範例</li>
+                <li>進階技巧</li>
+                <li>防禦方法</li>
+                <li>法律規範</li>
+            </ul>
+            <button class="save-progress">保存進度</button>
+        </div>
+
+        <main id="main-content">
+            <section id="introduction">
+                <h2>Gobuster 基本介紹</h2>
+                <p>Gobuster 是一款以 <em>字典</em> 為基礎的爆破工具，可用於：</p>
+                <ul aria-label="Gobuster主要用途">
+                    <li><strong>dir</strong>：網站目錄與檔案探測（常見於 Web 內容枚舉）</li>
+                    <li><strong>dns</strong>：子網域枚舉</li>
+                    <li><strong>vhost</strong>：虛擬主機（虛擬 Host）偵測</li>
+                    <li><strong>fuzz</strong>：以 <code>FUZZ</code> 標記進行通用模糊測試</li>
+                </ul>
+
+                <div class="note">
+                    <p>Gobuster 在 Kali Linux 通常已預裝；如需安裝可使用以下指令：</p>
+                </div>
+
+                <div class="terminal">
+                    <span class="command" tabindex="0" role="button" aria-label="更新套件列表，點擊複製命令">sudo apt update</span><br>
+                    <span class="command" tabindex="0" role="button" aria-label="安裝Gobuster，點擊複製命令">sudo apt install gobuster</span>
+                </div>
+
+                <p>檢查安裝與版本：</p>
+                <div class="terminal">
+                    <span class="command" tabindex="0" role="button" aria-label="顯示Gobuster版本，點擊複製命令">gobuster version</span>
+                </div>
+            </section>
+
+            <section id="commands">
+                <h2>基本指令教學</h2>
+                <p>Gobuster 以 <span class="option">模式</span> 為核心（<code>dir</code>、<code>dns</code>、<code>vhost</code>、<code>fuzz</code>），常見通用參數：</p>
+                <ul>
+                    <li><code>-u</code> 目標 URL / <code>-d</code> 目標網域（依模式不同）</li>
+                    <li><code>-w</code> 字典檔路徑（wordlist）</li>
+                    <li><code>-x</code> 檔案副檔名（<code>dir</code> 模式）</li>
+                    <li><code>-t</code> 併發執行緒數（預設 10，可視資源調整）</li>
+                    <li><code>-s</code> 僅顯示指定狀態碼（例如 <code>-s 200,204,301,302,307,401,403</code>）</li>
+                    <li><code>-b</code> 排除指定狀態碼（黑名單）</li>
+                    <li><code>-o</code> 將結果輸出到檔案</li>
+                    <li><code>-k</code> 跳過 SSL 驗證（自簽憑證測試時）</li>
+                    <li><code>-H</code> 自訂 Header、<code>-a</code> User-Agent、<code>-r</code> 跟隨重新導向</li>
+                </ul>
+
+                <h3>網站目錄探測（dir）</h3>
+                <div class="terminal">
+                    <span class="command" tabindex="0" role="button" aria-label="基本目錄探測">gobuster dir -u http://example.com -w /usr/share/wordlists/dirb/common.txt</span>
+                </div>
+
+                <h3>指定副檔名與狀態碼</h3>
+                <div class="terminal">
+                    <span class="command" tabindex="0" role="button" aria-label="副檔名與狀態碼篩選">gobuster dir -u http://example.com -w /usr/share/wordlists/dirb/common.txt -x php,html,txt -s 200,204,301,302,307,401,403 -t 50 -o result.txt</span>
+                </div>
+
+                <h3>子網域枚舉（dns）</h3>
+                <div class="terminal">
+                    <span class="command" tabindex="0" role="button" aria-label="DNS 子網域枚舉">gobuster dns -d example.com -w /usr/share/seclists/Discovery/DNS/subdomains-top1million-5000.txt -t 100 -o subdomains.txt</span>
+                </div>
+
+                <h3>虛擬主機偵測（vhost）</h3>
+                <div class="terminal">
+                    <span class="command" tabindex="0" role="button" aria-label="VHost 偵測">gobuster vhost -u http://example.com -w /usr/share/seclists/Discovery/DNS/subdomains-top1million-110000.txt --append-domain -t 50 -o vhost.txt</span>
+                </div>
+
+                <h3>通用模糊測試（fuzz）</h3>
+                <div class="terminal">
+                    <span class="command" tabindex="0" role="button" aria-label="FUZZ 參數替換">gobuster fuzz -u "http://example.com/FUZZ" -w /usr/share/wordlists/dirb/common.txt -t 50 -o fuzz.txt</span>
+                </div>
+
+                <div class="quiz">
+                    <h4>小測驗</h4>
+                    <p>若要進行子網域枚舉，應使用哪個模式？</p>
+                    <div class="quiz-option" tabindex="0" role="button" onclick="checkAnswer(this, false)">dir</div>
+                    <div class="quiz-option" tabindex="0" role="button" onclick="checkAnswer(this, true)">dns</div>
+                    <div class="quiz-option" tabindex="0" role="button" onclick="checkAnswer(this, false)">vhost</div>
+                    <div class="quiz-option" tabindex="0" role="button" onclick="checkAnswer(this, false)">fuzz</div>
+                    <p id="quiz-feedback" style="display:none; margin-top:10px; color:var(--accent);"></p>
+                    <div class="explanation">
+                        <p><strong>解析：</strong><code>dns</code> 模式用於子網域枚舉；<code>dir</code> 探測路徑，<code>vhost</code> 偵測虛擬主機，<code>fuzz</code> 為通用模糊測試。</p>
+                    </div>
+                </div>
+            </section>
+
+            <section id="examples">
+                <h2>實戰範例</h2>
+
+                <div class="example">
+                    <h4>範例 1：快速目錄探測（常見路徑）</h4>
+                    <div class="terminal">
+                        <span class="command" tabindex="0" role="button">gobuster dir -u http://example.com -w /usr/share/wordlists/dirb/common.txt -s 200,301,302 -t 30</span>
+                    </div>
+                    <p>以常見字典快速掃描可疑路徑，僅顯示回應碼 200/301/302。</p>
+                </div>
+
+                <div class="example">
+                    <h4>範例 2：深度探測（副檔名＋排除碼）</h4>
+                    <div class="terminal">
+                        <span class="command" tabindex="0" role="button">gobuster dir -u https://example.com -w /usr/share/seclists/Discovery/Web-Content/raft-medium-words.txt -x php,aspx,js,txt -s 200,204,301,302,401,403 -b 404,500 -t 60 -k -o deep.txt</span>
+                    </div>
+                    <p>加入多種副檔名與狀態碼篩選，並排除 404/500 回應；<code>-k</code> 允許自簽憑證。</p>
+                </div>
+
+                <div class="example">
+                    <h4>範例 3：子網域枚舉（DNS）</h4>
+                    <div class="terminal">
+                        <span class="command" tabindex="0" role="button">gobuster dns -d example.com -w /usr/share/seclists/Discovery/DNS/subdomains-top1million-20000.txt -t 150 -o dns.txt</span>
+                    </div>
+                    <p>從大型字典中枚舉子網域，建議配合被動資料（如 CT 日誌）縮小範圍。</p>
+                </div>
+
+                <div class="example">
+                    <h4>範例 4：虛擬主機偵測（VHost）</h4>
+                    <div class="terminal">
+                        <span class="command" tabindex="0" role="button">gobuster vhost -u http://example.com -w /usr/share/seclists/Discovery/DNS/vhost.txt --append-domain -o vhost.txt</span>
+                    </div>
+                    <p>利用 Host Header 嘗試不同主機名，找出僅於特定 Host 呈現的服務。</p>
+                </div>
+
+                <div class="example">
+                    <h4>範例 5：通用 FUZZ（參數注入點）</h4>
+                    <div class="terminal">
+                        <span class="command" tabindex="0" role="button">gobuster fuzz -u "http://example.com/search?q=FUZZ" -w /usr/share/seclists/Discovery/Web-Content/burp-parameter-names.txt -s 200,302 -o fuzz-param.txt</span>
+                    </div>
+                    <p>針對參數名稱進行模糊測試，協助發現隱藏功能或調試端點。</p>
+                </div>
+
+                <div class="warning">
+                    <p>注意：以上範例僅供學習。<strong>未經授權</strong>對第三方站台進行字典掃描可能造成法律風險與服務負載，請務必取得書面許可。</p>
+                </div>
+
+                <div class="quiz">
+                    <h4>小測驗</h4>
+                    <p>若想將掃描結果保存為檔案，下面哪個參數最合適？</p>
+                    <div class="quiz-option" tabindex="0" role="button" onclick="checkAnswer(this, true)">-o</div>
+                    <div class="quiz-option" tabindex="0" role="button" onclick="checkAnswer(this, false)">-x</div>
+                    <div class="quiz-option" tabindex="0" role="button" onclick="checkAnswer(this, false)">-t</div>
+                    <div class="quiz-option" tabindex="0" role="button" onclick="checkAnswer(this, false)">-k</div>
+                    <p id="quiz-feedback2" style="display:none; margin-top:10px; color:var(--accent);"></p>
+                    <div class="explanation">
+                        <p><strong>解析：</strong><code>-o</code> 將結果輸出到檔案；<code>-x</code> 為副檔名、<code>-t</code> 執行緒、<code>-k</code> 忽略 TLS 驗證。</p>
+                    </div>
+                </div>
+            </section>
+
+            <section id="advanced">
+                <h2>進階使用技巧</h2>
+
+                <div class="security-warning">
+                    <p>⚠️ 以下技巧僅適用於 <strong>合法授權</strong> 的測試，並建議於壓力可控的環境使用（測試/預備環境）。</p>
+                </div>
+
+                <div class="tab-container">
+                    <div class="tab active" onclick="openTab(event, 'performance')">效能與避偵</div>
+                    <div class="tab" onclick="openTab(event, 'headers')">自訂標頭與驗證</div>
+                    <div class="tab" onclick="openTab(event, 'report')">輸出與報表</div>
+                </div>
+
+                <div id="performance" class="tab-content active">
+                    <h3>效能與避偵（請遵守道德與法規）</h3>
+                    <div class="terminal">
+                        <span class="comment"># 適度提高併發與延遲</span><br>
+                        <span class="command" tabindex="0" role="button">gobuster dir -u https://target -w /path/to/wordlist.txt -t 80</span><br><br>
+
+                        <span class="comment"># 自訂 User-Agent、跟隨 3xx、排除 404</span><br>
+                        <span class="command" tabindex="0" role="button">gobuster dir -u https://target -w /path/to/words.txt -a "Audit-Lab/1.0" -r -b 404</span><br><br>
+
+                        <span class="comment"># 以 Proxy 導流（需合法授權）</span><br>
+                        <span class="command" tabindex="0" role="button">HTTPS_PROXY=http://127.0.0.1:8080 gobuster dir -u https://target -w /path/to/words.txt</span>
+                    </div>
+
+                    <div class="quiz">
+                        <h4>小測驗</h4>
+                        <p>想要 <strong>排除</strong> 404 結果，應該使用哪個參數？</p>
+                        <div class="quiz-option" tabindex="0" role="button" onclick="checkAnswer(this, true)">-b 404</div>
+                        <div class="quiz-option" tabindex="0" role="button" onclick="checkAnswer(this, false)">-s 404</div>
+                        <div class="quiz-option" tabindex="0" role="button" onclick="checkAnswer(this, false)">-x 404</div>
+                        <div class="quiz-option" tabindex="0" role="button" onclick="checkAnswer(this, false)">-k 404</div>
+                        <p id="quiz-feedback4" style="display:none; margin-top:10px; color:var(--accent);"></p>
+                        <div class="explanation">
+                            <p><strong>解析：</strong><code>-b</code> 為黑名單狀態碼，<code>-s</code> 則是白名單（只顯示）。</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="headers" class="tab-content">
+                    <h3>自訂標頭與驗證</h3>
+                    <p>面對需要身份驗證或特殊 Header 的服務時，可使用：</p>
+                    <div class="terminal">
+                        <span class="comment"># 自訂 Header</span><br>
+                        <span class="command" tabindex="0" role="button">gobuster dir -u https://target -w words.txt -H "X-Forwarded-For: 127.0.0.1" -H "Cookie: session=abc"</span><br><br>
+
+                        <span class="comment"># 基本驗證（HTTP Basic）</span><br>
+                        <span class="command" tabindex="0" role="button">gobuster dir -u https://target -w words.txt -U user -P pass</span><br><br>
+
+                        <span class="comment"># 跳過 TLS 驗證（自簽）</span><br>
+                        <span class="command" tabindex="0" role="button">gobuster dir -u https://self-signed.local -w words.txt -k</span>
+                    </div>
+                    <p>請避免在生產系統使用過高併發或頻繁認證嘗試，以免觸發鎖定或 WAF。</p>
+                </div>
+
+                <div id="report" class="tab-content">
+                    <h3>輸出格式與報表</h3>
+                    <p>Gobuster 主要透過純文字輸出，建議同時保留命令與時間戳：</p>
+                    <div class="terminal">
+                        <span class="comment"># 文字檔輸出</span><br>
+                        <span class="command" tabindex="0" role="button">gobuster dir -u https://target -w words.txt -o out.txt</span><br><br>
+
+                        <span class="comment"># 追加模式保存多次掃描</span><br>
+                        <span class="command" tabindex="0" role="button">gobuster dns -d example.com -w subs.txt | tee -a dns.log</span>
+                    </div>
+                    <ul>
+                        <li>以 <code>tee</code> 同步檢視與保存</li>
+                        <li>將指令、版本、字典、線程、白/黑名單狀態碼註記到報告</li>
+                        <li>以時間戳或目標建立目錄分流結果</li>
+                    </ul>
+                </div>
+            </section>
+
+            <section id="defense">
+                <h2>防禦方法</h2>
+                <p>理解字典式探測同時，也需要建立有效防禦：</p>
+
+                <h3>1. 正確的錯誤處理與回應</h3>
+                <ul>
+                    <li>避免將不存在路徑以 <em>不同長度/內容</em> 回傳（防「長度指標」偵測）</li>
+                    <li>統一 404 與應用層錯誤頁面，減少資訊洩漏（如框架版本、堆疊追蹤）</li>
+                    <li>關閉目錄瀏覽（Directory Listing）</li>
+                </ul>
+
+                <h3>2. 存取控制與速率限制</h3>
+                <ul>
+                    <li>WAF / RASP 規則：偵測高頻 404/401/403 與固定字典節奏</li>
+                    <li>IP/帳號/裝置層級的速率限制與節流（Rate Limiting / Backoff）</li>
+                    <li>針對敏感路徑（如 <code>/admin</code>、<code>/backup</code>）採白名單或多因子驗證</li>
+                </ul>
+
+                <h3>3. DNS 與 VHost 強化</h3>
+                <ul>
+                    <li>避免可猜測的子網域命名；清理未使用的 DNS 紀錄</li>
+                    <li>杜絕萬用字元（Wildcard）造成誤導，或正確回應一致的錯誤碼</li>
+                    <li>虛擬主機設定與憑證一致，避免「憑證主體/SubjectAltName」洩漏</li>
+                </ul>
+
+                <div class="note">
+                    <p>防禦字典探測需多層次控管：應用層設計、閘道/WAF、記錄/偵測與事件回應。</p>
+                </div>
+
+                <div class="quiz">
+                    <h4>小測驗</h4>
+                    <p>下列哪一項<strong>最能降低</strong>以「回應長度」為特徵的路徑枚舉成功率？</p>
+                    <div class="quiz-option" tabindex="0" role="button" onclick="checkAnswer(this, true)">統一 404 錯誤頁的版面與長度</div>
+                    <div class="quiz-option" tabindex="0" role="button" onclick="checkAnswer(this, false)">將 404 一律改成 500</div>
+                    <div class="quiz-option" tabindex="0" role="button" onclick="checkAnswer(this, false)">增加伺服器硬體規格</div>
+                    <div class="quiz-option" tabindex="0" role="button" onclick="checkAnswer(this, false)">開放目錄瀏覽</div>
+                    <p id="quiz-feedback5" style="display:none; margin-top:10px; color:var(--accent);"></p>
+                    <div class="explanation">
+                        <p><strong>解析：</strong>一致的錯誤頁長度能降低以「回應長度差異」判斷有效路徑的可行性。</p>
+                    </div>
+                </div>
+            </section>
+
+            <section id="legal">
+                <h2>法律與道德規範</h2>
+
+                <div class="danger">
+                    <p>重要：未經授權的字典爆破與內容探測屬於<strong>未經同意存取</strong>，可能違反當地資通安全或電腦相關法規。</p>
+                </div>
+
+                <h3>合法使用原則</h3>
+                <ul aria-label="合法使用原則">
+                    <li>僅針對<strong>自己擁有</strong>或<strong>取得書面授權</strong>的資產</li>
+                    <li>先於測試/預備環境演練，控制併發與流量</li>
+                    <li>尊重服務穩定性，避免長時間、高頻掃描</li>
+                    <li>依標準流程提交問題並保護敏感資料</li>
+                </ul>
+
+                <h3>道德黑客準則</h3>
+                <ol aria-label="道德黑客準則">
+                    <li>取得明確、範圍清楚的書面授權</li>
+                    <li>不造成服務中斷或資料毀損</li>
+                    <li>尊重隱私與最小揭露原則</li>
+                    <li>負責任揭露與修補協作</li>
+                </ol>
+
+                <div class="warning">
+                    <p>本教學僅供教育用途，務必確認您了解並遵守適用法規與合約條款。</p>
+                </div>
+
+                <div class="quiz">
+                    <h4>小測驗</h4>
+                    <p>在進行 Gobuster 探測前，最重要的前置動作是？</p>
+                    <div class="quiz-option" tabindex="0" role="button" onclick="checkAnswer(this, false)">準備最大的字典</div>
+                    <div class="quiz-option" tabindex="0" role="button" onclick="checkAnswer(this, true)">取得資產擁有者的書面授權</div>
+                    <div class="quiz-option" tabindex="0" role="button" onclick="checkAnswer(this, false)">把執行緒數設到 200</div>
+                    <div class="quiz-option" tabindex="0" role="button" onclick="checkAnswer(this, false)">更換 User-Agent</div>
+                    <p id="quiz-feedback3" style="display:none; margin-top:10px; color:var(--accent);"></p>
+                    <div class="explanation">
+                        <p><strong>解析：</strong>合法授權是所有測試的前提，未經授權的探測屬違法行為。</p>
+                    </div>
+                </div>
+            </section>
+
+            <div class="virtual-lab">
+                <div class="security-warning">
+                    <p>⚠️ 注意：此虛擬實驗室以<strong>模擬輸出</strong>示範 Gobuster 行為。實際測試請在 <strong>授權</strong> 的目標與可承受流量的環境操作。</p>
+                </div>
+                <h3>Gobuster 虛擬實驗室</h3>
+                <div class="lab-instructions">
+                    <p>按照步驟完成練習：</p>
+                    <ol>
+                        <li>基本目錄探測 <button class="btn-copy" data-cmd='gobuster dir -u http://example.com -w /usr/share/wordlists/dirb/common.txt'>複製命令</button></li>
+                        <li>加入副檔名、狀態碼與輸出 <button class="btn-copy" data-cmd='gobuster dir -u http://example.com -w /usr/share/wordlists/dirb/common.txt -x php,html -s 200,301,302 -o result.txt'>複製命令</button></li>
+                        <li>子網域枚舉 <button class="btn-copy" data-cmd='gobuster dns -d example.com -w /usr/share/seclists/Discovery/DNS/subdomains-top1million-5000.txt -o dns.txt'>複製命令</button></li>
+                        <li>VHost 偵測 <button class="btn-copy" data-cmd='gobuster vhost -u http://example.com -w /usr/share/seclists/Discovery/DNS/subdomains-top1million-110000.txt --append-domain -o vhost.txt'>複製命令</button></li>
+                        <li>FUZZ 範例 <button class="btn-copy" data-cmd='gobuster fuzz -u "http://example.com/FUZZ" -w /usr/share/wordlists/dirb/common.txt -o fuzz.txt'>複製命令</button></li>
+                    </ol>
+                </div>
+
+                <div class="terminal" id="virtual-terminal">
+                    <div class="terminal-header">
+                        <span class="terminal-title">Gobuster Terminal</span>
+                        <span class="terminal-controls">○ □ ×</span>
+                    </div>
+                    <div class="terminal-body" id="terminal-output">
+                        <div class="welcome-message">
+                            <p>歡迎使用 Gobuster 虛擬終端</p>
+                            <p>輸入 <span style="color:#00ffff">help</span> 查看可用命令</p>
+                            <p>可貼上上方步驟的命令觀察模擬結果</p>
+                        </div>
+                    </div>
+                    <div class="terminal-input-line">
+                        <span class="prompt">gobuster > </span>
+                        <input type="text" class="terminal-input" id="terminal-input" aria-label="終端輸入">
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <footer>
+            <p>© 2025 資安教學平台 | 僅供教育用途</p>
+            <p>本頁面版型與互動結構改寫自既有教學模板。資料來源：內部教材樣板 </p>
+        </footer>
+    </div>
+
+    <script>
+        // 可訪問性: 頁面加載後設置焦點
+        window.onload = function() {
+            document.querySelector('.skip-link').addEventListener('blur', function() {
+                this.style.top = '-40px';
+            });
+
+            // 初始化虛擬終端
+            initVirtualTerminal();
+
+            // 設置命令複製按鈕
+            setupCopyButtons();
+
+            // 恢復保存的進度
+            if (localStorage.getItem('gobusterProgress')) {
+                document.getElementById('learning-progress').style.width = localStorage.getItem('gobusterProgress');
+                updateProgress(); // 更新進度條狀態
+            }
+
+            // 恢復完成的測驗
+            if (localStorage.getItem('gobusterCompletedQuizzes')) {
+                const completedQuizzes = JSON.parse(localStorage.getItem('gobusterCompletedQuizzes'));
+                document.querySelectorAll('.quiz-option').forEach(opt => {
+                    if (completedQuizzes.includes(opt.textContent.trim())) {
+                        opt.style.backgroundColor = 'rgba(76, 175, 80, 0.3)';
+                        opt.style.borderLeft = '4px solid var(--success)';
+                    }
+                });
+            }
+        };
+
+        // 虛擬終端功能
+        function initVirtualTerminal() {
+            const terminalInput = document.getElementById('terminal-input');
+            const terminalOutput = document.getElementById('terminal-output');
+
+            terminalInput.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter') {
+                    const command = this.value.trim();
+                    if (command) {
+                        const commandLine = document.createElement('div');
+                        commandLine.className = 'command-line';
+                        commandLine.innerHTML = `<span class="prompt">gobuster > </span>${escapeHtml(command)}`;
+                        terminalOutput.appendChild(commandLine);
+
+                        let output = processCommand(command);
+
+                        const outputDiv = document.createElement('div');
+                        outputDiv.className = 'command-output';
+                        outputDiv.innerHTML = `<pre style="white-space:pre-wrap;">${escapeHtml(output)}</pre>`;
+                        terminalOutput.appendChild(outputDiv);
+
+                        terminalOutput.scrollTop = terminalOutput.scrollHeight;
+                        this.value = '';
+                    }
+                }
+            });
+        }
+
+        function processCommand(command) {
+            const lowerCmd = command.toLowerCase();
+
+            if (lowerCmd === 'help') {
+                return `可用命令:
+help            - 顯示此幫助資訊
+dir             - 顯示 dir 模式使用提示
+dns             - 顯示 dns 模式使用提示
+vhost           - 顯示 vhost 模式使用提示
+fuzz            - 顯示 fuzz 模式使用提示
+clear           - 清除終端
+範例命令（可直接貼上）:
+gobuster dir -u http://example.com -w /usr/share/wordlists/dirb/common.txt
+gobuster dns -d example.com -w /usr/share/seclists/Discovery/DNS/subdomains-top1million-5000.txt
+gobuster vhost -u http://example.com -w /usr/share/seclists/Discovery/DNS/subdomains-top1million-110000.txt --append-domain
+gobuster fuzz -u "http://example.com/FUZZ" -w /usr/share/wordlists/dirb/common.txt`;
+            } else if (lowerCmd === 'clear') {
+                document.getElementById('terminal-output').innerHTML = '';
+                return '';
+            } else if (lowerCmd.startsWith('gobuster dir')) {
+                return `Gobuster v3.X
+===============================================================
+[+] URL:            http://example.com
+[+] Method:         GET
+[+] Threads:        30
+[+] Wordlist:       /usr/share/wordlists/dirb/common.txt
+[+] Status codes:   200,301,302
+===============================================================
+/admin               (Status: 302)  -> /login
+/images              (Status: 301)  -> /images/
+/uploads             (Status: 403)
+/index.html          (Status: 200)  [Size: 4212]
+/server-status       (Status: 403)
+===============================================================
+Finished
+Total requests: 4612  | Elapsed time: 00:01:37`;
+            } else if (lowerCmd.startsWith('gobuster dns')) {
+                return `Gobuster v3.X
+===============================================================
+[+] Domain:         example.com
+[+] Threads:        100
+[+] Wordlist:       /usr/share/seclists/.../subdomains-top1million-5000.txt
+===============================================================
+Found: dev.example.com           93.184.216.34
+Found: staging.example.com       93.184.216.34
+Found: cdn.example.com           203.0.113.10
+Found: api.example.com           93.184.216.34
+===============================================================
+Finished | Total requests: 5000 | Wildcard: false`;
+            } else if (lowerCmd.startsWith('gobuster vhost')) {
+                return `Gobuster v3.X
+===============================================================
+[+] VHost URL:      http://example.com
+[+] Wordlist:       /usr/share/seclists/.../subdomains-top1million-110000.txt
+===============================================================
+Found: billing.example.com       (Status: 200) [VHost Match]
+Found: internal.example.com      (Status: 401) [VHost Match]
+Found: legacy.example.com        (Status: 302) [VHost Match]
+===============================================================
+Finished | Total requests: 12000`;
+            } else if (lowerCmd.startsWith('gobuster fuzz')) {
+                return `Gobuster v3.X
+===============================================================
+[+] Fuzz URL:       http://example.com/FUZZ
+[+] Wordlist:       /usr/share/wordlists/dirb/common.txt
+===============================================================
+/debug               (Status: 403)
+/health              (Status: 200)  [Size: 18]
+/metrics             (Status: 200)  [Size: 1247]
+/backup              (Status: 301)  -> /backup/
+/.git                (Status: 403)
+===============================================================
+Finished | Total requests: 4612 | Time: 00:01:15`;
+            } else if (lowerCmd === 'dir') {
+                return `dir 模式：針對 URL 以字典嘗試目錄/檔案。
+範例：gobuster dir -u http://target -w /path/words.txt -x php,html -s 200,302 -t 50 -o out.txt`;
+            } else if (lowerCmd === 'dns') {
+                return `dns 模式：以字典枚舉子網域。
+範例：gobuster dns -d example.com -w /path/subs.txt -t 100 -o dns.txt`;
+            } else if (lowerCmd === 'vhost') {
+                return `vhost 模式：透過 Host 標頭測試虛擬主機。
+範例：gobuster vhost -u http://example.com -w /path/vhosts.txt --append-domain -o vhost.txt`;
+            } else if (lowerCmd === 'fuzz') {
+                return `fuzz 模式：以 FUZZ 為替換位點進行模糊測試。
+範例：gobuster fuzz -u "http://example.com/FUZZ" -w /path/words.txt -o fuzz.txt`;
+            } else {
+                return `命令 "${command}" 未找到，輸入 "help" 查看可用命令`;
+            }
+        }
+
+        // HTML escape helper
+        function escapeHtml(str){
+            return str.replace(/[&<>"']/g, function(m){
+                return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[m];
+            });
+        }
+
+        // 設置命令複製按鈕
+        function setupCopyButtons() {
+            document.querySelectorAll('.command').forEach(cmd => {
+                cmd.addEventListener('click', function() {
+                    const commandText = this.textContent.trim();
+                    copyToClipboard(commandText);
+                    showTooltip(this, '已複製到剪貼簿!');
+                });
+
+                cmd.addEventListener('keydown', function(e) {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                        const commandText = this.textContent.trim();
+                        copyToClipboard(commandText);
+                        showTooltip(this, '已複製到剪貼簿!');
+                    }
+                });
+            });
+
+            document.querySelectorAll('.btn-copy').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const command = this.getAttribute('data-cmd');
+                    copyToClipboard(command);
+                    showTooltip(this, '命令已複製!');
+                });
+            });
+        }
+
+        // 複製到剪貼簿
+        function copyToClipboard(text) {
+            const textarea = document.createElement('textarea');
+            textarea.value = text;
+            document.body.appendChild(textarea);
+            textarea.select();
+            document.execCommand('copy');
+            document.body.removeChild(textarea);
+        }
+
+        // 顯示工具提示
+        function showTooltip(element, message) {
+            const tooltip = document.createElement('div');
+            tooltip.className = 'custom-tooltip';
+            tooltip.textContent = message;
+            tooltip.style.position = 'absolute';
+            tooltip.style.backgroundColor = 'rgba(0,0,0,0.9)';
+            tooltip.style.color = 'white';
+            tooltip.style.padding = '5px 10px';
+            tooltip.style.borderRadius = '4px';
+            tooltip.style.zIndex = '1000';
+            tooltip.style.fontSize = '0.9rem';
+
+            const rect = element.getBoundingClientRect();
+            tooltip.style.left = `${rect.left}px`;
+            tooltip.style.top = `${rect.top - 35}px`;
+
+            document.body.appendChild(tooltip);
+
+            setTimeout(() => {
+                tooltip.style.opacity = '0';
+                tooltip.style.transition = 'opacity 0.5s';
+                setTimeout(() => tooltip.remove(), 500);
+            }, 1500);
+        }
+
+        // 標籤頁切換功能
+        function openTab(evt, tabName) {
+            const tabContents = document.getElementsByClassName("tab-content");
+            for (let i = 0; i < tabContents.length; i++) {
+                tabContents[i].classList.remove("active");
+            }
+
+            const tabs = document.getElementsByClassName("tab");
+            for (let i = 0; i < tabs.length; i++) {
+                tabs[i].classList.remove("active");
+            }
+
+            document.getElementById(tabName).classList.add("active");
+            evt.currentTarget.classList.add("active");
+
+            // 更新進度
+            updateProgress();
+        }
+
+        // 測驗功能
+        function checkAnswer(selectedOption, isCorrect) {
+            const feedbackId = selectedOption.parentElement.querySelector('p[id^="quiz-feedback"]').id;
+            const feedbackElement = document.getElementById(feedbackId);
+            const explanation = selectedOption.parentElement.nextElementSibling;
+
+            selectedOption.parentElement.querySelectorAll('.quiz-option').forEach(opt => {
+                opt.style.backgroundColor = '';
+                opt.style.borderLeft = '';
+            });
+
+            if (isCorrect) {
+                selectedOption.style.backgroundColor = 'rgba(76, 175, 80, 0.3)';
+                selectedOption.style.borderLeft = '4px solid var(--success)';
+                feedbackElement.textContent = '✓ 正確!';
+
+                if (explanation && explanation.classList.contains('explanation')) {
+                    explanation.style.display = 'block';
+                }
+            } else {
+                selectedOption.style.backgroundColor = 'rgba(244, 67, 54, 0.3)';
+                selectedOption.style.borderLeft = '4px solid var(--danger)';
+                feedbackElement.textContent = '✗ 不正確，請再試一次。';
+            }
+
+            feedbackElement.style.display = 'block';
+
+            if (isCorrect) {
+                updateProgress();
+            }
+        }
+
+        // 保存進度功能
+        function saveProgress() {
+            const progress = document.getElementById('learning-progress').style.width;
+            localStorage.setItem('gobusterProgress', progress);
+
+            // 保存完成的測驗
+            const completedQuizzes = [];
+            document.querySelectorAll('.quiz-option[style*="background-color: rgba(76, 175, 80, 0.3)"]').forEach(opt => {
+                completedQuizzes.push(opt.textContent.trim());
+            });
+            localStorage.setItem('gobusterCompletedQuizzes', JSON.stringify(completedQuizzes));
+
+            const saveButton = document.querySelector('.save-progress');
+            const originalText = saveButton.textContent;
+            saveButton.textContent = '✓ 進度已保存';
+            saveButton.style.backgroundColor = '#3d8b40';
+
+            setTimeout(() => {
+                saveButton.textContent = originalText;
+                saveButton.style.backgroundColor = '';
+            }, 2000);
+        }
+
+        // 更新學習進度
+        function updateProgress() {
+            const completedQuizzes = document.querySelectorAll('.quiz-option[style*="background-color: rgba(76, 175, 80, 0.3)"]').length;
+            const progress = Math.min(100, 20 + (completedQuizzes * 15));
+            document.getElementById('learning-progress').style.width = `${progress}%`;
+
+            const progressSteps = document.querySelectorAll('.progress-steps li');
+
+            if (progress >= 30) {
+                progressSteps[2].classList.add('active');
+                progressSteps[1].classList.remove('active');
+                progressSteps[1].classList.add('completed');
+            }
+            if (progress >= 45) {
+                progressSteps[3].classList.add('active');
+                progressSteps[2].classList.remove('active');
+                progressSteps[2].classList.add('completed');
+            }
+            if (progress >= 60) {
+                progressSteps[4].classList.add('active');
+                progressSteps[3].classList.remove('active');
+                progressSteps[3].classList.add('completed');
+            }
+            if (progress >= 75) {
+                progressSteps[5].classList.add('active');
+                progressSteps[4].classList.remove('active');
+                progressSteps[4].classList.add('completed');
+            }
+        }
+
+        // 綁定保存進度按鈕
+        document.querySelector('.save-progress').addEventListener('click', saveProgress);
+    </script>
+</body>
+</html>

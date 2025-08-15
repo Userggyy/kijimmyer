@@ -1,0 +1,698 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WhatWeb 新手教學 | 資安學習平台</title>
+    <meta name="description" content="WhatWeb 指紋辨識工具完整教學，從安裝、基本指令到插件、輸出與防禦">
+    <style>
+        :root {
+            --primary: #2a3b4d;
+            --secondary: #3a6ea5;
+            --accent: #ff7f50;
+            --light: #ffffff;
+            --dark: #1a2a3a;
+            --success: #4CAF50;
+            --warning: #FFC107;
+            --danger: #F44336;
+            --text-primary: #ffffff;
+            --text-secondary: #e0e0e0;
+            --bg-gradient: radial-gradient(ellipse at bottom, #1B2735 0%, #090A0F 100%);
+        }
+        
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body { background: var(--bg-gradient); color: var(--text-primary); line-height: 1.6; min-height: 100vh; }
+        .skip-link { position: absolute; top: -40px; left: 0; background: var(--secondary); color: white; padding: 8px; z-index: 100; transition: top 0.3s; }
+        .skip-link:focus { top: 0; }
+        .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+        header { background: linear-gradient(135deg, var(--primary), var(--secondary)); padding: 2rem 0; text-align: center; border-bottom: 4px solid var(--accent); margin-bottom: 2rem; border-radius: 0 0 10px 10px; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3); position: relative; }
+        header h1 { font-size: 2.5rem; margin-bottom: 0.5rem; color: white; text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5); }
+        header p { font-size: 1.1rem; color: rgba(255, 255, 255, 0.9); max-width: 800px; margin: 0 auto; }
+        nav { background-color: var(--dark); padding: 1rem; border-radius: 8px; margin-bottom: 2rem; box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2); }
+        nav ul { display: flex; justify-content: center; list-style: none; flex-wrap: wrap; }
+        nav li { margin: 0 15px; }
+        nav a { color: var(--light); text-decoration: none; font-weight: 500; padding: 5px 10px; border-radius: 4px; transition: all 0.3s ease; }
+        nav a:hover, nav a:focus { background-color: var(--secondary); color: white; outline: none; }
+        section { background: rgba(30, 30, 30, 0.8); backdrop-filter: blur(10px); border-radius: 8px; padding: 2rem; margin-bottom: 2rem; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.25); border-left: 4px solid var(--secondary); border: 1px solid rgba(58, 110, 165, 0.3); }
+        h2 { color: var(--accent); margin-bottom: 1.5rem; font-size: 1.8rem; border-bottom: 2px solid var(--secondary); padding-bottom: 0.5rem; display: inline-block; }
+        h3 { color: var(--light); margin: 1.5rem 0 1rem; font-size: 1.4rem; }
+        p { margin-bottom: 1rem; color: var(--text-secondary); }
+        .terminal { background-color: #000000; color: #00ff00; padding: 1.5rem; border-radius: 8px; font-family: 'Courier New', Courier, monospace; margin: 1.5rem 0; position: relative; border: 1px solid #333; box-shadow: inset 0 0 10px rgba(0, 255, 0, 0.1); overflow-x: auto; }
+        .terminal:before { content: "Terminal"; position: absolute; top: -10px; left: 15px; background-color: #000; color: #00ff00; padding: 0 10px; font-size: 0.8rem; border: 1px solid #333; border-bottom: none; border-radius: 5px 5px 0 0; }
+        .command { color: #00ffff; font-weight: bold; cursor: pointer; transition: all 0.3s ease; position: relative; display: inline-block; padding: 2px 5px; border-radius: 3px; }
+        .command:hover { text-shadow: 0 0 8px rgba(0, 255, 255, 0.7); }
+        .command:after { content: ''; position: absolute; bottom: -2px; left: 0; width: 0; height: 2px; background: var(--accent); transition: width 0.3s; }
+        .command:hover:after { width: 100%; }
+        .option { color: #ffa500; }
+        .comment { color: #888; font-style: italic; }
+        .note { background-color: rgba(58, 110, 165, 0.2); border-left: 4px solid var(--secondary); padding: 1rem; margin: 1.5rem 0; border-radius: 0 4px 4px 0; }
+        .warning { background-color: rgba(255, 193, 7, 0.2); border-left: 4px solid var(--warning); padding: 1rem; margin: 1.5rem 0; border-radius: 0 4px 4px 0; }
+        .danger { background-color: rgba(244, 67, 54, 0.2); border-left: 4px solid var(--danger); padding: 1rem; margin: 1.5rem 0; border-radius: 0 4px 4px 0; }
+        .example { background-color: rgba(42, 59, 77, 0.3); padding: 1.5rem; border-radius: 8px; margin: 1.5rem 0; border: 1px dashed var(--secondary); }
+        .example h4 { color: var(--accent); margin-bottom: 1rem; }
+        .quiz { background-color: rgba(42, 59, 77, 0.5); padding: 1.5rem; border-radius: 8px; margin: 1.5rem 0; border: 1px solid var(--secondary); }
+        .quiz h4 { color: var(--accent); margin-bottom: 1rem; }
+        .quiz-option { display: block; margin: 0.5rem 0; padding: 0.5rem; background-color: rgba(255, 255, 255, 0.1); border-radius: 4px; cursor: pointer; transition: all 0.2s; }
+        .quiz-option:hover, .quiz-option:focus { background-color: rgba(255, 255, 255, 0.2); outline: 2px solid var(--accent); }
+        .btn { display: inline-block; background-color: var(--secondary); color: white; padding: 0.5rem 1rem; border-radius: 4px; text-decoration: none; font-weight: bold; transition: all 0.3s; border: none; cursor: pointer; margin-top: 0.5rem; }
+        .btn:hover, .btn:focus { background-color: var(--accent); transform: translateY(-2px); box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); outline: none; }
+        .btn:active { transform: translateY(0); }
+        footer { text-align: center; padding: 2rem 0; margin-top: 2rem; color: #888; font-size: 0.9rem; border-top: 1px solid #333; }
+        .progress-tracker { background: rgba(30, 30, 30, 0.8); padding: 1.5rem; border-radius: 8px; margin-bottom: 2rem; border-left: 4px solid var(--accent); }
+        .progress-tracker h3 { margin-top: 0; color: var(--accent); }
+        .progress-bar { height: 10px; background: rgba(255, 255, 255, 0.1); border-radius: 5px; margin: 1rem 0; overflow: hidden; }
+        .progress { height: 100%; background: linear-gradient(90deg, var(--secondary), var(--accent)); width: 20%; transition: width 0.5s ease; }
+        .progress-steps { display: flex; justify-content: space-between; list-style: none; padding: 0; }
+        .progress-steps li { text-align: center; position: relative; flex: 1; padding-top: 25px; color: #888; }
+        .progress-steps li:before { content: ''; position: absolute; top: 0; left: 50%; transform: translateX(-50%); width: 20px; height: 20px; border-radius: 50%; background: #333; border: 3px solid #333; }
+        .progress-steps li.completed:before { background: var(--success); border-color: var(--success); }
+        .progress-steps li.active:before { background: var(--accent); border-color: var(--accent); box-shadow: 0 0 0 3px rgba(255, 127, 80, 0.3); }
+        .virtual-lab { background: rgba(30, 30, 30, 0.9); padding: 2rem; border-radius: 8px; margin-bottom: 2rem; border: 1px solid var(--secondary); }
+        .lab-instructions { margin-bottom: 1.5rem; }
+        .lab-instructions ol { margin-left: 1.5rem; }
+        .btn-copy { background: rgba(58, 110, 165, 0.3); color: var(--light); border: 1px solid var(--secondary); border-radius: 4px; padding: 0.2rem 0.5rem; margin-left: 0.5rem; font-size: 0.8rem; cursor: pointer; transition: all 0.2s; }
+        .btn-copy:hover { background: rgba(58, 110, 165, 0.5); }
+        .security-warning { background-color: rgba(255, 0, 0, 0.1); border: 1px solid var(--danger); padding: 1rem; border-radius: 8px; margin: 1rem 0; animation: pulse 2s infinite; }
+        .advanced-section { background: rgba(42, 59, 77, 0.5); border-left: 4px solid var(--accent); padding: 1.5rem; margin: 2rem 0; }
+        .tab-container { display: flex; margin-bottom: -1px; }
+        .tab { padding: 0.8rem 1.5rem; background: rgba(30, 30, 30, 0.7); border: 1px solid #444; border-bottom: none; border-radius: 5px 5px 0 0; cursor: pointer; margin-right: 5px; }
+        .tab.active { background: rgba(30, 30, 30, 0.9); border-color: var(--secondary); color: var(--accent); }
+        .tab-content { display: none; padding: 1.5rem; background: rgba(30, 30, 30, 0.9); border: 1px solid var(--secondary); border-radius: 0 8px 8px 8px; }
+        .tab-content.active { display: block; }
+        .save-progress { background-color: var(--success); color: white; border: none; padding: 0.5rem 1rem; border-radius: 4px; cursor: pointer; margin-top: 1rem; transition: all 0.3s; }
+        .save-progress:hover { background-color: #3d8b40; }
+        .explanation { background-color: rgba(58, 110, 165, 0.2); padding: 1rem; border-radius: 8px; margin: 1rem 0; display: none; }
+        .tag { display: inline-block; padding: 0.2rem 0.5rem; border-radius: 3px; font-size: 0.8rem; font-weight: bold; margin-left: 0.5rem; }
+        .tag-advanced { background-color: rgba(255, 127, 80, 0.2); color: var(--accent); border: 1px solid var(--accent); }
+        .tag-warning { background-color: rgba(255, 193, 7, 0.2); color: var(--warning); border: 1px solid var(--warning); }
+        .case-study { background-color: rgba(42, 59, 77, 0.3); padding: 1.5rem; border-radius: 8px; margin: 1.5rem 0; border-left: 4px solid var(--accent); }
+        @media (max-width: 768px) {
+            nav ul { flex-direction: column; align-items: center; }
+            nav li { margin: 5px 0; }
+            header h1 { font-size: 2rem; }
+            section, .virtual-lab, .progress-tracker { padding: 1.5rem; }
+            .progress-steps { flex-wrap: wrap; }
+            .progress-steps li { flex: 0 0 50%; margin-bottom: 1rem; }
+            .tab-container { flex-wrap: wrap; }
+            .tab { margin-bottom: 5px; border-radius: 5px; border: 1px solid #444; }
+            .tab-content { border-radius: 0 0 8px 8px; }
+        }
+        @media (max-width: 576px) {
+            .terminal { font-size: 0.9rem; padding: 1rem; }
+            .command { white-space: pre-wrap; word-break: break-all; }
+        }
+        :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+        @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(255, 127, 80, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(255, 127, 80, 0); } 100% { box-shadow: 0 0 0 0 rgba(255, 127, 80, 0); } }
+        .pulse { animation: pulse 2s infinite; }
+    </style>
+</head>
+<body>
+    <a href="#main-content" class="skip-link">跳至主要内容</a>
+    
+    <div class="container">
+        <header>
+            <h1>WhatWeb 新手教學</h1>
+            <p>學習如何使用這款網站指紋辨識工具，快速辨識網站使用的技術堆疊、框架與外掛，並了解相對應的防禦與規範</p>
+        </header>
+        
+        <nav aria-label="主要導航">
+            <ul role="menubar">
+                <li role="menuitem"><a href="#introduction">基本介紹</a></li>
+                <li role="menuitem"><a href="#commands">基本指令</a></li>
+                <li role="menuitem"><a href="#examples">實戰範例</a></li>
+                <li role="menuitem"><a href="#advanced">進階技巧</a></li>
+                <li role="menuitem"><a href="#defense">防禦方法</a></li>
+                <li role="menuitem"><a href="#legal">法律規範</a></li>
+            </ul>
+        </nav>
+        
+        <div class="progress-tracker">
+            <h3>您的學習進度</h3>
+            <div class="progress-bar">
+                <div class="progress" id="learning-progress" style="width: 20%"></div>
+            </div>
+            <ul class="progress-steps">
+                <li class="completed">基本介紹</li>
+                <li class="active">基本指令</li>
+                <li>實戰範例</li>
+                <li>進階技巧</li>
+                <li>防禦方法</li>
+                <li>法律規範</li>
+            </ul>
+            <button class="save-progress">保存進度</button>
+        </div>
+        
+        <main id="main-content">
+            <section id="introduction">
+                <h2>WhatWeb 基本介紹</h2>
+                <p>WhatWeb 是一款用於識別網站技術指紋的工具（Web Scanner / Fingerprinter）。它透過 <em>HTTP 標頭、HTML 標記、Cookie、錯誤頁面、回應內容</em> 等各種線索，來判斷網站所使用的 <strong>伺服器、框架、CMS、外掛、程式語言、JavaScript 套件</strong> 等資訊。</p>
+                <div class="note">
+                    <p>與漏洞掃描器不同，WhatWeb 著重在「<strong>辨識</strong>」，不會主動嘗試利用漏洞；但在未經授權環境中大量或高等級偵測仍可能造成風險或被視為未經授權的掃描。</p>
+                </div>
+                <h3>主要特點</h3>
+                <ul aria-label="WhatWeb主要特點">
+                    <li>豐富的 <strong>插件（plugins）</strong>，可偵測上千種技術指紋</li>
+                    <li><strong>偵測等級（Aggression -a）</strong> 可調整深度與風險</li>
+                    <li>支援 <strong>JSON、XML、Grepable</strong> 等輸出，便於整合</li>
+                    <li>可設定 <strong>代理、User-Agent、逾時、執行緒數</strong> 等參數</li>
+                    <li>支援 <strong>清單掃描（-i、--input-file）</strong> 與通配</li>
+                </ul>
+                <h3>安裝方法</h3>
+                <p>Kali Linux 通常已預裝 WhatWeb；若無可使用：</p>
+                <div class="terminal">
+                    <span class="command" tabindex="0" role="button" aria-label="更新套件列表，點擊複製命令">sudo apt update</span><br>
+                    <span class="command" tabindex="0" role="button" aria-label="安裝WhatWeb，點擊複製命令">sudo apt install whatweb</span>
+                </div>
+                <p>確認版本：</p>
+                <div class="terminal">
+                    <span class="command" tabindex="0" role="button" aria-label="顯示WhatWeb版本，點擊複製命令">whatweb --version</span>
+                </div>
+            </section>
+            
+            <section id="commands">
+                <h2>基本指令教學</h2>
+                <p>以下是 WhatWeb 常用參數：</p>
+
+                <h3>最簡單的辨識</h3>
+                <div class="terminal">
+                    <span class="command" tabindex="0" role="button" aria-label="對單一網址進行辨識，點擊複製命令">whatweb http://example.com</span>
+                </div>
+
+                <h3>偵測等級（Aggression）</h3>
+                <p><code>-a</code> 由 1~5（或 0 表示被動）等級：數字越高嘗試越積極（例如發送更多請求或特定 payload）。</p>
+                <div class="terminal">
+                    <span class="comment"># 等級 1：輕量快速</span><br>
+                    <span class="command" tabindex="0" role="button">whatweb -a 1 http://example.com</span><br><br>
+                    <span class="comment"># 等級 3：平衡偵測</span><br>
+                    <span class="command" tabindex="0" role="button">whatweb -a 3 http://example.com</span><br><br>
+                    <span class="comment"># 等級 5：最積極（風險較高）</span><br>
+                    <span class="command" tabindex="0" role="button">whatweb -a 5 http://example.com</span>
+                </div>
+
+                <h3>選擇插件與列出插件</h3>
+                <div class="terminal">
+                    <span class="comment"># 列出所有可用插件</span><br>
+                    <span class="command" tabindex="0" role="button">whatweb --list-plugins</span><br><br>
+                    <span class="comment"># 僅啟用特定插件（逗號分隔）</span><br>
+                    <span class="command" tabindex="0" role="button">whatweb -p http-headers,wordpress,php http://example.com</span>
+                </div>
+
+                <h3>輸出格式與記錄</h3>
+                <div class="terminal">
+                    <span class="comment"># JSON 輸出到檔案</span><br>
+                    <span class="command" tabindex="0" role="button">whatweb --log-json result.json http://example.com</span><br><br>
+                    <span class="comment"># XML 與 Grepable 輸出</span><br>
+                    <span class="command" tabindex="0" role="button">whatweb --log-xml result.xml --log-brief result.grep http://example.com</span><br><br>
+                    <span class="comment"># 詳細輸出（verbosity）</span><br>
+                    <span class="command" tabindex="0" role="button">whatweb -v http://example.com</span>
+                </div>
+
+                <div class="quiz">
+                    <h4>小測驗</h4>
+                    <p>哪個選項可用來調整偵測強度（積極度）？</p>
+                    <div class="quiz-option" tabindex="0" role="button" onclick="checkAnswer(this, true)">-a</div>
+                    <div class="quiz-option" tabindex="0" role="button" onclick="checkAnswer(this, false)">-p</div>
+                    <div class="quiz-option" tabindex="0" role="button" onclick="checkAnswer(this, false)">--log-json</div>
+                    <div class="quiz-option" tabindex="0" role="button" onclick="checkAnswer(this, false)">-v</div>
+                    <p id="quiz-feedback" style="display:none; margin-top:10px; color:var(--accent);"></p>
+                    <div class="explanation">
+                        <p><strong>解析：</strong> <code>-a</code> 控制偵測等級；<code>-p</code> 是插件選擇，<code>--log-json</code> 是輸出，<code>-v</code> 為詳細度。</p>
+                    </div>
+                </div>
+            </section>
+            
+            <section id="examples">
+                <h2>實戰範例</h2>
+
+                <div class="example">
+                    <h4>範例1：掃描單一網站（基本）</h4>
+                    <div class="terminal">
+                        <span class="command" tabindex="0" role="button">whatweb http://example.com</span>
+                    </div>
+                    <p>快速辨識網站伺服器與框架，輸出會包含如 <code>HTTPServer</code>、<code>Country</code>、<code>Title</code> 等插件結果。</p>
+                </div>
+
+                <div class="example">
+                    <h4>範例2：從清單批次掃描</h4>
+                    <div class="terminal">
+                        <span class="comment"># targets.txt 每行一個網址或 IP</span><br>
+                        <span class="command" tabindex="0" role="button">whatweb -i targets.txt --log-json batch.json</span>
+                    </div>
+                    <p>適合企業資產盤點，建議同時設定逾時、執行緒數避免阻塞。</p>
+                </div>
+
+                <div class="example">
+                    <h4>範例3：啟用特定插件與較高偵測等級</h4>
+                    <div class="terminal">
+                        <span class="comment"># 嘗試辨識 CMS、腳本語言與常見安全性標頭</span><br>
+                        <span class="command" tabindex="0" role="button">whatweb -a 3 -p wordpress,php,http-headers,http-security-headers http://testhtml5.vulnweb.com</span>
+                    </div>
+                    <p>透過插件精準鎖定技術堆疊；提高等級會增加請求數量，務必取得授權。</p>
+                </div>
+
+                <div class="case-study">
+                    <h4>實務流程：網站技術盤點</h4>
+                    <ol>
+                        <li>以 <code>-a 1</code> 初探、確認可達性與主要技術</li>
+                        <li>針對重要資產使用 <code>-a 3</code> 與目標插件精掃</li>
+                        <li>以 <code>--log-json</code> 匯出，輸入 SIEM/報表系統</li>
+                        <li>搭配指紋結果交叉驗證（如指紋與實際頁面/標頭一致性）</li>
+                    </ol>
+                </div>
+
+                <div class="warning">
+                    <p>注意：請僅在授權範圍內進行偵測；部分網站的 WAF/速率限制可能將高等級偵測視為惡意流量。</p>
+                </div>
+
+                <div class="quiz">
+                    <h4>小測驗</h4>
+                    <p>若要掃描 100 個網址並將結果以 JSON 存檔，最合適的做法是？</p>
+                    <div class="quiz-option" tabindex="0" role="button" onclick="checkAnswer(this, true)">使用 <code>-i</code> 載入清單並加上 <code>--log-json</code></div>
+                    <div class="quiz-option" tabindex="0" role="button" onclick="checkAnswer(this, false)">逐一手動輸入網址</div>
+                    <div class="quiz-option" tabindex="0" role="button" onclick="checkAnswer(this, false)">只使用 <code>-v</code> 增加輸出詳盡度</div>
+                    <div class="quiz-option" tabindex="0" role="button" onclick="checkAnswer(this, false)">改用 <code>--list-plugins</code> 列表</div>
+                    <p id="quiz-feedback2" style="display:none; margin-top:10px; color:var(--accent);"></p>
+                    <div class="explanation">
+                        <p><strong>解析：</strong> <code>-i</code> 可讀取清單，<code>--log-json</code> 便於後續自動化處理與統計。</p>
+                    </div>
+                </div>
+            </section>
+            
+            <section id="advanced">
+                <h2>進階使用技巧</h2>
+                <div class="security-warning">
+                    <p>⚠️ 僅適用於合法授權的測試；提高積極度、並行與繞過技巧均可能觸發風險控管。</p>
+                </div>
+
+                <div class="tab-container">
+                    <div class="tab active" onclick="openTab(event, 'plugins')">插件策略</div>
+                    <div class="tab" onclick="openTab(event, 'output')">輸出整合</div>
+                    <div class="tab" onclick="openTab(event, 'evasion')">效能與繞避</div>
+                </div>
+
+                <div id="plugins" class="tab-content active">
+                    <h3>選用插件的思路</h3>
+                    <p>以「目標情境」挑選插件能提升準確度與效率：</p>
+                    <ul>
+                        <li><strong>基礎盤點：</strong> <code>http-headers</code>、<code>http-security-headers</code>、<code>country</code>、<code>title</code></li>
+                        <li><strong>CMS/框架：</strong> <code>wordpress</code>、<code>drupal</code>、<code>joomla</code>、<code>rails</code></li>
+                        <li><strong>語言/伺服器：</strong> <code>php</code>、<code>aspnet</code>、<code>java</code>、<code>apache</code>、<code>nginx</code></li>
+                    </ul>
+                    <div class="terminal">
+                        <span class="comment"># 僅啟用與盤點相關的精選插件</span><br>
+                        <span class="command" tabindex="0" role="button">whatweb -a 2 -p http-headers,http-security-headers,title,country http://example.com</span>
+                    </div>
+                    <div class="quiz">
+                        <h4>小測驗</h4>
+                        <p>若只想辨識 CMS 與語言，最佳作法是？</p>
+                        <div class="quiz-option" tabindex="0" role="button" onclick="checkAnswer(this, true)">用 <code>-p</code> 僅啟用 <code>wordpress,drupal,php</code> 等相關插件</div>
+                        <div class="quiz-option" tabindex="0" role="button" onclick="checkAnswer(this, false)">將 <code>-a</code> 設為 5 不選插件</div>
+                        <div class="quiz-option" tabindex="0" role="button" onclick="checkAnswer(this, false)">只使用 <code>-v</code></div>
+                        <div class="quiz-option" tabindex="0" role="button" onclick="checkAnswer(this, false)">使用 <code>--log-xml</code></div>
+                        <p id="quiz-feedback4" style="display:none; margin-top:10px; color:var(--accent);"></p>
+                        <div class="explanation">
+                            <p><strong>解析：</strong> 精準選用插件可降低噪音、加速結果。</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="output" class="tab-content">
+                    <h3>輸出與報表</h3>
+                    <p>建議以 JSON 作為自動化與可視化的主要介面：</p>
+                    <div class="terminal">
+                        <span class="comment"># 同時輸出 JSON 與簡要 grep 檔</span><br>
+                        <span class="command" tabindex="0" role="button">whatweb --log-json out.json --log-brief out.grep http://example.com</span><br><br>
+                        <span class="comment"># XML 輸出（與部分報表工具兼容）</span><br>
+                        <span class="command" tabindex="0" role="button">whatweb --log-xml out.xml http://example.com</span>
+                    </div>
+                    <p>整合建議：將 JSON 導入 ELK/SIEM、以關鍵欄位（插件 → 版本、信心分數）生成儀表板。</p>
+                </div>
+
+                <div id="evasion" class="tab-content">
+                    <h3>效能與繞避技巧</h3>
+                    <p>在合法授權下，以下參數可改善速度或降低被辨識機率：</p>
+                    <div class="terminal">
+                        <span class="comment"># 控制執行緒與逾時</span><br>
+                        <span class="command" tabindex="0" role="button">whatweb --max-threads=10 --open-timeout=5 --read-timeout=8 http://example.com</span><br><br>
+                        <span class="comment"># 變更 User-Agent</span><br>
+                        <span class="command" tabindex="0" role="button">whatweb --user-agent "Mozilla/5.0 (compatible; AuditBot/1.0)" http://example.com</span><br><br>
+                        <span class="comment"># 經由代理（例如 Tor 或公司 Proxy）</span><br>
+                        <span class="command" tabindex="0" role="button">whatweb --proxy http://127.0.0.1:8080 http://example.com</span>
+                    </div>
+                    <p class="note">務必遵循組織之掃描頻率與來源 IP 規範；過高併發可能造成資源耗損或觸發 WAF。</p>
+                </div>
+            </section>
+            
+            <section id="defense">
+                <h2>防禦方法</h2>
+                <p>了解指紋辨識的原理，有助於降低被動資訊外洩：</p>
+                <h3>1. 減少特徵暴露</h3>
+                <ul>
+                    <li>關閉或覆寫 <code>Server</code>、<code>X-Powered-By</code> 等標頭</li>
+                    <li>以 <strong>安全性標頭</strong>（CSP、X-Content-Type-Options、X-Frame-Options）強化資安</li>
+                    <li>隱藏預設頁面、框架版權註記與 <code>robots.txt</code> 敏感路徑</li>
+                </ul>
+                <h3>2. WAF 與速率限制</h3>
+                <p>針對異常 User-Agent、短時間大量請求進行限制或驗證（如 Captcha/行為挑戰）。</p>
+                <h3>3. 資產與版本管理</h3>
+                <p>定期盤點對外服務與版本，避免舊版組件暴露明確指紋。</p>
+
+                <div class="quiz">
+                    <h4>小測驗</h4>
+                    <p>以下哪一項<strong>最直接</strong>降低 WhatWeb 從標頭獲得的資訊？</p>
+                    <div class="quiz-option" tabindex="0" role="button" onclick="checkAnswer(this, true)">移除或覆寫 <code>Server</code>、<code>X-Powered-By</code></div>
+                    <div class="quiz-option" tabindex="0" role="button" onclick="checkAnswer(this, false)">升級瀏覽器</div>
+                    <div class="quiz-option" tabindex="0" role="button" onclick="checkAnswer(this, false)">改用 HTTP/2</div>
+                    <div class="quiz-option" tabindex="0" role="button" onclick="checkAnswer(this, false)">增加網站美觀度</div>
+                    <p id="quiz-feedback5" style="display:none; margin-top:10px; color:var(--accent);"></p>
+                    <div class="explanation">
+                        <p><strong>解析：</strong> 指紋多來自伺服器回應標頭；減少可辨識資訊能直接降低指紋準確度。</p>
+                    </div>
+                </div>
+            </section>
+            
+            <section id="legal">
+                <h2>法律與道德規範</h2>
+                <div class="danger">
+                    <p>重要：未經授權的網站偵測/掃描可能違法。請務必取得<strong>明確書面授權</strong>並遵循組織政策。</p>
+                </div>
+                <h3>合法使用原則</h3>
+                <ul aria-label="合法使用原則">
+                    <li>僅偵測自己擁有或已授權的目標</li>
+                    <li>以最低必要等級 <code>-a</code> 進行、避免干擾營運</li>
+                    <li>對結果妥善保存與保密</li>
+                </ul>
+                <h3>道德黑客準則</h3>
+                <ol aria-label="道德黑客準則">
+                    <li>事前告知與同意</li>
+                    <li>降低影響：控制併發與頻率</li>
+                    <li>尊重隱私與資料保護</li>
+                    <li>負責任揭露與修補協作</li>
+                </ol>
+
+                <div class="quiz">
+                    <h4>小測驗</h4>
+                    <p>在進行批次偵測前，最重要的是什麼？</p>
+                    <div class="quiz-option" tabindex="0" role="button" onclick="checkAnswer(this, true)">取得目標擁有者的書面授權與測試時段</div>
+                    <div class="quiz-option" tabindex="0" role="button" onclick="checkAnswer(this, false)">將 <code>-a</code> 設為 5</div>
+                    <div class="quiz-option" tabindex="0" role="button" onclick="checkAnswer(this, false)">改用最高執行緒數</div>
+                    <div class="quiz-option" tabindex="0" role="button" onclick="checkAnswer(this, false)">只輸出 JSON</div>
+                    <p id="quiz-feedback3" style="display:none; margin-top:10px; color:var(--accent);"></p>
+                    <div class="explanation">
+                        <p><strong>解析：</strong> 合法授權是前提；技術選項都不能取代授權。</p>
+                    </div>
+                </div>
+            </section>
+            
+            <div class="virtual-lab">
+                <div class="security-warning">
+                    <p>⚠️ 注意：此虛擬實驗室僅做<strong>模擬輸出</strong>教學（不會真實連線）。如需實測，請在已授權環境或本機站點進行。</p>
+                </div>
+                <h3>WhatWeb 虛擬實驗室</h3>
+                <div class="lab-instructions">
+                    <p>按照步驟完成實驗：</p>
+                    <ol>
+                        <li>基本辨識 <button class="btn-copy" data-cmd="whatweb http://example.com">複製命令</button></li>
+                        <li>提高偵測等級 <button class="btn-copy" data-cmd="whatweb -a 3 http://example.com">複製命令</button></li>
+                        <li>使用插件 <button class="btn-copy" data-cmd="whatweb -p http-headers,php http://example.com">複製命令</button></li>
+                        <li>輸出 JSON <button class="btn-copy" data-cmd="whatweb --log-json out.json http://example.com">複製命令</button></li>
+                    </ol>
+                </div>
+                <div class="terminal" id="virtual-terminal">
+                    <div class="terminal-header">
+                        <span class="terminal-title">WhatWeb Terminal</span>
+                        <span class="terminal-controls">○ □ ×</span>
+                    </div>
+                    <div class="terminal-body" id="terminal-output">
+                        <div class="welcome-message">
+                            <p>歡迎使用 WhatWeb 虛擬終端</p>
+                            <p>輸入 "help" 查看可用命令</p>
+                            <p>嘗試執行實驗室中的命令</p>
+                        </div>
+                    </div>
+                    <div class="terminal-input-line">
+                        <span class="prompt">whatweb &gt; </span>
+                        <input type="text" class="terminal-input" id="terminal-input" aria-label="終端輸入">
+                    </div>
+                </div>
+            </div>
+        </main>
+        
+        <footer>
+            <p>© 2025 資安教學平台 | 僅供教育用途</p>
+            <p>使用本教學內容前請確保您了解並遵守相關法律法規</p>
+        </footer>
+    </div>
+    
+    <script>
+        // 可訪問性: 頁面加載後設置焦點
+        window.onload = function() {
+            document.querySelector('.skip-link').addEventListener('blur', function() {
+                this.style.top = '-40px';
+            });
+            initVirtualTerminal();
+            setupCopyButtons();
+
+            // 恢復保存的進度（使用 WhatWeb 專用 key）
+            if (localStorage.getItem('whatwebProgress')) {
+                document.getElementById('learning-progress').style.width = localStorage.getItem('whatwebProgress');
+                updateProgress();
+            }
+
+            // 恢復完成的測驗
+            if (localStorage.getItem('completedQuizzesWhatWeb')) {
+                const completedQuizzes = JSON.parse(localStorage.getItem('completedQuizzesWhatWeb'));
+                document.querySelectorAll('.quiz-option').forEach(opt => {
+                    if (completedQuizzes.includes(opt.textContent.trim())) {
+                        opt.style.backgroundColor = 'rgba(76, 175, 80, 0.3)';
+                        opt.style.borderLeft = '4px solid var(--success)';
+                    }
+                });
+            }
+        };
+        
+        // 虛擬終端功能
+        function initVirtualTerminal() {
+            const terminalInput = document.getElementById('terminal-input');
+            const terminalOutput = document.getElementById('terminal-output');
+            
+            terminalInput.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter') {
+                    const command = this.value.trim();
+                    if (command) {
+                        const commandLine = document.createElement('div');
+                        commandLine.className = 'command-line';
+                        commandLine.innerHTML = `<span class="prompt">whatweb &gt; </span>${escapeHtml(command)}`;
+                        terminalOutput.appendChild(commandLine);
+                        
+                        let output = processCommand(command);
+                        
+                        const outputDiv = document.createElement('div');
+                        outputDiv.className = 'command-output';
+                        outputDiv.innerHTML = output;
+                        terminalOutput.appendChild(outputDiv);
+                        
+                        terminalOutput.scrollTop = terminalOutput.scrollHeight;
+                        this.value = '';
+                    }
+                }
+            });
+        }
+
+        function escapeHtml(str){
+            return str.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+        }
+        
+        function processCommand(command) {
+            const lowerCmd = command.toLowerCase();
+
+            if (lowerCmd === 'help') {
+                return `可用命令:
+help - 顯示此幫助信息
+scan - 基本辨識
+aggr - 示範偵測等級
+plugins - 插件示例
+output - 輸出示例
+clear - 清除終端`;
+            } else if (lowerCmd === 'clear') {
+                document.getElementById('terminal-output').innerHTML = '';
+                return '';
+            } else if (lowerCmd.startsWith('whatweb --version')) {
+                return `WhatWeb version 0.5.5 (模擬)
+Copyright (C) WhatWeb contributors`;
+            } else if (lowerCmd.startsWith('whatweb --list-plugins')) {
+                return `模擬插件列表（節錄）:
+- http-headers
+- http-security-headers
+- title
+- country
+- apache
+- nginx
+- php
+- wordpress
+- drupal
+...（更多略）`;
+            } else if (lowerCmd.includes('whatweb http://example.com') || lowerCmd.includes('whatweb https://example.com')) {
+                return `http://example.com [ HTTPServer: (ECS)  | Title: Example Domain | Country: US ]`;
+            } else if (lowerCmd.includes('whatweb -a 3 http://example.com')) {
+                return `http://example.com
+[ HTTPServer: (ECS) | Title: Example Domain | Country: US | X-Frame-Options: present | X-Content-Type-Options: nosniff ]`;
+            } else if (lowerCmd.includes('whatweb -p http-headers,php http://example.com')) {
+                return `http://example.com [ http-headers: present | PHP: Not detected ]`;
+            } else if (lowerCmd.includes('whatweb --log-json')) {
+                return `已輸出 JSON（模擬）：out.json`;
+            } else if (lowerCmd === 'scan') {
+                return `基本辨識命令範例: whatweb http://example.com`;
+            } else if (lowerCmd === 'aggr') {
+                return `偵測等級範例: whatweb -a 1|3|5 http://example.com`;
+            } else if (lowerCmd === 'plugins') {
+                return `插件命令範例:
+whatweb --list-plugins
+whatweb -p http-headers,wordpress,php http://example.com`;
+            } else if (lowerCmd === 'output') {
+                return `輸出命令範例:
+whatweb --log-json out.json http://example.com
+whatweb --log-xml out.xml http://example.com`;
+            } else {
+                return `命令 "${escapeHtml(command)}" 未找到，輸入 "help" 查看可用命令`;
+            }
+        }
+        
+        // 設置命令複製按鈕
+        function setupCopyButtons() {
+            document.querySelectorAll('.command').forEach(cmd => {
+                cmd.addEventListener('click', function() {
+                    const commandText = this.textContent.trim();
+                    copyToClipboard(commandText);
+                    showTooltip(this, '已複製到剪貼簿!');
+                });
+                cmd.addEventListener('keydown', function(e) {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                        const commandText = this.textContent.trim();
+                        copyToClipboard(commandText);
+                        showTooltip(this, '已複製到剪貼簿!');
+                    }
+                });
+            });
+            document.querySelectorAll('.btn-copy').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const command = this.getAttribute('data-cmd');
+                    copyToClipboard(command);
+                    showTooltip(this, '命令已複製!');
+                });
+            });
+        }
+        
+        // 複製到剪貼簿
+        function copyToClipboard(text) {
+            const textarea = document.createElement('textarea');
+            textarea.value = text;
+            document.body.appendChild(textarea);
+            textarea.select();
+            document.execCommand('copy');
+            document.body.removeChild(textarea);
+        }
+        
+        // 顯示工具提示
+        function showTooltip(element, message) {
+            const tooltip = document.createElement('div');
+            tooltip.className = 'custom-tooltip';
+            tooltip.textContent = message;
+            tooltip.style.position = 'absolute';
+            tooltip.style.backgroundColor = 'rgba(0,0,0,0.9)';
+            tooltip.style.color = 'white';
+            tooltip.style.padding = '5px 10px';
+            tooltip.style.borderRadius = '4px';
+            tooltip.style.zIndex = '1000';
+            tooltip.style.fontSize = '0.9rem';
+            
+            const rect = element.getBoundingClientRect();
+            tooltip.style.left = `${rect.left}px`;
+            tooltip.style.top = `${rect.top - 35}px`;
+            
+            document.body.appendChild(tooltip);
+            
+            setTimeout(() => {
+                tooltip.style.opacity = '0';
+                tooltip.style.transition = 'opacity 0.5s';
+                setTimeout(() => tooltip.remove(), 500);
+            }, 1500);
+        }
+        
+        // 標籤頁切換功能
+        function openTab(evt, tabName) {
+            const tabContents = document.getElementsByClassName("tab-content");
+            for (let i = 0; i < tabContents.length; i++) {
+                tabContents[i].classList.remove("active");
+            }
+            const tabs = document.getElementsByClassName("tab");
+            for (let i = 0; i < tabs.length; i++) {
+                tabs[i].classList.remove("active");
+            }
+            document.getElementById(tabName).classList.add("active");
+            evt.currentTarget.classList.add("active");
+            updateProgress();
+        }
+        
+        // 測驗功能
+        function checkAnswer(selectedOption, isCorrect) {
+            const feedbackId = selectedOption.parentElement.querySelector('p[id^="quiz-feedback"]').id;
+            const feedbackElement = document.getElementById(feedbackId);
+            const explanation = selectedOption.parentElement.nextElementSibling;
+            
+            selectedOption.parentElement.querySelectorAll('.quiz-option').forEach(opt => {
+                opt.style.backgroundColor = '';
+                opt.style.borderLeft = '';
+            });
+            
+            if (isCorrect) {
+                selectedOption.style.backgroundColor = 'rgba(76, 175, 80, 0.3)';
+                selectedOption.style.borderLeft = '4px solid var(--success)';
+                feedbackElement.textContent = '✓ 正確!';
+                if (explanation && explanation.classList.contains('explanation')) {
+                    explanation.style.display = 'block';
+                }
+            } else {
+                selectedOption.style.backgroundColor = 'rgba(244, 67, 54, 0.3)';
+                selectedOption.style.borderLeft = '4px solid var(--danger)';
+                feedbackElement.textContent = '✗ 不正確，請再試一次。';
+            }
+            feedbackElement.style.display = 'block';
+            if (isCorrect) updateProgress();
+        }
+        
+        // 保存進度功能
+        function saveProgress() {
+            const progress = document.getElementById('learning-progress').style.width;
+            localStorage.setItem('whatwebProgress', progress);
+            const completedQuizzes = [];
+            document.querySelectorAll('.quiz-option[style*="background-color: rgba(76, 175, 80, 0.3)"]').forEach(opt => {
+                completedQuizzes.push(opt.textContent.trim());
+            });
+            localStorage.setItem('completedQuizzesWhatWeb', JSON.stringify(completedQuizzes));
+            const saveButton = document.querySelector('.save-progress');
+            const originalText = saveButton.textContent;
+            saveButton.textContent = '✓ 進度已保存';
+            saveButton.style.backgroundColor = '#3d8b40';
+            setTimeout(() => {
+                saveButton.textContent = originalText;
+                saveButton.style.backgroundColor = '';
+            }, 2000);
+        }
+        
+        // 更新學習進度
+        function updateProgress() {
+            const completedQuizzes = document.querySelectorAll('.quiz-option[style*="background-color: rgba(76, 175, 80, 0.3)"]').length;
+            const progress = Math.min(100, 20 + (completedQuizzes * 15));
+            document.getElementById('learning-progress').style.width = `${progress}%`;
+            const progressSteps = document.querySelectorAll('.progress-steps li');
+            if (progress >= 30) { progressSteps[2].classList.add('active'); progressSteps[1].classList.remove('active'); progressSteps[1].classList.add('completed'); }
+            if (progress >= 45) { progressSteps[3].classList.add('active'); progressSteps[2].classList.remove('active'); progressSteps[2].classList.add('completed'); }
+            if (progress >= 60) { progressSteps[4].classList.add('active'); progressSteps[3].classList.remove('active'); progressSteps[3].classList.add('completed'); }
+            if (progress >= 75) { progressSteps[5].classList.add('active'); progressSteps[4].classList.remove('active'); progressSteps[4].classList.add('completed'); }
+        }
+        
+        document.querySelector('.save-progress').addEventListener('click', saveProgress);
+    </script>
+</body>
+</html>

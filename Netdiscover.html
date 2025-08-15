@@ -1,0 +1,699 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Netdiscover 新手教學 | 資安學習平台</title>
+    <meta name="description" content="Netdiscover 區域網路主機發現工具完整教學，從基礎到進階使用技巧">
+    <style>
+        :root {
+            --primary: #2a3b4d;
+            --secondary: #3a6ea5;
+            --accent: #ff7f50;
+            --light: #ffffff;
+            --dark: #1a2a3a;
+            --success: #4CAF50;
+            --warning: #FFC107;
+            --danger: #F44336;
+            --text-primary: #ffffff;
+            --text-secondary: #e0e0e0;
+            --bg-gradient: radial-gradient(ellipse at bottom, #1B2735 0%, #090A0F 100%);
+        }
+        
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body { background: var(--bg-gradient); color: var(--text-primary); line-height: 1.6; min-height: 100vh; }
+        .skip-link { position: absolute; top: -40px; left: 0; background: var(--secondary); color: white; padding: 8px; z-index: 100; transition: top 0.3s; }
+        .skip-link:focus { top: 0; }
+        .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+        header { background: linear-gradient(135deg, var(--primary), var(--secondary)); padding: 2rem 0; text-align: center; border-bottom: 4px solid var(--accent); margin-bottom: 2rem; border-radius: 0 0 10px 10px; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3); position: relative; }
+        header h1 { font-size: 2.5rem; margin-bottom: 0.5rem; color: white; text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5); }
+        header p { font-size: 1.1rem; color: rgba(255, 255, 255, 0.9); max-width: 800px; margin: 0 auto; }
+        nav { background-color: var(--dark); padding: 1rem; border-radius: 8px; margin-bottom: 2rem; box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2); }
+        nav ul { display: flex; justify-content: center; list-style: none; flex-wrap: wrap; }
+        nav li { margin: 0 15px; }
+        nav a { color: var(--light); text-decoration: none; font-weight: 500; padding: 5px 10px; border-radius: 4px; transition: all 0.3s ease; }
+        nav a:hover, nav a:focus { background-color: var(--secondary); color: white; outline: none; }
+        section { background: rgba(30, 30, 30, 0.8); backdrop-filter: blur(10px); border-radius: 8px; padding: 2rem; margin-bottom: 2rem; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.25); border-left: 4px solid var(--secondary); border: 1px solid rgba(58, 110, 165, 0.3); }
+        h2 { color: var(--accent); margin-bottom: 1.5rem; font-size: 1.8rem; border-bottom: 2px solid var(--secondary); padding-bottom: 0.5rem; display: inline-block; }
+        h3 { color: var(--light); margin: 1.5rem 0 1rem; font-size: 1.4rem; }
+        p { margin-bottom: 1rem; color: var(--text-secondary); }
+        .terminal { background-color: #000000; color: #00ff00; padding: 1.5rem; border-radius: 8px; font-family: 'Courier New', Courier, monospace; margin: 1.5rem 0; position: relative; border: 1px solid #333; box-shadow: inset 0 0 10px rgba(0, 255, 0, 0.1); overflow-x: auto; }
+        .terminal:before { content: "Terminal"; position: absolute; top: -10px; left: 15px; background-color: #000; color: #00ff00; padding: 0 10px; font-size: 0.8rem; border: 1px solid #333; border-bottom: none; border-radius: 5px 5px 0 0; }
+        .command { color: #00ffff; font-weight: bold; cursor: pointer; transition: all 0.3s ease; position: relative; display: inline-block; padding: 2px 5px; border-radius: 3px; }
+        .command:hover { text-shadow: 0 0 8px rgba(0, 255, 255, 0.7); }
+        .command:after { content: ''; position: absolute; bottom: -2px; left: 0; width: 0; height: 2px; background: var(--accent); transition: width 0.3s; }
+        .command:hover:after { width: 100%; }
+        .option { color: #ffa500; }
+        .comment { color: #888; font-style: italic; }
+        .note { background-color: rgba(58, 110, 165, 0.2); border-left: 4px solid var(--secondary); padding: 1rem; margin: 1.5rem 0; border-radius: 0 4px 4px 0; }
+        .warning { background-color: rgba(255, 193, 7, 0.2); border-left: 4px solid var(--warning); padding: 1rem; margin: 1.5rem 0; border-radius: 0 4px 4px 0; }
+        .danger { background-color: rgba(244, 67, 54, 0.2); border-left: 4px solid var(--danger); padding: 1rem; margin: 1.5rem 0; border-radius: 0 4px 4px 0; }
+        .example { background-color: rgba(42, 59, 77, 0.3); padding: 1.5rem; border-radius: 8px; margin: 1.5rem 0; border: 1px dashed var(--secondary); }
+        .example h4 { color: var(--accent); margin-bottom: 1rem; }
+        .quiz { background-color: rgba(42, 59, 77, 0.5); padding: 1.5rem; border-radius: 8px; margin: 1.5rem 0; border: 1px solid var(--secondary); }
+        .quiz h4 { color: var(--accent); margin-bottom: 1rem; }
+        .quiz-option { display: block; margin: 0.5rem 0; padding: 0.5rem; background-color: rgba(255, 255, 255, 0.1); border-radius: 4px; cursor: pointer; transition: all 0.2s; }
+        .quiz-option:hover, .quiz-option:focus { background-color: rgba(255, 255, 255, 0.2); outline: 2px solid var(--accent); }
+        .btn { display: inline-block; background-color: var(--secondary); color: white; padding: 0.5rem 1rem; border-radius: 4px; text-decoration: none; font-weight: bold; transition: all 0.3s; border: none; cursor: pointer; margin-top: 0.5rem; }
+        .btn:hover, .btn:focus { background-color: var(--accent); transform: translateY(-2px); box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); outline: none; }
+        .btn:active { transform: translateY(0); }
+        footer { text-align: center; padding: 2rem 0; margin-top: 2rem; color: #888; font-size: 0.9rem; border-top: 1px solid #333; }
+        .progress-tracker { background: rgba(30, 30, 30, 0.8); padding: 1.5rem; border-radius: 8px; margin-bottom: 2rem; border-left: 4px solid var(--accent); }
+        .progress-tracker h3 { margin-top: 0; color: var(--accent); }
+        .progress-bar { height: 10px; background: rgba(255, 255, 255, 0.1); border-radius: 5px; margin: 1rem 0; overflow: hidden; }
+        .progress { height: 100%; background: linear-gradient(90deg, var(--secondary), var(--accent)); width: 20%; transition: width 0.5s ease; }
+        .progress-steps { display: flex; justify-content: space-between; list-style: none; padding: 0; }
+        .progress-steps li { text-align: center; position: relative; flex: 1; padding-top: 25px; color: #888; }
+        .progress-steps li:before { content: ''; position: absolute; top: 0; left: 50%; transform: translateX(-50%); width: 20px; height: 20px; border-radius: 50%; background: #333; border: 3px solid #333; }
+        .progress-steps li.completed:before { background: var(--success); border-color: var(--success); }
+        .progress-steps li.active:before { background: var(--accent); border-color: var(--accent); box-shadow: 0 0 0 3px rgba(255, 127, 80, 0.3); }
+        .virtual-lab { background: rgba(30, 30, 30, 0.9); padding: 2rem; border-radius: 8px; margin-bottom: 2rem; border: 1px solid var(--secondary); }
+        .lab-instructions { margin-bottom: 1.5rem; }
+        .lab-instructions ol { margin-left: 1.5rem; }
+        .btn-copy { background: rgba(58, 110, 165, 0.3); color: var(--light); border: 1px solid var(--secondary); border-radius: 4px; padding: 0.2rem 0.5rem; margin-left: 0.5rem; font-size: 0.8rem; cursor: pointer; transition: all 0.2s; }
+        .btn-copy:hover { background: rgba(58, 110, 165, 0.5); }
+        .security-warning { background-color: rgba(255, 0, 0, 0.1); border: 1px solid var(--danger); padding: 1rem; border-radius: 8px; margin: 1rem 0; animation: pulse 2s infinite; }
+        .advanced-section { background: rgba(42, 59, 77, 0.5); border-left: 4px solid var(--accent); padding: 1.5rem; margin: 2rem 0; }
+        .tab-container { display: flex; margin-bottom: -1px; }
+        .tab { padding: 0.8rem 1.5rem; background: rgba(30, 30, 30, 0.7); border: 1px solid #444; border-bottom: none; border-radius: 5px 5px 0 0; cursor: pointer; margin-right: 5px; }
+        .tab.active { background: rgba(30, 30, 30, 0.9); border-color: var(--secondary); color: var(--accent); }
+        .tab-content { display: none; padding: 1.5rem; background: rgba(30, 30, 30, 0.9); border: 1px solid var(--secondary); border-radius: 0 8px 8px 8px; }
+        .tab-content.active { display: block; }
+        .save-progress { background-color: var(--success); color: white; border: none; padding: 0.5rem 1rem; border-radius: 4px; cursor: pointer; margin-top: 1rem; transition: all 0.3s; }
+        .save-progress:hover { background-color: #3d8b40; }
+        .explanation { background-color: rgba(58, 110, 165, 0.2); padding: 1rem; border-radius: 8px; margin: 1rem 0; display: none; }
+        .tag { display: inline-block; padding: 0.2rem 0.5rem; border-radius: 3px; font-size: 0.8rem; font-weight: bold; margin-left: 0.5rem; }
+        .tag-advanced { background-color: rgba(255, 127, 80, 0.2); color: var(--accent); border: 1px solid var(--accent); }
+        .tag-warning { background-color: rgba(255, 193, 7, 0.2); color: var(--warning); border: 1px solid var(--warning); }
+        .case-study { background-color: rgba(42, 59, 77, 0.3); padding: 1.5rem; border-radius: 8px; margin: 1.5rem 0; border-left: 4px solid var(--accent); }
+        @media (max-width: 768px) {
+            nav ul { flex-direction: column; align-items: center; }
+            nav li { margin: 5px 0; }
+            header h1 { font-size: 2rem; }
+            section, .virtual-lab, .progress-tracker { padding: 1.5rem; }
+            .progress-steps { flex-wrap: wrap; }
+            .progress-steps li { flex: 0 0 50%; margin-bottom: 1rem; }
+            .tab-container { flex-wrap: wrap; }
+            .tab { margin-bottom: 5px; border-radius: 5px; border: 1px solid #444; }
+            .tab-content { border-radius: 0 0 8px 8px; }
+        }
+        @media (max-width: 576px) {
+            .terminal { font-size: 0.9rem; padding: 1rem; }
+            .command { white-space: pre-wrap; word-break: break-all; }
+        }
+        :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+        @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(255, 127, 80, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(255, 127, 80, 0); } 100% { box-shadow: 0 0 0 0 rgba(255, 127, 80, 0); } }
+        .pulse { animation: pulse 2s infinite; }
+    </style>
+</head>
+<body>
+    <a href="#main-content" class="skip-link">跳至主要內容</a>
+
+    <div class="container">
+        <header>
+            <h1>Netdiscover 新手教學</h1>
+            <p>學習如何使用這款輕量的 ARP 主機發現工具，在區域網路內快速找出線上裝置，並了解相對應的防禦與法規</p>
+        </header>
+
+        <nav aria-label="主要導航">
+            <ul role="menubar">
+                <li role="menuitem"><a href="#introduction">基本介紹</a></li>
+                <li role="menuitem"><a href="#commands">基本指令</a></li>
+                <li role="menuitem"><a href="#examples">實戰範例</a></li>
+                <li role="menuitem"><a href="#advanced">進階技巧</a></li>
+                <li role="menuitem"><a href="#defense">防禦方法</a></li>
+                <li role="menuitem"><a href="#legal">法律規範</a></li>
+            </ul>
+        </nav>
+
+        <div class="progress-tracker">
+            <h3>您的學習進度</h3>
+            <div class="progress-bar">
+                <div class="progress" id="learning-progress" style="width: 20%"></div>
+            </div>
+            <ul class="progress-steps">
+                <li class="completed">基本介紹</li>
+                <li class="active">基本指令</li>
+                <li>實戰範例</li>
+                <li>進階技巧</li>
+                <li>防禦方法</li>
+                <li>法律規範</li>
+            </ul>
+            <button class="save-progress">保存進度</button>
+        </div>
+
+        <main id="main-content">
+            <section id="introduction">
+                <h2>Netdiscover 基本介紹</h2>
+                <p><strong>Netdiscover</strong> 是一款使用 ARP 封包在區域網路中發現主機的輕量級工具。它特別適合在無法使用 DHCP 伺服器資訊或缺乏完整網段文件時，快速盤點 LAN 內的存活裝置與廠商資訊（Vendor）。</p>
+                <div class="note">
+                    <p>Netdiscover 主要用於 <strong>區域網路</strong> 掃描；不像 Nmap 著重於連接埠/服務偵測，它專注於 <strong>IP/MAC/Vendor</strong> 快速盤點，並提供主動/被動兩種模式。</p>
+                </div>
+
+                <h3>主要特點</h3>
+                <ul aria-label="Netdiscover主要特點">
+                    <li>ARP 掃描：快速發現 LAN 內線上裝置</li>
+                    <li>主動/被動模式：可主動發送 ARP，也可被動嗅探</li>
+                    <li>顯示 MAC 與廠商：協助資產盤點與異常偵測</li>
+                    <li>指定介面與網段：支援細緻範圍控制</li>
+                    <li>簡潔輸出：易於讀取與匯出</li>
+                </ul>
+
+                <h3>安裝與版本確認</h3>
+                <p>在 Kali Linux 中通常已預裝，如需安裝或確認版本：</p>
+                <div class="terminal">
+                    <span class="command" tabindex="0" aria-label="更新套件列表，點擊複製命令">sudo apt update</span><br>
+                    <span class="command" tabindex="0" aria-label="安裝Netdiscover，點擊複製命令">sudo apt install netdiscover</span><br>
+                    <span class="command" tabindex="0" aria-label="顯示Netdiscover版本，點擊複製命令">netdiscover -h</span>
+                </div>
+            </section>
+
+            <section id="commands">
+                <h2>基本指令教學</h2>
+                <p>以下為 Netdiscover 常用參數與用法：</p>
+
+                <h3>1. 指定掃描網段 <span class="tag tag-advanced">核心</span></h3>
+                <div class="terminal">
+                    <span class="command" tabindex="0" aria-label="掃描指定網段，點擊複製命令">sudo netdiscover -r 192.168.1.0/24</span>
+                </div>
+                <p><span class="option">-r</span>：設定 CIDR 網段範圍。</p>
+
+                <h3>2. 指定網路介面</h3>
+                <div class="terminal">
+                    <span class="command" tabindex="0" aria-label="指定網路介面，點擊複製命令">sudo netdiscover -i eth0 -r 192.168.1.0/24</span>
+                </div>
+                <p><span class="option">-i</span>：指定介面，例如 <code>eth0</code>、<code>wlan0</code>、<code>ens33</code> 等。</p>
+
+                <h3>3. 被動模式（嗅探）</h3>
+                <div class="terminal">
+                    <span class="command" tabindex="0" aria-label="被動模式，點擊複製命令">sudo netdiscover -p -i wlan0</span>
+                </div>
+                <p><span class="option">-p</span>：不主動發送 ARP，只被動監聽網段內的 ARP 流量。</p>
+
+                <h3>4. 調整封包節奏 / 次數</h3>
+                <div class="terminal">
+                    <span class="comment"># 每個目標間隔（毫秒）與嘗試次數（範例值）</span><br>
+                    <span class="command" tabindex="0" aria-label="調整節奏與嘗試次數，點擊複製命令">sudo netdiscover -r 192.168.1.0/24 -s 2 -c 3</span>
+                </div>
+                <p><span class="option">-s</span>：每個 ARP 請求之間的睡眠時間（單位常見為毫秒或秒，依版本顯示），<span class="option">-c</span>：對每個目標嘗試的次數。</p>
+
+                <div class="quiz">
+                    <h4>小測驗</h4>
+                    <p>若要在不驚動網路的情況下「只觀察」現有 ARP 流量，你應該使用哪個選項？</p>
+                    <div class="quiz-option" tabindex="0" role="button" onclick="checkAnswer(this, true)">-p</div>
+                    <div class="quiz-option" tabindex="0" role="button" onclick="checkAnswer(this, false)">-r</div>
+                    <div class="quiz-option" tabindex="0" role="button" onclick="checkAnswer(this, false)">-i</div>
+                    <div class="quiz-option" tabindex="0" role="button" onclick="checkAnswer(this, false)">-c</div>
+                    <p id="quiz-feedback" style="display:none; margin-top:10px; color:var(--accent);"></p>
+                    <div class="explanation">
+                        <p><strong>解析：</strong><code>-p</code> 啟動被動模式，不會主動發送 ARP 封包，適合在敏感環境中觀察。</p>
+                    </div>
+                </div>
+            </section>
+
+            <section id="examples">
+                <h2>實戰範例</h2>
+
+                <div class="example">
+                    <h4>範例 1：掃描虛擬化測試網段（VirtualBox Host-Only）</h4>
+                    <div class="terminal">
+                        <span class="command" tabindex="0" aria-label="掃描測試網段，點擊複製命令">sudo netdiscover -i vboxnet0 -r 192.168.56.0/24</span>
+                    </div>
+                    <p>在測試環境常見的 <code>192.168.56.0/24</code> 網段上盤點所有線上裝置。</p>
+                </div>
+
+                <div class="example">
+                    <h4>範例 2：NAT 測試網段（VMware/VirtualBox）</h4>
+                    <div class="terminal">
+                        <span class="command" tabindex="0" aria-label="掃描 NAT 網段，點擊複製命令">sudo netdiscover -i eth0 -r 10.0.2.0/24</span>
+                    </div>
+                    <p>快速發現 NAT 網段內的靶機與工具機。</p>
+                </div>
+
+                <div class="example">
+                    <h4>範例 3：辦公室 Wi-Fi 被動觀察</h4>
+                    <div class="terminal">
+                        <span class="command" tabindex="0" aria-label="Wi-Fi 被動模式，點擊複製命令">sudo netdiscover -p -i wlan0</span>
+                    </div>
+                    <p>只嗅探 ARP，避免在生產環境主動送出探測封包。</p>
+                </div>
+
+                <div class="case-study">
+                    <h4>資產盤點小流程（適用於已授權之網段）</h4>
+                    <ol>
+                        <li>確認介面與網段：<code>ip a</code> / <code>ip route</code></li>
+                        <li>被動觀察 1～2 分鐘：<code>sudo netdiscover -p -i &lt;ifc&gt;</code></li>
+                        <li>必要時小範圍主動掃描：<code>sudo netdiscover -r 192.168.1.0/27</code></li>
+                        <li>匯出/截圖結果並標注未知裝置，追蹤 MAC Vendor 來源</li>
+                    </ol>
+                </div>
+
+                <div class="warning">
+                    <p>注意：這些範例僅供 <strong>合法授權</strong> 的實驗/維運環境。未經許可在他人網路進行掃描屬違法行為。</p>
+                </div>
+
+                <div class="quiz">
+                    <h4>小測驗</h4>
+                    <p>哪個指令適合在 <code>192.168.1.0/24</code> 網段做主動快速盤點？</p>
+                    <div class="quiz-option" tabindex="0" role="button" onclick="checkAnswer(this, true)">sudo netdiscover -r 192.168.1.0/24</div>
+                    <div class="quiz-option" tabindex="0" role="button" onclick="checkAnswer(this, false)">sudo netdiscover -p</div>
+                    <div class="quiz-option" tabindex="0" role="button" onclick="checkAnswer(this, false)">sudo netdiscover -i lo</div>
+                    <div class="quiz-option" tabindex="0" role="button" onclick="checkAnswer(this, false)">sudo netdiscover -c 1</div>
+                    <p id="quiz-feedback2" style="display:none; margin-top:10px; color:var(--accent);"></p>
+                    <div class="explanation">
+                        <p><strong>解析：</strong><code>-r</code> 指定 CIDR 範圍進行主動盤點，是最常見也最實用的用法之一。</p>
+                    </div>
+                </div>
+            </section>
+
+            <section id="advanced">
+                <h2>進階使用技巧</h2>
+
+                <div class="security-warning">
+                    <p>⚠️ 以下技巧僅適用於 <strong>已書面授權</strong> 的滲透測試或維運環境，請先確認合法性再操作。</p>
+                </div>
+
+                <div class="tab-container">
+                    <div class="tab active" onclick="openTab(event, 'modes')">模式與節奏</div>
+                    <div class="tab" onclick="openTab(event, 'output')">輸出與整合</div>
+                    <div class="tab" onclick="openTab(event, 'triage')">盤點與追蹤</div>
+                </div>
+
+                <div id="modes" class="tab-content active">
+                    <h3>主動 / 被動模式與節奏控管</h3>
+                    <p>在敏感網段，先以被動模式暖身，再針對特定區段主動掃描：</p>
+                    <div class="terminal">
+                        <span class="comment"># 被動模式嗅探（不送 ARP）</span><br>
+                        <span class="command" tabindex="0">sudo netdiscover -p -i wlan0</span><br><br>
+                        <span class="comment"># 小範圍主動掃描 + 控制節奏與嘗試次數</span><br>
+                        <span class="command" tabindex="0">sudo netdiscover -r 192.168.1.0/27 -s 2 -c 2</span>
+                    </div>
+
+                    <div class="quiz">
+                        <h4>小測驗</h4>
+                        <p>若你想降低網路負擔，應調整哪個參數以拉長探測間隔？</p>
+                        <div class="quiz-option" tabindex="0" role="button" onclick="checkAnswer(this, true)">-s</div>
+                        <div class="quiz-option" tabindex="0" role="button" onclick="checkAnswer(this, false)">-p</div>
+                        <div class="quiz-option" tabindex="0" role="button" onclick="checkAnswer(this, false)">-i</div>
+                        <div class="quiz-option" tabindex="0" role="button" onclick="checkAnswer(this, false)">-r</div>
+                        <p id="quiz-feedback4" style="display:none; margin-top:10px; color:var(--accent);"></p>
+                        <div class="explanation">
+                            <p><strong>解析：</strong><code>-s</code> 可調整請求間的睡眠時間，適合在壅塞或敏感環境放慢節奏。</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="output" class="tab-content">
+                    <h3>結果輸出與後續整合</h3>
+                    <p>將結果導向檔案，便於對照變更或導入資產系統：</p>
+                    <div class="terminal">
+                        <span class="comment"># 標準輸出轉存（使用 shell 重導向）</span><br>
+                        <span class="command" tabindex="0">sudo netdiscover -r 192.168.1.0/24 &gt; discover_192.168.1.txt</span><br><br>
+                        <span class="comment"># 搭配 grep / awk 快速過濾</span><br>
+                        <span class="command" tabindex="0">grep "00:" discover_192.168.1.txt</span>
+                    </div>
+                    <p>提示：也可將結果貼入試算表，標註負責人、設備位置與用途，建立變更追蹤。</p>
+                </div>
+
+                <div id="triage" class="tab-content">
+                    <h3>辨識未知裝置與追蹤</h3>
+                    <p>看到陌生 MAC Vendor 或不在資產名單內的 IP？建議：</p>
+                    <ul>
+                        <li>比對 DHCP 租約或網管系統紀錄</li>
+                        <li>交叉檢視交換器 MAC 位址表（<code>show mac address-table</code>）</li>
+                        <li>排程定期盤點，對新增/消失的裝置建立告警</li>
+                    </ul>
+                </div>
+            </section>
+
+            <section id="defense">
+                <h2>防禦方法</h2>
+                <p>了解 ARP 掃描的同時，也要知道如何降低風險：</p>
+
+                <h3>1. L2 安全機制</h3>
+                <p>啟用動態 ARP 檢測（DAI）、IP/MAC 綁定（如 DHCP Snooping + ARP Inspection），減少 ARP 欺騙與濫用。</p>
+
+                <h3>2. 分段與 ACL</h3>
+                <p>將敏感系統隔離於獨立 VLAN，對管理網段施加更嚴格的 ACL。</p>
+
+                <h3>3. 監控與告警</h3>
+                <p>在 SIEM/IDS 中建立異常 ARP 流量規則，偵測可疑掃描行為。</p>
+
+                <div class="note">
+                    <p>防禦 ARP 掃描需同時考量 L2 與 L3 的策略，並搭配資產盤點流程，持續維護白名單。</p>
+                </div>
+
+                <div class="quiz">
+                    <h4>小測驗</h4>
+                    <p>哪項做法可以在二層網路層面減少 ARP 濫用？</p>
+                    <div class="quiz-option" tabindex="0" role="button" onclick="checkAnswer(this, true)">啟用動態 ARP 檢測（DAI）</div>
+                    <div class="quiz-option" tabindex="0" role="button" onclick="checkAnswer(this, false)">關閉所有 TCP 80</div>
+                    <div class="quiz-option" tabindex="0" role="button" onclick="checkAnswer(this, false)">改用更快的 Wi-Fi</div>
+                    <div class="quiz-option" tabindex="0" role="button" onclick="checkAnswer(this, false)">升級作業系統</div>
+                    <p id="quiz-feedback5" style="display:none; margin-top:10px; color:var(--accent);"></p>
+                    <div class="explanation">
+                        <p><strong>解析：</strong>DAI 可檢驗 ARP 封包與 DHCP Snooping 綁定是否一致，降低偽造 ARP 造成的風險。</p>
+                    </div>
+                </div>
+            </section>
+
+            <section id="legal">
+                <h2>法律與道德規範</h2>
+                <div class="danger">
+                    <p>重要：未經授權的網路掃描是違法行為；請務必取得 <strong>書面授權</strong> 後再進行任何測試。</p>
+                </div>
+
+                <h3>合法使用原則</h3>
+                <ul aria-label="合法使用原則">
+                    <li>僅掃描自己擁有或獲得明確授權的網路</li>
+                    <li>取得書面授權並事先告知相關窗口</li>
+                    <li>在生產環境使用被動模式或小範圍低負載掃描</li>
+                    <li>遵守當地法律與公司內規</li>
+                </ul>
+
+                <h3>道德黑客準則</h3>
+                <ol aria-label="道德黑客準則">
+                    <li>範圍清晰且可追溯</li>
+                    <li>最小影響原則</li>
+                    <li>尊重隱私與資料保護</li>
+                    <li>負責任揭露與修補</li>
+                </ol>
+
+                <div class="warning">
+                    <p>本教學僅供教育用途，請依規範操作。</p>
+                </div>
+
+                <div class="quiz">
+                    <h4>小測驗</h4>
+                    <p>在進行任何網段掃描前，最重要的前置動作是？</p>
+                    <div class="quiz-option" tabindex="0" role="button" onclick="checkAnswer(this, false)">準備好輸出檔名</div>
+                    <div class="quiz-option" tabindex="0" role="button" onclick="checkAnswer(this, true)">取得網路擁有者的書面授權</div>
+                    <div class="quiz-option" tabindex="0" role="button" onclick="checkAnswer(this, false)">使用最新版本工具</div>
+                    <div class="quiz-option" tabindex="0" role="button" onclick="checkAnswer(this, false)">先關閉防毒軟體</div>
+                    <p id="quiz-feedback3" style="display:none; margin-top:10px; color:var(--accent);"></p>
+                    <div class="explanation">
+                        <p><strong>解析：</strong>合法授權是測試的基礎。</p>
+                    </div>
+                </div>
+            </section>
+
+            <div class="virtual-lab">
+                <div class="security-warning">
+                    <p>⚠️ 注意：此虛擬實驗室僅示範在 <strong>本機/虛擬化測試網段</strong>（如 192.168.56.0/24、10.0.2.0/24）進行；請勿在未授權環境操作。</p>
+                </div>
+                <h3>Netdiscover 虛擬實驗室</h3>
+                <div class="lab-instructions">
+                    <p>依序完成以下步驟：</p>
+                    <ol>
+                        <li>被動觀察（1 分鐘）<button class="btn-copy" data-cmd="sudo netdiscover -p -i wlan0">複製命令</button></li>
+                        <li>掃描測試網段（VirtualBox）<button class="btn-copy" data-cmd="sudo netdiscover -i vboxnet0 -r 192.168.56.0/24">複製命令</button></li>
+                        <li>掃描 NAT 網段（VM/實機）<button class="btn-copy" data-cmd="sudo netdiscover -i eth0 -r 10.0.2.0/24">複製命令</button></li>
+                        <li>儲存輸出<button class="btn-copy" data-cmd="sudo netdiscover -r 192.168.1.0/24 > discover_192.168.1.txt">複製命令</button></li>
+                    </ol>
+                </div>
+                <div class="terminal" id="virtual-terminal">
+                    <div class="terminal-header">
+                        <span class="terminal-title">Netdiscover Terminal</span>
+                        <span class="terminal-controls">○ □ ×</span>
+                    </div>
+                    <div class="terminal-body" id="terminal-output">
+                        <div class="welcome-message">
+                            <p>歡迎使用 Netdiscover 虛擬終端</p>
+                            <p>輸入 "help" 查看可用命令</p>
+                            <p>嘗試執行上方實驗室中的命令</p>
+                        </div>
+                    </div>
+                    <div class="terminal-input-line">
+                        <span class="prompt">netdiscover &gt; </span>
+                        <input type="text" class="terminal-input" id="terminal-input" aria-label="終端輸入">
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <footer>
+            <p>© 2025 資安教學平台 | 僅供教育用途</p>
+            <p>使用本教學內容前請確保您了解並遵守相關法律法規</p>
+        </footer>
+    </div>
+
+    <script>
+        // 可訪問性: 頁面加載後設置焦點與初始化
+        window.onload = function() {
+            document.querySelector('.skip-link').addEventListener('blur', function() {
+                this.style.top = '-40px';
+            });
+
+            initVirtualTerminal();
+            setupCopyButtons();
+
+            // 恢復保存進度
+            if (localStorage.getItem('netdiscoverProgress')) {
+                document.getElementById('learning-progress').style.width = localStorage.getItem('netdiscoverProgress');
+                updateProgress();
+            }
+
+            // 恢復完成的測驗
+            if (localStorage.getItem('completedQuizzes_netdiscover')) {
+                const completedQuizzes = JSON.parse(localStorage.getItem('completedQuizzes_netdiscover'));
+                document.querySelectorAll('.quiz-option').forEach(opt => {
+                    if (completedQuizzes.includes(opt.textContent.trim())) {
+                        opt.style.backgroundColor = 'rgba(76, 175, 80, 0.3)';
+                        opt.style.borderLeft = '4px solid var(--success)';
+                    }
+                });
+            }
+        };
+
+        // 虛擬終端
+        function initVirtualTerminal() {
+            const terminalInput = document.getElementById('terminal-input');
+            const terminalOutput = document.getElementById('terminal-output');
+
+            terminalInput.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter') {
+                    const command = this.value.trim();
+                    if (command) {
+                        const commandLine = document.createElement('div');
+                        commandLine.className = 'command-line';
+                        commandLine.innerHTML = `<span class="prompt">netdiscover &gt; </span>${escapeHtml(command)}`;
+                        terminalOutput.appendChild(commandLine);
+
+                        let output = processCommand(command);
+
+                        const outputDiv = document.createElement('div');
+                        outputDiv.className = 'command-output';
+                        outputDiv.innerHTML = `<pre>${escapeHtml(output)}</pre>`;
+                        terminalOutput.appendChild(outputDiv);
+
+                        terminalOutput.scrollTop = terminalOutput.scrollHeight;
+                        this.value = '';
+                    }
+                }
+            });
+        }
+
+        function processCommand(command) {
+            const lowerCmd = command.toLowerCase();
+
+            if (lowerCmd === 'help') {
+                return `可用命令:
+help       - 顯示此幫助信息
+passive    - 被動模式示例
+scan56     - 掃描 192.168.56.0/24
+scan102    - 掃描 10.0.2.0/24
+save       - 導出結果示例
+clear      - 清除終端`;
+            } else if (lowerCmd === 'clear') {
+                document.getElementById('terminal-output').innerHTML = '';
+                return '';
+            } else if (lowerCmd.includes('netdiscover -p') || lowerCmd === 'passive') {
+                return `Initializing netdiscover 0.X
+Currently scanning: Passive mode (no ARP requests sent)
+Interface: wlan0
+Packets captured: 142
+
+IP              MAC               COUNT  LEN   VENDOR
+192.168.1.1     00:11:22:33:44:55   18   108   Cisco Systems
+192.168.1.12    a4:5e:60:7b:8c:9d   12    72   Apple, Inc.
+192.168.1.23    3c:52:82:aa:bb:cc    7    42   TP-Link Tech
+... (press Ctrl+C to stop)`;
+            } else if (lowerCmd.includes('netdiscover -i vboxnet0 -r 192.168.56.0/24') || lowerCmd === 'scan56') {
+                return `Starting active scan on vboxnet0
+Range: 192.168.56.0/24
+
+IP              MAC               COUNT  LEN   VENDOR
+192.168.56.1    08:00:27:12:34:56   10    60   PCS Systemtechnik
+192.168.56.101  08:00:27:aa:bb:cc    4    24   Oracle VirtualBox
+192.168.56.102  08:00:27:de:ad:be    3    18   Oracle VirtualBox
+
+Found 3 hosts.`;
+            } else if (lowerCmd.includes('netdiscover -i eth0 -r 10.0.2.0/24') || lowerCmd === 'scan102') {
+                return `Starting active scan on eth0
+Range: 10.0.2.0/24
+
+IP           MAC               COUNT  LEN   VENDOR
+10.0.2.2     52:54:00:12:34:56   11    66   QEMU virtio
+10.0.2.3     52:54:00:65:43:21    5    30   QEMU virtio
+10.0.2.15    08:00:27:77:88:99    8    48   Oracle VirtualBox
+
+Found 3 hosts.`;
+            } else if (lowerCmd.includes('>') || lowerCmd === 'save') {
+                return `Writing results to discover_192.168.1.txt ...
+Done. (tip: use grep/awk to filter MAC vendor)`;
+            } else if (lowerCmd.includes('netdiscover -r')) {
+                return `Starting active scan...
+(示意) 掃描指定範圍，結果會列出 IP / MAC / Vendor 與封包統計。`;
+            } else {
+                return `命令 "${command}" 未找到，輸入 "help" 查看可用命令`;
+            }
+        }
+
+        // 轉義輸出
+        function escapeHtml(text) {
+            const map = { '&': '&amp;', '<': '&lt;', '>': '&gt;' };
+            return text.replace(/[&<>]/g, (ch) => map[ch]);
+        }
+
+        // 設置命令複製按鈕
+        function setupCopyButtons() {
+            document.querySelectorAll('.command').forEach(cmd => {
+                cmd.addEventListener('click', function() {
+                    const commandText = this.textContent.trim();
+                    copyToClipboard(commandText);
+                    showTooltip(this, '已複製到剪貼簿!');
+                });
+                cmd.addEventListener('keydown', function(e) {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                        const commandText = this.textContent.trim();
+                        copyToClipboard(commandText);
+                        showTooltip(this, '已複製到剪貼簿!');
+                    }
+                });
+            });
+
+            document.querySelectorAll('.btn-copy').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const command = this.getAttribute('data-cmd');
+                    copyToClipboard(command);
+                    showTooltip(this, '命令已複製!');
+                });
+            });
+
+            document.querySelector('.save-progress').addEventListener('click', saveProgress);
+        }
+
+        // 複製到剪貼簿
+        function copyToClipboard(text) {
+            const textarea = document.createElement('textarea');
+            textarea.value = text;
+            document.body.appendChild(textarea);
+            textarea.select();
+            document.execCommand('copy');
+            document.body.removeChild(textarea);
+        }
+
+        // 工具提示
+        function showTooltip(element, message) {
+            const tooltip = document.createElement('div');
+            tooltip.className = 'custom-tooltip';
+            tooltip.textContent = message;
+            tooltip.style.position = 'absolute';
+            tooltip.style.backgroundColor = 'rgba(0,0,0,0.9)';
+            tooltip.style.color = 'white';
+            tooltip.style.padding = '5px 10px';
+            tooltip.style.borderRadius = '4px';
+            tooltip.style.zIndex = '1000';
+            tooltip.style.fontSize = '0.9rem';
+
+            const rect = element.getBoundingClientRect();
+            tooltip.style.left = `${rect.left}px`;
+            tooltip.style.top = `${rect.top - 35}px`;
+
+            document.body.appendChild(tooltip);
+
+            setTimeout(() => {
+                tooltip.style.opacity = '0';
+                tooltip.style.transition = 'opacity 0.5s';
+                setTimeout(() => tooltip.remove(), 500);
+            }, 1500);
+        }
+
+        // 標籤頁切換
+        function openTab(evt, tabName) {
+            const tabContents = document.getElementsByClassName("tab-content");
+            for (let i = 0; i < tabContents.length; i++) tabContents[i].classList.remove("active");
+
+            const tabs = document.getElementsByClassName("tab");
+            for (let i = 0; i < tabs.length; i++) tabs[i].classList.remove("active");
+
+            document.getElementById(tabName).classList.add("active");
+            evt.currentTarget.classList.add("active");
+
+            updateProgress();
+        }
+
+        // 測驗
+        function checkAnswer(selectedOption, isCorrect) {
+            const feedbackId = selectedOption.parentElement.querySelector('p[id^="quiz-feedback"]').id;
+            const feedbackElement = document.getElementById(feedbackId);
+            const explanation = selectedOption.parentElement.nextElementSibling;
+
+            selectedOption.parentElement.querySelectorAll('.quiz-option').forEach(opt => {
+                opt.style.backgroundColor = '';
+                opt.style.borderLeft = '';
+            });
+
+            if (isCorrect) {
+                selectedOption.style.backgroundColor = 'rgba(76, 175, 80, 0.3)';
+                selectedOption.style.borderLeft = '4px solid var(--success)';
+                feedbackElement.textContent = '✓ 正確!';
+                if (explanation && explanation.classList.contains('explanation')) {
+                    explanation.style.display = 'block';
+                }
+            } else {
+                selectedOption.style.backgroundColor = 'rgba(244, 67, 54, 0.3)';
+                selectedOption.style.borderLeft = '4px solid var(--danger)';
+                feedbackElement.textContent = '✗ 不正確，請再試一次。';
+            }
+
+            feedbackElement.style.display = 'block';
+            if (isCorrect) updateProgress();
+        }
+
+        // 保存進度
+        function saveProgress() {
+            const progress = document.getElementById('learning-progress').style.width;
+            localStorage.setItem('netdiscoverProgress', progress);
+
+            const completedQuizzes = [];
+            document.querySelectorAll('.quiz-option[style*="background-color: rgba(76, 175, 80, 0.3)"]').forEach(opt => {
+                completedQuizzes.push(opt.textContent.trim());
+            });
+            localStorage.setItem('completedQuizzes_netdiscover', JSON.stringify(completedQuizzes));
+
+            const saveButton = document.querySelector('.save-progress');
+            const originalText = saveButton.textContent;
+            saveButton.textContent = '✓ 進度已保存';
+            saveButton.style.backgroundColor = '#3d8b40';
+            setTimeout(() => {
+                saveButton.textContent = originalText;
+                saveButton.style.backgroundColor = '';
+            }, 2000);
+        }
+
+        // 更新進度
+        function updateProgress() {
+            const completedQuizzes = document.querySelectorAll('.quiz-option[style*="background-color: rgba(76, 175, 80, 0.3)"]').length;
+            const progress = Math.min(100, 20 + (completedQuizzes * 15));
+            document.getElementById('learning-progress').style.width = `${progress}%`;
+
+            const progressSteps = document.querySelectorAll('.progress-steps li');
+            if (progress >= 30) { progressSteps[2].classList.add('active'); progressSteps[1].classList.remove('active'); progressSteps[1].classList.add('completed'); }
+            if (progress >= 45) { progressSteps[3].classList.add('active'); progressSteps[2].classList.remove('active'); progressSteps[2].classList.add('completed'); }
+            if (progress >= 60) { progressSteps[4].classList.add('active'); progressSteps[3].classList.remove('active'); progressSteps[3].classList.add('completed'); }
+            if (progress >= 75) { progressSteps[5].classList.add('active'); progressSteps[4].classList.remove('active'); progressSteps[4].classList.add('completed'); }
+        }
+    </script>
+</body>
+</html>

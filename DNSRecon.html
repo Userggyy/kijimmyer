@@ -1,0 +1,703 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DNSRecon 新手教學 | 資安學習平台</title>
+    <meta name="description" content="DNSRecon DNS 列舉與滲透前期情報蒐集完整教學，從基礎到進階使用技巧">
+    <style>
+        :root {
+            --primary: #2a3b4d;
+            --secondary: #3a6ea5;
+            --accent: #ff7f50;
+            --light: #ffffff;
+            --dark: #1a2a3a;
+            --success: #4CAF50;
+            --warning: #FFC107;
+            --danger: #F44336;
+            --text-primary: #ffffff;
+            --text-secondary: #e0e0e0;
+            --bg-gradient: radial-gradient(ellipse at bottom, #1B2735 0%, #090A0F 100%);
+        }
+        
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body { background: var(--bg-gradient); color: var(--text-primary); line-height: 1.6; min-height: 100vh; }
+        .skip-link { position: absolute; top: -40px; left: 0; background: var(--secondary); color: white; padding: 8px; z-index: 100; transition: top 0.3s; }
+        .skip-link:focus { top: 0; }
+        .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+        header { background: linear-gradient(135deg, var(--primary), var(--secondary)); padding: 2rem 0; text-align: center; border-bottom: 4px solid var(--accent); margin-bottom: 2rem; border-radius: 0 0 10px 10px; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3); position: relative; }
+        header h1 { font-size: 2.5rem; margin-bottom: 0.5rem; color: white; text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5); }
+        header p { font-size: 1.1rem; color: rgba(255, 255, 255, 0.9); max-width: 800px; margin: 0 auto; }
+        nav { background-color: var(--dark); padding: 1rem; border-radius: 8px; margin-bottom: 2rem; box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2); }
+        nav ul { display: flex; justify-content: center; list-style: none; flex-wrap: wrap; }
+        nav li { margin: 0 15px; }
+        nav a { color: var(--light); text-decoration: none; font-weight: 500; padding: 5px 10px; border-radius: 4px; transition: all 0.3s ease; }
+        nav a:hover, nav a:focus { background-color: var(--secondary); color: white; outline: none; }
+        section { background: rgba(30, 30, 30, 0.8); backdrop-filter: blur(10px); border-radius: 8px; padding: 2rem; margin-bottom: 2rem; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.25); border-left: 4px solid var(--secondary); border: 1px solid rgba(58, 110, 165, 0.3); }
+        h2 { color: var(--accent); margin-bottom: 1.5rem; font-size: 1.8rem; border-bottom: 2px solid var(--secondary); padding-bottom: 0.5rem; display: inline-block; }
+        h3 { color: var(--light); margin: 1.5rem 0 1rem; font-size: 1.4rem; }
+        p { margin-bottom: 1rem; color: var(--text-secondary); }
+        .terminal { background-color: #000000; color: #00ff00; padding: 1.5rem; border-radius: 8px; font-family: 'Courier New', Courier, monospace; margin: 1.5rem 0; position: relative; border: 1px solid #333; box-shadow: inset 0 0 10px rgba(0, 255, 0, 0.1); overflow-x: auto; }
+        .terminal:before { content: "Terminal"; position: absolute; top: -10px; left: 15px; background-color: #000; color: #00ff00; padding: 0 10px; font-size: 0.8rem; border: 1px solid #333; border-bottom: none; border-radius: 5px 5px 0 0; }
+        .command { color: #00ffff; font-weight: bold; cursor: pointer; transition: all 0.3s ease; position: relative; display: inline-block; padding: 2px 5px; border-radius: 3px; }
+        .command:hover { text-shadow: 0 0 8px rgba(0, 255, 255, 0.7); }
+        .command:after { content: ''; position: absolute; bottom: -2px; left: 0; width: 0; height: 2px; background: var(--accent); transition: width 0.3s; }
+        .command:hover:after { width: 100%; }
+        .option { color: #ffa500; }
+        .comment { color: #888; font-style: italic; }
+        .note { background-color: rgba(58, 110, 165, 0.2); border-left: 4px solid var(--secondary); padding: 1rem; margin: 1.5rem 0; border-radius: 0 4px 4px 0; }
+        .warning { background-color: rgba(255, 193, 7, 0.2); border-left: 4px solid var(--warning); padding: 1rem; margin: 1.5rem 0; border-radius: 0 4px 4px 0; }
+        .danger { background-color: rgba(244, 67, 54, 0.2); border-left: 4px solid var(--danger); padding: 1rem; margin: 1.5rem 0; border-radius: 0 4px 4px 0; }
+        .example { background-color: rgba(42, 59, 77, 0.3); padding: 1.5rem; border-radius: 8px; margin: 1.5rem 0; border: 1px dashed var(--secondary); }
+        .example h4 { color: var(--accent); margin-bottom: 1rem; }
+        .quiz { background-color: rgba(42, 59, 77, 0.5); padding: 1.5rem; border-radius: 8px; margin: 1.5rem 0; border: 1px solid var(--secondary); }
+        .quiz h4 { color: var(--accent); margin-bottom: 1rem; }
+        .quiz-option { display: block; margin: 0.5rem 0; padding: 0.5rem; background-color: rgba(255, 255, 255, 0.1); border-radius: 4px; cursor: pointer; transition: all 0.2s; }
+        .quiz-option:hover, .quiz-option:focus { background-color: rgba(255, 255, 255, 0.2); outline: 2px solid var(--accent); }
+        .btn { display: inline-block; background-color: var(--secondary); color: white; padding: 0.5rem 1rem; border-radius: 4px; text-decoration: none; font-weight: bold; transition: all 0.3s; border: none; cursor: pointer; margin-top: 0.5rem; }
+        .btn:hover, .btn:focus { background-color: var(--accent); transform: translateY(-2px); box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); outline: none; }
+        .btn:active { transform: translateY(0); }
+        footer { text-align: center; padding: 2rem 0; margin-top: 2rem; color: #888; font-size: 0.9rem; border-top: 1px solid #333; }
+        .progress-tracker { background: rgba(30, 30, 30, 0.8); padding: 1.5rem; border-radius: 8px; margin-bottom: 2rem; border-left: 4px solid var(--accent); }
+        .progress-tracker h3 { margin-top: 0; color: var(--accent); }
+        .progress-bar { height: 10px; background: rgba(255, 255, 255, 0.1); border-radius: 5px; margin: 1rem 0; overflow: hidden; }
+        .progress { height: 100%; background: linear-gradient(90deg, var(--secondary), var(--accent)); width: 20%; transition: width 0.5s ease; }
+        .progress-steps { display: flex; justify-content: space-between; list-style: none; padding: 0; }
+        .progress-steps li { text-align: center; position: relative; flex: 1; padding-top: 25px; color: #888; }
+        .progress-steps li:before { content: ''; position: absolute; top: 0; left: 50%; transform: translateX(-50%); width: 20px; height: 20px; border-radius: 50%; background: #333; border: 3px solid #333; }
+        .progress-steps li.completed:before { background: var(--success); border-color: var(--success); }
+        .progress-steps li.active:before { background: var(--accent); border-color: var(--accent); box-shadow: 0 0 0 3px rgba(255, 127, 80, 0.3); }
+        .virtual-lab { background: rgba(30, 30, 30, 0.9); padding: 2rem; border-radius: 8px; margin-bottom: 2rem; border: 1px solid var(--secondary); }
+        .lab-instructions { margin-bottom: 1.5rem; }
+        .lab-instructions ol { margin-left: 1.5rem; }
+        .btn-copy { background: rgba(58, 110, 165, 0.3); color: var(--light); border: 1px solid var(--secondary); border-radius: 4px; padding: 0.2rem 0.5rem; margin-left: 0.5rem; font-size: 0.8rem; cursor: pointer; transition: all 0.2s; }
+        .btn-copy:hover { background: rgba(58, 110, 165, 0.5); }
+        .security-warning { background-color: rgba(255, 0, 0, 0.1); border: 1px solid var(--danger); padding: 1rem; border-radius: 8px; margin: 1rem 0; animation: pulse 2s infinite; }
+        .advanced-section { background: rgba(42, 59, 77, 0.5); border-left: 4px solid var(--accent); padding: 1.5rem; margin: 2rem 0; }
+        .tab-container { display: flex; margin-bottom: -1px; }
+        .tab { padding: 0.8rem 1.5rem; background: rgba(30, 30, 30, 0.7); border: 1px solid #444; border-bottom: none; border-radius: 5px 5px 0 0; cursor: pointer; margin-right: 5px; }
+        .tab.active { background: rgba(30, 30, 30, 0.9); border-color: var(--secondary); color: var(--accent); }
+        .tab-content { display: none; padding: 1.5rem; background: rgba(30, 30, 30, 0.9); border: 1px solid var(--secondary); border-radius: 0 8px 8px 8px; }
+        .tab-content.active { display: block; }
+        .save-progress { background-color: var(--success); color: white; border: none; padding: 0.5rem 1rem; border-radius: 4px; cursor: pointer; margin-top: 1rem; transition: all 0.3s; }
+        .save-progress:hover { background-color: #3d8b40; }
+        .explanation { background-color: rgba(58, 110, 165, 0.2); padding: 1rem; border-radius: 8px; margin: 1rem 0; display: none; }
+        .tag { display: inline-block; padding: 0.2rem 0.5rem; border-radius: 3px; font-size: 0.8rem; font-weight: bold; margin-left: 0.5rem; }
+        .tag-advanced { background-color: rgba(255, 127, 80, 0.2); color: var(--accent); border: 1px solid var(--accent); }
+        .tag-warning { background-color: rgba(255, 193, 7, 0.2); color: var(--warning); border: 1px solid var(--warning); }
+        .case-study { background-color: rgba(42, 59, 77, 0.3); padding: 1.5rem; border-radius: 8px; margin: 1.5rem 0; border-left: 4px solid var(--accent); }
+
+        @media (max-width: 768px) {
+            nav ul { flex-direction: column; align-items: center; }
+            nav li { margin: 5px 0; }
+            header h1 { font-size: 2rem; }
+            section, .virtual-lab, .progress-tracker { padding: 1.5rem; }
+            .progress-steps { flex-wrap: wrap; }
+            .progress-steps li { flex: 0 0 50%; margin-bottom: 1rem; }
+            .tab-container { flex-wrap: wrap; }
+            .tab { margin-bottom: 5px; border-radius: 5px; border: 1px solid #444; }
+            .tab-content { border-radius: 0 0 8px 8px; }
+        }
+        @media (max-width: 576px) {
+            .terminal { font-size: 0.9rem; padding: 1rem; }
+            .command { white-space: pre-wrap; word-break: break-all; }
+        }
+        :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+        @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(255, 127, 80, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(255, 127, 80, 0); } 100% { box-shadow: 0 0 0 0 rgba(255, 127, 80, 0); } }
+        .pulse { animation: pulse 2s infinite; }
+    </style>
+</head>
+<body>
+    <a href="#main-content" class="skip-link">跳至主要内容</a>
+    
+    <div class="container">
+        <header>
+            <h1>DNSRecon 新手教學</h1>
+            <p>學習如何使用 DNSRecon 進行 DNS 列舉與情報蒐集，並了解相對應的防禦方法與法律規範</p>
+        </header>
+        
+        <nav aria-label="主要導航">
+            <ul role="menubar">
+                <li role="menuitem"><a href="#introduction">基本介紹</a></li>
+                <li role="menuitem"><a href="#commands">基本指令</a></li>
+                <li role="menuitem"><a href="#examples">實戰範例</a></li>
+                <li role="menuitem"><a href="#advanced">進階技巧</a></li>
+                <li role="menuitem"><a href="#defense">防禦方法</a></li>
+                <li role="menuitem"><a href="#legal">法律規範</a></li>
+            </ul>
+        </nav>
+        
+        <div class="progress-tracker">
+            <h3>您的學習進度</h3>
+            <div class="progress-bar">
+                <div class="progress" id="learning-progress" style="width: 20%"></div>
+            </div>
+            <ul class="progress-steps">
+                <li class="completed">基本介紹</li>
+                <li class="active">基本指令</li>
+                <li>實戰範例</li>
+                <li>進階技巧</li>
+                <li>防禦方法</li>
+                <li>法律規範</li>
+            </ul>
+            <button class="save-progress">保存進度</button>
+        </div>
+        
+        <main id="main-content">
+            <section id="introduction">
+                <h2>DNSRecon 基本介紹</h2>
+                <p>DNSRecon 是一款用於 <strong>DNS 列舉（DNS Enumeration）</strong> 的開源工具，可協助在滲透測試前期收集目標網域的 DNS 記錄、名稱伺服器(NS)、子網域、可疑配置（如可被 Zone Transfer 的開放式 NS）等資訊。</p>
+                <div class="note">
+                    <p>請僅於 <strong>合法授權</strong> 的範圍內對目標域名進行列舉與測試。</p>
+                </div>
+                <h3>可以蒐集的資訊</h3>
+                <ul aria-label="DNSRecon蒐集重點">
+                    <li>A / AAAA / CNAME / MX / NS / TXT / SOA 記錄</li>
+                    <li>SRV 服務記錄（例如 SIP、Kerberos、LDAP）</li>
+                    <li>AXFR（區域傳送）檢查與 Zone Walk（NSEC/NSEC3）</li>
+                    <li>子網域字典暴力枚舉（Brute force subdomains）</li>
+                    <li>反查（Reverse lookup）及 WHOIS 對應段列舉</li>
+                </ul>
+                <h3>安裝方法</h3>
+                <p>Kali Linux 通常已內建 DNSRecon。若需安裝/更新：</p>
+                <div class="terminal">
+                    <span class="command" tabindex="0" role="button">sudo apt update</span><br>
+                    <span class="command" tabindex="0" role="button">sudo apt install dnsrecon</span><br>
+                    <span class="command" tabindex="0" role="button">dnsrecon -h</span>
+                </div>
+            </section>
+            
+            <section id="commands">
+                <h2>基本指令教學</h2>
+                <p>DNSRecon 最核心的使用方式是指定 <code>-d</code> 目標網域以及 <code>-t</code> 欲執行的列舉類型。</p>
+
+                <h3>1) 標準列舉（常見記錄）</h3>
+                <div class="terminal">
+                    <span class="comment"># 蒐集 A/AAAA/CNAME/MX/NS/TXT/SOA 等常見記錄</span><br>
+                    <span class="command" tabindex="0" role="button">dnsrecon -d example.com -t std</span>
+                </div>
+
+                <h3>2) 子網域暴力枚舉（字典）</h3>
+                <div class="terminal">
+                    <span class="comment"># 使用字典檔嘗試解析大量子網域</span><br>
+                    <span class="command" tabindex="0" role="button">dnsrecon -d example.com -t brt -D /usr/share/wordlists/dnsmap.txt</span>
+                </div>
+
+                <h3>3) 服務記錄（SRV）列舉</h3>
+                <div class="terminal">
+                    <span class="comment"># 尋找常見服務位置，如 _sip._tcp, _kerberos 等</span><br>
+                    <span class="command" tabindex="0" role="button">dnsrecon -d example.com -t srv</span>
+                </div>
+
+                <h3>4) 區域傳送（AXFR）測試</h3>
+                <div class="terminal">
+                    <span class="comment"># 嘗試向名稱伺服器要求完整區域資料（若配置錯誤可能成功）</span><br>
+                    <span class="command" tabindex="0" role="button">dnsrecon -d zonetransfer.me -t axfr</span>
+                </div>
+
+                <h3>5) 反向查詢 / CIDR 列舉</h3>
+                <div class="terminal">
+                    <span class="comment"># 針對 IP 段進行反向 DNS</span><br>
+                    <span class="command" tabindex="0" role="button">dnsrecon -r 192.168.1.0/24 -n 8.8.8.8</span>
+                </div>
+
+                <div class="quiz">
+                    <h4>小測驗</h4>
+                    <p>哪個 <code>-t</code> 類型可以嘗試完整區域傳送（Zone Transfer）？</p>
+                    <div class="quiz-option" tabindex="0" role="button" onclick="checkAnswer(this, true)">axfr</div>
+                    <div class="quiz-option" tabindex="0" role="button" onclick="checkAnswer(this, false)">std</div>
+                    <div class="quiz-option" tabindex="0" role="button" onclick="checkAnswer(this, false)">srv</div>
+                    <div class="quiz-option" tabindex="0" role="button" onclick="checkAnswer(this, false)">brt</div>
+                    <p id="quiz-feedback" style="display:none; margin-top:10px; color:var(--accent);"></p>
+                    <div class="explanation">
+                        <p><strong>解析：</strong><code>-t axfr</code> 會對每個 NS 嘗試區域傳送，若權限配置錯誤可能取得完整區域資料。</p>
+                    </div>
+                </div>
+            </section>
+            
+            <section id="examples">
+                <h2>實戰範例</h2>
+
+                <div class="example">
+                    <h4>範例 1：標準列舉 + 匯出報表</h4>
+                    <div class="terminal">
+                        <span class="comment"># 取得常見記錄並輸出 JSON/CSV 報告</span><br>
+                        <span class="command" tabindex="0" role="button">dnsrecon -d example.com -t std -j result.json -c result.csv</span>
+                    </div>
+                    <p>常見報表選項：<code>-j</code> 匯出 JSON、<code>-c</code> 匯出 CSV。便於後續分析/歸檔。</p>
+                </div>
+
+                <div class="example">
+                    <h4>範例 2：指定 DNS 伺服器與逾時</h4>
+                    <div class="terminal">
+                        <span class="comment"># 指定查詢 NS，並合理設定逾時秒數</span><br>
+                        <span class="command" tabindex="0" role="button">dnsrecon -d example.com -t std -n 1.1.1.1 --lifetime 5</span>
+                    </div>
+                    <p>當預設遞迴 DNS 不穩定或被限制時，可用 <code>-n</code> 指定可信 DNS。</p>
+                </div>
+
+                <div class="example">
+                    <h4>範例 3：子網域暴力枚舉 + 限速</h4>
+                    <div class="terminal">
+                        <span class="comment"># 避免對方偵測到過於密集的查詢</span><br>
+                        <span class="command" tabindex="0" role="button">dnsrecon -d example.com -t brt -D subdomains.txt --threads 5 --sleep 0.2</span>
+                    </div>
+                    <p>調降 <code>--threads</code> 與加入 <code>--sleep</code> 能降低噪音，較不易觸發防護。</p>
+                </div>
+
+                <div class="case-study">
+                    <h4>企業網域情報蒐集流程（參考）</h4>
+                    <ol>
+                        <li>標準列舉：<code>dnsrecon -d target.com -t std</code> 盤點 NS/MX/TXT 等基礎面。</li>
+                        <li>服務列舉：<code>dnsrecon -d target.com -t srv</code> 發掘關鍵服務端點。</li>
+                        <li>子網域暴力：<code>dnsrecon -d target.com -t brt -D wordlist.txt</code> 擴大面向。</li>
+                        <li>AXFR 與 Zone Walk：<code>-t axfr</code> / <code>-t zonewalk</code> 驗證配置缺陷。</li>
+                        <li>反向查詢：<code>-r</code> 針對已知 IP 範圍補足名稱對應。</li>
+                        <li>全部結果彙整輸出 <code>-j / -c</code> 並撰寫報告。</li>
+                    </ol>
+                </div>
+
+                <div class="warning">
+                    <p>注意：這些範例僅供學習。未經授權的列舉與嘗試 AXFR 可能違法且具風險。</p>
+                </div>
+
+                <div class="quiz">
+                    <h4>小測驗</h4>
+                    <p>若要嘗試找出 <strong>常見企業服務</strong>（如 SIP/Kerberos/LDAP）的 DNS 指向，應使用哪個 <code>-t</code>？</p>
+                    <div class="quiz-option" tabindex="0" role="button" onclick="checkAnswer(this, true)">srv</div>
+                    <div class="quiz-option" tabindex="0" role="button" onclick="checkAnswer(this, false)">brt</div>
+                    <div class="quiz-option" tabindex="0" role="button" onclick="checkAnswer(this, false)">tld</div>
+                    <div class="quiz-option" tabindex="0" role="button" onclick="checkAnswer(this, false)">zonewalk</div>
+                    <p id="quiz-feedback2" style="display:none; margin-top:10px; color:var(--accent);"></p>
+                    <div class="explanation">
+                        <p><strong>解析：</strong><code>-t srv</code> 會查詢常見 <code>_service._proto</code> 的 SRV 記錄。</p>
+                    </div>
+                </div>
+            </section>
+            
+            <section id="advanced">
+                <h2>進階使用技巧</h2>
+                <div class="security-warning">
+                    <p>⚠️ 僅於取得 <strong>書面授權</strong> 的前提下進行下列進階操作</p>
+                </div>
+
+                <div class="tab-container">
+                    <div class="tab active" onclick="openTab(event, 'rate')">查詢節流與隱蔽性</div>
+                    <div class="tab" onclick="openTab(event, 'output')">報表整合</div>
+                    <div class="tab" onclick="openTab(event, 'zone')">Zone Walk / TLD</div>
+                </div>
+
+                <div id="rate" class="tab-content active">
+                    <h3>降低噪音與封鎖風險</h3>
+                    <p>在面對 WAF/IDS 或 DNS 查詢頻率限制時，調整並發數與等待時間：</p>
+                    <div class="terminal">
+                        <span class="comment"># 以較低併發與睡眠時間，減緩流量</span><br>
+                        <span class="command" tabindex="0" role="button">dnsrecon -d target.com -t brt -D sub.txt --threads 3 --sleep 0.5 --lifetime 4</span><br><br>
+                        <span class="comment"># 指定解析器，避免企業內 DNS 解析干擾</span><br>
+                        <span class="command" tabindex="0" role="button">dnsrecon -d target.com -t std -n 9.9.9.9</span>
+                    </div>
+
+                    <div class="quiz">
+                        <h4>小測驗</h4>
+                        <p>若想減少被速率限制偵測，哪個參數最直接？</p>
+                        <div class="quiz-option" tabindex="0" role="button" onclick="checkAnswer(this, false)">-n</div>
+                        <div class="quiz-option" tabindex="0" role="button" onclick="checkAnswer(this, true)">--sleep</div>
+                        <div class="quiz-option" tabindex="0" role="button" onclick="checkAnswer(this, false)">-t srv</div>
+                        <div class="quiz-option" tabindex="0" role="button" onclick="checkAnswer(this, false)">-r</div>
+                        <p id="quiz-feedback4" style="display:none; margin-top:10px; color:var(--accent);"></p>
+                        <div class="explanation">
+                            <p><strong>解析：</strong><code>--sleep</code> 會在查詢間插入延遲，降低速率。</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="output" class="tab-content">
+                    <h3>報表輸出與自動化</h3>
+                    <p>將結果輸出為標準格式，利於與其他工具整合（如解析、去重、視覺化）：</p>
+                    <div class="terminal">
+                        <span class="comment"># JSON 與 CSV 輸出</span><br>
+                        <span class="command" tabindex="0" role="button">dnsrecon -d target.com -t std -j out.json -c out.csv</span><br><br>
+                        <span class="comment"># XML（若版本支援）</span><br>
+                        <span class="command" tabindex="0" role="button">dnsrecon -d target.com -t std -x out.xml</span>
+                    </div>
+                    <p>後續可用 Python/Excel/ELK 等進行統計或告警規則撰寫。</p>
+                </div>
+
+                <div id="zone" class="tab-content">
+                    <h3>Zone Walk 與 TLD 枚舉</h3>
+                    <p>若目標網域啟用 NSEC/NSEC3，<code>-t zonewalk</code> 可能能走訪可見名稱；<code>-t tld</code> 則可針對頂級域名相關資訊進行檢查。</p>
+                    <div class="terminal">
+                        <span class="comment"># Zone Walk（依 DNSSEC 設定而定，不一定可行）</span><br>
+                        <span class="command" tabindex="0" role="button">dnsrecon -d example.com -t zonewalk</span><br><br>
+                        <span class="comment"># TLD 綜覽（不同版本支援內容略有差異）</span><br>
+                        <span class="command" tabindex="0" role="button">dnsrecon -d example.com -t tld</span>
+                    </div>
+                    <div class="note">
+                        <p>注意：Zone Walk 成功與否高度仰賴 DNSSEC 與伺服器配置。</p>
+                    </div>
+                </div>
+            </section>
+            
+            <section id="defense">
+                <h2>防禦方法</h2>
+                <p>理解攻擊面後，也要知道如何降低暴露風險：</p>
+
+                <h3>1. 正確設定名稱伺服器</h3>
+                <ul>
+                    <li>關閉未授權的 <strong>AXFR</strong>（僅允許授權的二級 NS）</li>
+                    <li>使用最小化授權資料（Minimal records on public zone）</li>
+                    <li>避免將內部子網域直接公開於外部 DNS</li>
+                </ul>
+
+                <h3>2. 減少資訊洩露</h3>
+                <ul>
+                    <li>審視 TXT/SPF/DMARC/BIMI 記錄是否洩露內部命名規範</li>
+                    <li>對外服務採用中性命名（避免 dev/test 等敏感字樣）</li>
+                </ul>
+
+                <h3>3. 監控異常查詢</h3>
+                <p>部署 DNS 監控與速率限制，針對短時間內大量 NXDOMAIN 或遍歷式查詢進行告警。</p>
+
+                <div class="note">
+                    <p>DNS 防護屬於長期治理：命名規範、最小揭露、權限分離與日誌監控同等重要。</p>
+                </div>
+
+                <div class="quiz">
+                    <h4>小測驗</h4>
+                    <p>要避免外部取得完整區域資料，首要防護項目是？</p>
+                    <div class="quiz-option" tabindex="0" role="button" onclick="checkAnswer(this, true)">關閉未授權的 AXFR 或僅允許授權 NS</div>
+                    <div class="quiz-option" tabindex="0" role="button" onclick="checkAnswer(this, false)">將所有子網域改成大寫</div>
+                    <div class="quiz-option" tabindex="0" role="button" onclick="checkAnswer(this, false)">增加更多 TXT 記錄</div>
+                    <div class="quiz-option" tabindex="0" role="button" onclick="checkAnswer(this, false)">將 TTL 設成 1 秒</div>
+                    <p id="quiz-feedback5" style="display:none; margin-top:10px; color:var(--accent);"></p>
+                    <div class="explanation">
+                        <p><strong>解析：</strong>限制 AXFR 是阻止區域外洩最直接有效的方法。</p>
+                    </div>
+                </div>
+            </section>
+            
+            <section id="legal">
+                <h2>法律與道德規範</h2>
+                <div class="danger">
+                    <p>重要：未經授權的 DNS 列舉、暴力枚舉與 AXFR 嘗試可能違反法律與使用條款。</p>
+                </div>
+                <h3>合法使用原則</h3>
+                <ul aria-label="合法使用原則">
+                    <li>僅針對自己擁有或取得書面授權之網域操作</li>
+                    <li>避免於生產環境進行高頻或大量字典暴力測試</li>
+                    <li>遵守當地法律與資通安全規範、校內/企業內部規章</li>
+                </ul>
+                <h3>道德黑客準則</h3>
+                <ol aria-label="道德黑客準則">
+                    <li>事前取得書面授權</li>
+                    <li>不影響服務可用性</li>
+                    <li>尊重隱私與資料最小化原則</li>
+                    <li>負責任揭露發現之錯誤配置/漏洞</li>
+                </ol>
+
+                <div class="warning">
+                    <p>本教學僅供教育目的，請在可控且授權的環境中練習。</p>
+                </div>
+
+                <div class="quiz">
+                    <h4>小測驗</h4>
+                    <p>在嘗試 <code>-t axfr</code> 前，最重要的是？</p>
+                    <div class="quiz-option" tabindex="0" role="button" onclick="checkAnswer(this, true)">取得網域擁有者書面授權</div>
+                    <div class="quiz-option" tabindex="0" role="button" onclick="checkAnswer(this, false)">確認字典檔內容充足</div>
+                    <div class="quiz-option" tabindex="0" role="button" onclick="checkAnswer(this, false)">把執行緒開到 50</div>
+                    <div class="quiz-option" tabindex="0" role="button" onclick="checkAnswer(this, false)">把 TTL 設到最大</div>
+                    <p id="quiz-feedback3" style="display:none; margin-top:10px; color:var(--accent);"></p>
+                    <div class="explanation">
+                        <p><strong>解析：</strong>AXFR 嘗試可能造成資訊外洩爭議，務必先取得書面授權。</p>
+                    </div>
+                </div>
+            </section>
+            
+            <div class="virtual-lab">
+                <div class="security-warning">
+                    <p>⚠️ 注意：此虛擬實驗室採用公開示例網域（<code>example.com</code>）與教學用網域（如 <code>zonetransfer.me</code>）作演示。實務上請務必取得授權。</p>
+                </div>
+                <h3>DNSRecon 虛擬實驗室</h3>
+                <div class="lab-instructions">
+                    <p>依序嘗試：</p>
+                    <ol>
+                        <li>標準列舉 <button class="btn-copy" data-cmd="dnsrecon -d example.com -t std">複製命令</button></li>
+                        <li>SRV 記錄列舉 <button class="btn-copy" data-cmd="dnsrecon -d example.com -t srv">複製命令</button></li>
+                        <li>子網域暴力枚舉 <button class="btn-copy" data-cmd="dnsrecon -d example.com -t brt -D /usr/share/wordlists/dnsmap.txt">複製命令</button></li>
+                        <li>AXFR 測試 <button class="btn-copy" data-cmd="dnsrecon -d zonetransfer.me -t axfr">複製命令</button></li>
+                    </ol>
+                </div>
+                <div class="terminal" id="virtual-terminal">
+                    <div class="terminal-header">
+                        <span class="terminal-title">DNSRecon Terminal</span>
+                        <span class="terminal-controls">○ □ ×</span>
+                    </div>
+                    <div class="terminal-body" id="terminal-output">
+                        <div class="welcome-message">
+                            <p>歡迎使用 DNSRecon 虛擬終端</p>
+                            <p>輸入 "help" 查看可用命令</p>
+                            <p>嘗試執行上方實驗室命令</p>
+                        </div>
+                    </div>
+                    <div class="terminal-input-line">
+                        <span class="prompt">dnsrecon > </span>
+                        <input type="text" class="terminal-input" id="terminal-input" aria-label="終端輸入">
+                    </div>
+                </div>
+            </div>
+        </main>
+        
+        <footer>
+            <p>© 2025 資安教學平台 | 僅供教育用途</p>
+            <p>使用本教學內容前請確保您了解並遵守相關法律法規</p>
+        </footer>
+    </div>
+    
+    <script>
+        // 可訪問性: 頁面加載後設置焦點與初始化
+        window.onload = function() {
+            document.querySelector('.skip-link').addEventListener('blur', function() {
+                this.style.top = '-40px';
+            });
+            initVirtualTerminal();
+            setupCopyButtons();
+
+            // 恢復保存的進度
+            if (localStorage.getItem('dnsreconProgress')) {
+                document.getElementById('learning-progress').style.width = localStorage.getItem('dnsreconProgress');
+                updateProgress();
+            }
+            // 恢復完成的測驗
+            if (localStorage.getItem('dnsreconCompletedQuizzes')) {
+                const completedQuizzes = JSON.parse(localStorage.getItem('dnsreconCompletedQuizzes'));
+                document.querySelectorAll('.quiz-option').forEach(opt => {
+                    if (completedQuizzes.includes(opt.textContent.trim())) {
+                        opt.style.backgroundColor = 'rgba(76, 175, 80, 0.3)';
+                        opt.style.borderLeft = '4px solid var(--success)';
+                    }
+                });
+            }
+        };
+
+        // 虛擬終端
+        function initVirtualTerminal() {
+            const terminalInput = document.getElementById('terminal-input');
+            const terminalOutput = document.getElementById('terminal-output');
+            terminalInput.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter') {
+                    const command = this.value.trim();
+                    if (command) {
+                        const commandLine = document.createElement('div');
+                        commandLine.className = 'command-line';
+                        commandLine.innerHTML = `<span class="prompt">dnsrecon > </span>${sanitize(command)}`;
+                        terminalOutput.appendChild(commandLine);
+
+                        const outputDiv = document.createElement('div');
+                        outputDiv.className = 'command-output';
+                        outputDiv.innerHTML = processCommand(command);
+                        terminalOutput.appendChild(outputDiv);
+
+                        terminalOutput.scrollTop = terminalOutput.scrollHeight;
+                        this.value = '';
+                    }
+                }
+            });
+        }
+
+        // 簡單防 XSS
+        function sanitize(text) {
+            return text.replace(/[&<>"]/g, function(c) {
+                return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];
+            });
+        }
+
+        function processCommand(command) {
+            const lower = command.toLowerCase();
+
+            if (lower === 'help') {
+                return `可用命令:
+help        - 顯示此幫助
+std         - 等同: dnsrecon -d example.com -t std
+srv         - 等同: dnsrecon -d example.com -t srv
+brt         - 等同: dnsrecon -d example.com -t brt -D wordlist
+axfr        - 等同: dnsrecon -d zonetransfer.me -t axfr
+reverse     - 等同: dnsrecon -r 192.168.1.0/24 -n 8.8.8.8
+clear       - 清除終端`;
+            } else if (lower === 'clear') {
+                document.getElementById('terminal-output').innerHTML = '';
+                return '';
+            } else if (lower.includes('dnsrecon -d example.com -t std') || lower === 'std') {
+                return `[*] Performing General Enumeration of Domain: example.com
+[*] NS Records:
+    ns1.example.com, ns2.example.com
+[*] MX Records:
+    10 mail.example.com
+[*] TXT Records:
+    v=spf1 include:_spf.example.com ~all
+[*] A Records:
+    www.example.com -> 93.184.216.34
+[*] SOA:
+    ns1.example.com hostmaster.example.com
+[*] Done: Found 6 records.`;
+            } else if (lower.includes('dnsrecon -d example.com -t srv') || lower === 'srv') {
+                return `[*] Enumerating SRV Records for: example.com
+    _sip._tcp.example.com -> sip.example.com:5060
+    _kerberos._udp.example.com -> krb.example.com:88
+[*] Done.`;
+            } else if (lower.includes('dnsrecon -d example.com -t brt') || lower === 'brt') {
+                return `[*] Brute Forcing Subdomains for: example.com
+[+] Found: dev.example.com -> 93.184.216.34
+[+] Found: mail.example.com -> 93.184.216.34
+[+] Found: vpn.example.com -> 93.184.216.34
+[*] Completed brute force.`;
+            } else if (lower.includes('dnsrecon -d zonetransfer.me -t axfr') || lower === 'axfr') {
+                return `[*] Testing Zone Transfer for: zonetransfer.me
+[+] Attempting AXFR against ns1.zonetransfer.me
+[+] Zone Transfer success - records dumped (示意輸出)
+    @   3600 IN SOA   ns1.zonetransfer.me hostmaster.zonetransfer.me
+    www 300  IN A     5.6.7.8
+    mail 300 IN MX    10 mail.zonetransfer.me
+[*] Note: 此為教學用示意輸出。`;
+            } else if (lower.includes('dnsrecon -r 192.168.1.0/24') || lower === 'reverse') {
+                return `[*] Performing Reverse Lookup for: 192.168.1.0/24 (Resolver: 8.8.8.8)
+    192.168.1.10 -> printer.local
+    192.168.1.20 -> nas.local
+[*] Completed reverse enumeration.`;
+            } else {
+                return `命令 "${sanitize(command)}" 未找到，輸入 "help" 查看可用命令`;
+            }
+        }
+
+        // 設置命令複製按鈕
+        function setupCopyButtons() {
+            document.querySelectorAll('.command').forEach(cmd => {
+                cmd.addEventListener('click', function() {
+                    const commandText = this.textContent.trim();
+                    copyToClipboard(commandText);
+                    showTooltip(this, '已複製到剪貼簿!');
+                });
+                cmd.addEventListener('keydown', function(e) {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                        const commandText = this.textContent.trim();
+                        copyToClipboard(commandText);
+                        showTooltip(this, '已複製到剪貼簿!');
+                    }
+                });
+            });
+            document.querySelectorAll('.btn-copy').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const command = this.getAttribute('data-cmd');
+                    copyToClipboard(command);
+                    showTooltip(this, '命令已複製!');
+                });
+            });
+        }
+
+        // 複製到剪貼簿
+        function copyToClipboard(text) {
+            const textarea = document.createElement('textarea');
+            textarea.value = text;
+            document.body.appendChild(textarea);
+            textarea.select();
+            document.execCommand('copy');
+            document.body.removeChild(textarea);
+        }
+
+        // 顯示工具提示
+        function showTooltip(element, message) {
+            const tooltip = document.createElement('div');
+            tooltip.className = 'custom-tooltip';
+            tooltip.textContent = message;
+            tooltip.style.position = 'absolute';
+            tooltip.style.backgroundColor = 'rgba(0,0,0,0.9)';
+            tooltip.style.color = 'white';
+            tooltip.style.padding = '5px 10px';
+            tooltip.style.borderRadius = '4px';
+            tooltip.style.zIndex = '1000';
+            tooltip.style.fontSize = '0.9rem';
+
+            const rect = element.getBoundingClientRect();
+            tooltip.style.left = `${rect.left}px`;
+            tooltip.style.top = `${rect.top - 35}px`;
+
+            document.body.appendChild(tooltip);
+            setTimeout(() => {
+                tooltip.style.opacity = '0';
+                tooltip.style.transition = 'opacity 0.5s';
+                setTimeout(() => tooltip.remove(), 500);
+            }, 1500);
+        }
+
+        // 標籤頁切換
+        function openTab(evt, tabName) {
+            const tabContents = document.getElementsByClassName("tab-content");
+            for (let i = 0; i < tabContents.length; i++) tabContents[i].classList.remove("active");
+            const tabs = document.getElementsByClassName("tab");
+            for (let i = 0; i < tabs.length; i++) tabs[i].classList.remove("active");
+            document.getElementById(tabName).classList.add("active");
+            evt.currentTarget.classList.add("active");
+            updateProgress();
+        }
+
+        // 測驗
+        function checkAnswer(selectedOption, isCorrect) {
+            const feedbackId = selectedOption.parentElement.querySelector('p[id^="quiz-feedback"]').id;
+            const feedbackElement = document.getElementById(feedbackId);
+            const explanation = selectedOption.parentElement.nextElementSibling;
+
+            selectedOption.parentElement.querySelectorAll('.quiz-option').forEach(opt => {
+                opt.style.backgroundColor = '';
+                opt.style.borderLeft = '';
+            });
+
+            if (isCorrect) {
+                selectedOption.style.backgroundColor = 'rgba(76, 175, 80, 0.3)';
+                selectedOption.style.borderLeft = '4px solid var(--success)';
+                feedbackElement.textContent = '✓ 正確!';
+                if (explanation && explanation.classList.contains('explanation')) {
+                    explanation.style.display = 'block';
+                }
+            } else {
+                selectedOption.style.backgroundColor = 'rgba(244, 67, 54, 0.3)';
+                selectedOption.style.borderLeft = '4px solid var(--danger)';
+                feedbackElement.textContent = '✗ 不正確，請再試一次。';
+            }
+            feedbackElement.style.display = 'block';
+
+            if (isCorrect) updateProgress();
+        }
+
+        // 保存進度
+        function saveProgress() {
+            const progress = document.getElementById('learning-progress').style.width;
+            localStorage.setItem('dnsreconProgress', progress);
+
+            const completedQuizzes = [];
+            document.querySelectorAll('.quiz-option[style*="background-color: rgba(76, 175, 80, 0.3)"]').forEach(opt => {
+                completedQuizzes.push(opt.textContent.trim());
+            });
+            localStorage.setItem('dnsreconCompletedQuizzes', JSON.stringify(completedQuizzes));
+
+            const saveButton = document.querySelector('.save-progress');
+            const originalText = saveButton.textContent;
+            saveButton.textContent = '✓ 進度已保存';
+            saveButton.style.backgroundColor = '#3d8b40';
+            setTimeout(() => { saveButton.textContent = originalText; saveButton.style.backgroundColor = ''; }, 2000);
+        }
+        document.querySelector('.save-progress').addEventListener('click', saveProgress);
+
+        // 更新學習進度
+        function updateProgress() {
+            const completedQuizzes = document.querySelectorAll('.quiz-option[style*="background-color: rgba(76, 175, 80, 0.3)"]').length;
+            const progress = Math.min(100, 20 + (completedQuizzes * 15));
+            document.getElementById('learning-progress').style.width = `${progress}%`;
+
+            const steps = document.querySelectorAll('.progress-steps li');
+            if (progress >= 30) { steps[2].classList.add('active'); steps[1].classList.remove('active'); steps[1].classList.add('completed'); }
+            if (progress >= 45) { steps[3].classList.add('active'); steps[2].classList.remove('active'); steps[2].classList.add('completed'); }
+            if (progress >= 60) { steps[4].classList.add('active'); steps[3].classList.remove('active'); steps[3].classList.add('completed'); }
+            if (progress >= 75) { steps[5].classList.add('active'); steps[4].classList.remove('active'); steps[4].classList.add('completed'); }
+        }
+    </script>
+</body>
+</html>
