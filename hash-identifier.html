@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Hash-Identifier 新手教學 | 資安學習平台</title>
-    <meta name="description" content="Hash-Identifier 雜湊辨識工具完整教學，從安裝到實戰辨識、策略與整合">
+    <meta name="description" content="Hash-Identifier 雜湊類型辨識工具完整教學，從基礎到進階使用技巧">
     <style>
         :root {
             --primary: #2a3b4d;
@@ -19,72 +19,291 @@
             --text-secondary: #e0e0e0;
             --bg-gradient: radial-gradient(ellipse at bottom, #1B2735 0%, #090A0F 100%);
         }
-        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-        body { background: var(--bg-gradient); color: var(--text-primary); line-height: 1.6; min-height: 100vh; }
-        .skip-link { position: absolute; top: -40px; left: 0; background: var(--secondary); color: white; padding: 8px; z-index: 100; transition: top 0.3s; }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background: var(--bg-gradient);
+            color: var(--text-primary);
+            line-height: 1.6;
+            min-height: 100vh;
+        }
+        
+        .skip-link {
+            position: absolute;
+            top: -40px;
+            left: 0;
+            background: var(--secondary);
+            color: white;
+            padding: 8px;
+            z-index: 100;
+            transition: top 0.3s;
+        }
+        
         .skip-link:focus { top: 0; }
-        .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
-        header { background: linear-gradient(135deg, var(--primary), var(--secondary)); padding: 2rem 0; text-align: center; border-bottom: 4px solid var(--accent); margin-bottom: 2rem; border-radius: 0 0 10px 10px; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3); position: relative; }
-        header h1 { font-size: 2.5rem; margin-bottom: 0.5rem; color: white; text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5); }
-        header p { font-size: 1.1rem; color: rgba(255, 255, 255, 0.9); max-width: 800px; margin: 0 auto; }
-        nav { background-color: var(--dark); padding: 1rem; border-radius: 8px; margin-bottom: 2rem; box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2); }
-        nav ul { display: flex; justify-content: center; list-style: none; flex-wrap: wrap; }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        header {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            padding: 2rem 0;
+            text-align: center;
+            border-bottom: 4px solid var(--accent);
+            margin-bottom: 2rem;
+            border-radius: 0 0 10px 10px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+            position: relative;
+        }
+        
+        header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+            color: white;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+        }
+        
+        header p {
+            font-size: 1.1rem;
+            color: rgba(255, 255, 255, 0.9);
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        
+        nav {
+            background-color: var(--dark);
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 2rem;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+        }
+        
+        nav ul {
+            display: flex;
+            justify-content: center;
+            list-style: none;
+            flex-wrap: wrap;
+        }
+        
         nav li { margin: 0 15px; }
-        nav a { color: var(--light); text-decoration: none; font-weight: 500; padding: 5px 10px; border-radius: 4px; transition: all 0.3s ease; }
-        nav a:hover, nav a:focus { background-color: var(--secondary); color: white; outline: none; }
-        section { background: rgba(30, 30, 30, 0.8); backdrop-filter: blur(10px); border-radius: 8px; padding: 2rem; margin-bottom: 2rem; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.25); border-left: 4px solid var(--secondary); border: 1px solid rgba(58, 110, 165, 0.3); }
-        h2 { color: var(--accent); margin-bottom: 1.5rem; font-size: 1.8rem; border-bottom: 2px solid var(--secondary); padding-bottom: 0.5rem; display: inline-block; }
+        
+        nav a {
+            color: var(--light);
+            text-decoration: none;
+            font-weight: 500;
+            padding: 5px 10px;
+            border-radius: 4px;
+            transition: all 0.3s ease;
+        }
+        
+        nav a:hover, nav a:focus {
+            background-color: var(--secondary);
+            color: white;
+            outline: none;
+        }
+        
+        section {
+            background: rgba(30, 30, 30, 0.8);
+            backdrop-filter: blur(10px);
+            border-radius: 8px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.25);
+            border-left: 4px solid var(--secondary);
+            border: 1px solid rgba(58, 110, 165, 0.3);
+        }
+        
+        h2 {
+            color: var(--accent);
+            margin-bottom: 1.5rem;
+            font-size: 1.8rem;
+            border-bottom: 2px solid var(--secondary);
+            padding-bottom: 0.5rem;
+            display: inline-block;
+        }
+        
         h3 { color: var(--light); margin: 1.5rem 0 1rem; font-size: 1.4rem; }
         p { margin-bottom: 1rem; color: var(--text-secondary); }
-        .terminal { background-color: #000000; color: #00ff00; padding: 1.5rem; border-radius: 8px; font-family: 'Courier New', Courier, monospace; margin: 1.5rem 0; position: relative; border: 1px solid #333; box-shadow: inset 0 0 10px rgba(0, 255, 0, 0.1); overflow-x: auto; }
-        .terminal:before { content: "Terminal"; position: absolute; top: -10px; left: 15px; background-color: #000; color: #00ff00; padding: 0 10px; font-size: 0.8rem; border: 1px solid #333; border-bottom: none; border-radius: 5px 5px 0 0; }
-        .command { color: #00ffff; font-weight: bold; cursor: pointer; transition: all 0.3s ease; position: relative; display: inline-block; padding: 2px 5px; border-radius: 3px; }
+        
+        .terminal {
+            background-color: #000000;
+            color: #00ff00;
+            padding: 1.5rem;
+            border-radius: 8px;
+            font-family: 'Courier New', Courier, monospace;
+            margin: 1.5rem 0;
+            position: relative;
+            border: 1px solid #333;
+            box-shadow: inset 0 0 10px rgba(0, 255, 0, 0.1);
+            overflow-x: auto;
+        }
+        .terminal:before {
+            content: "Terminal";
+            position: absolute;
+            top: -10px;
+            left: 15px;
+            background-color: #000;
+            color: #00ff00;
+            padding: 0 10px;
+            font-size: 0.8rem;
+            border: 1px solid #333;
+            border-bottom: none;
+            border-radius: 5px 5px 0 0;
+        }
+        
+        .command {
+            color: #00ffff;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            display: inline-block;
+            padding: 2px 5px;
+            border-radius: 3px;
+        }
         .command:hover { text-shadow: 0 0 8px rgba(0, 255, 255, 0.7); }
-        .command:after { content: ''; position: absolute; bottom: -2px; left: 0; width: 0; height: 2px; background: var(--accent); transition: width 0.3s; }
+        .command:after {
+            content: '';
+            position: absolute;
+            bottom: -2px; left: 0; width: 0; height: 2px;
+            background: var(--accent); transition: width 0.3s;
+        }
         .command:hover:after { width: 100%; }
+        
         .option { color: #ffa500; }
         .comment { color: #888; font-style: italic; }
-        .note { background-color: rgba(58, 110, 165, 0.2); border-left: 4px solid var(--secondary); padding: 1rem; margin: 1.5rem 0; border-radius: 0 4px 4px 0; }
-        .warning { background-color: rgba(255, 193, 7, 0.2); border-left: 4px solid var(--warning); padding: 1rem; margin: 1.5rem 0; border-radius: 0 4px 4px 0; }
-        .danger { background-color: rgba(244, 67, 54, 0.2); border-left: 4px solid var(--danger); padding: 1rem; margin: 1.5rem 0; border-radius: 0 4px 4px 0; }
-        .example { background-color: rgba(42, 59, 77, 0.3); padding: 1.5rem; border-radius: 8px; margin: 1.5rem 0; border: 1px dashed var(--secondary); }
+        
+        .note {
+            background-color: rgba(58, 110, 165, 0.2);
+            border-left: 4px solid var(--secondary);
+            padding: 1rem; margin: 1.5rem 0; border-radius: 0 4px 4px 0;
+        }
+        .warning {
+            background-color: rgba(255, 193, 7, 0.2);
+            border-left: 4px solid var(--warning);
+            padding: 1rem; margin: 1.5rem 0; border-radius: 0 4px 4px 0;
+        }
+        .danger {
+            background-color: rgba(244, 67, 54, 0.2);
+            border-left: 4px solid var(--danger);
+            padding: 1rem; margin: 1.5rem 0; border-radius: 0 4px 4px 0;
+        }
+        .example {
+            background-color: rgba(42, 59, 77, 0.3);
+            padding: 1.5rem; border-radius: 8px; margin: 1.5rem 0; border: 1px dashed var(--secondary);
+        }
         .example h4 { color: var(--accent); margin-bottom: 1rem; }
-        .quiz { background-color: rgba(42, 59, 77, 0.5); padding: 1.5rem; border-radius: 8px; margin: 1.5rem 0; border: 1px solid var(--secondary); }
+        
+        .quiz {
+            background-color: rgba(42, 59, 77, 0.5);
+            padding: 1.5rem; border-radius: 8px; margin: 1.5rem 0; border: 1px solid var(--secondary);
+        }
         .quiz h4 { color: var(--accent); margin-bottom: 1rem; }
-        .quiz-option { display: block; margin: 0.5rem 0; padding: 0.5rem; background-color: rgba(255, 255, 255, 0.1); border-radius: 4px; cursor: pointer; transition: all 0.2s; }
+        .quiz-option {
+            display: block; margin: 0.5rem 0; padding: 0.5rem;
+            background-color: rgba(255, 255, 255, 0.1);
+            border-radius: 4px; cursor: pointer; transition: all 0.2s;
+        }
         .quiz-option:hover, .quiz-option:focus { background-color: rgba(255, 255, 255, 0.2); outline: 2px solid var(--accent); }
-        .btn { display: inline-block; background-color: var(--secondary); color: white; padding: 0.5rem 1rem; border-radius: 4px; text-decoration: none; font-weight: bold; transition: all 0.3s; border: none; cursor: pointer; margin-top: 0.5rem; }
-        .btn:hover, .btn:focus { background-color: var(--accent); transform: translateY(-2px); box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); outline: none; }
+        
+        .btn {
+            display: inline-block; background-color: var(--secondary); color: white;
+            padding: 0.5rem 1rem; border-radius: 4px; text-decoration: none;
+            font-weight: bold; transition: all 0.3s; border: none; cursor: pointer; margin-top: 0.5rem;
+        }
+        .btn:hover, .btn:focus { background-color: var(--accent); transform: translateY(-2px); box-shadow: 0 4px 8px rgba(0,0,0,0.2); outline: none; }
         .btn:active { transform: translateY(0); }
-        footer { text-align: center; padding: 2rem 0; margin-top: 2rem; color: #888; font-size: 0.9rem; border-top: 1px solid #333; }
-        .progress-tracker { background: rgba(30, 30, 30, 0.8); padding: 1.5rem; border-radius: 8px; margin-bottom: 2rem; border-left: 4px solid var(--accent); }
+        
+        footer {
+            text-align: center; padding: 2rem 0; margin-top: 2rem; color: #888; font-size: 0.9rem; border-top: 1px solid #333;
+        }
+        
+        .progress-tracker {
+            background: rgba(30, 30, 30, 0.8);
+            padding: 1.5rem; border-radius: 8px; margin-bottom: 2rem; border-left: 4px solid var(--accent);
+        }
         .progress-tracker h3 { margin-top: 0; color: var(--accent); }
         .progress-bar { height: 10px; background: rgba(255, 255, 255, 0.1); border-radius: 5px; margin: 1rem 0; overflow: hidden; }
         .progress { height: 100%; background: linear-gradient(90deg, var(--secondary), var(--accent)); width: 20%; transition: width 0.5s ease; }
         .progress-steps { display: flex; justify-content: space-between; list-style: none; padding: 0; }
         .progress-steps li { text-align: center; position: relative; flex: 1; padding-top: 25px; color: #888; }
-        .progress-steps li:before { content: ''; position: absolute; top: 0; left: 50%; transform: translateX(-50%); width: 20px; height: 20px; border-radius: 50%; background: #333; border: 3px solid #333; }
+        .progress-steps li:before {
+            content: ''; position: absolute; top: 0; left: 50%; transform: translateX(-50%);
+            width: 20px; height: 20px; border-radius: 50%; background: #333; border: 3px solid #333;
+        }
         .progress-steps li.completed:before { background: var(--success); border-color: var(--success); }
         .progress-steps li.active:before { background: var(--accent); border-color: var(--accent); box-shadow: 0 0 0 3px rgba(255, 127, 80, 0.3); }
-        .virtual-lab { background: rgba(30, 30, 30, 0.9); padding: 2rem; border-radius: 8px; margin-bottom: 2rem; border: 1px solid var(--secondary); }
+        
+        .virtual-lab {
+            background: rgba(30, 30, 30, 0.9);
+            padding: 2rem; border-radius: 8px; margin-bottom: 2rem; border: 1px solid var(--secondary);
+        }
         .lab-instructions { margin-bottom: 1.5rem; }
         .lab-instructions ol { margin-left: 1.5rem; }
-        .btn-copy { background: rgba(58, 110, 165, 0.3); color: var(--light); border: 1px solid var(--secondary); border-radius: 4px; padding: 0.2rem 0.5rem; margin-left: 0.5rem; font-size: 0.8rem; cursor: pointer; transition: all 0.2s; }
+        
+        .btn-copy {
+            background: rgba(58, 110, 165, 0.3);
+            color: var(--light);
+            border: 1px solid var(--secondary);
+            border-radius: 4px; padding: 0.2rem 0.5rem; margin-left: 0.5rem; font-size: 0.8rem;
+            cursor: pointer; transition: all 0.2s;
+        }
         .btn-copy:hover { background: rgba(58, 110, 165, 0.5); }
-        .security-warning { background-color: rgba(255, 0, 0, 0.1); border: 1px solid var(--danger); padding: 1rem; border-radius: 8px; margin: 1rem 0; animation: pulse 2s infinite; }
-        .advanced-section { background: rgba(42, 59, 77, 0.5); border-left: 4px solid var(--accent); padding: 1.5rem; margin: 2rem 0; }
+        
+        .security-warning {
+            background-color: rgba(255, 0, 0, 0.1);
+            border: 1px solid var(--danger);
+            padding: 1rem; border-radius: 8px; margin: 1rem 0;
+            animation: pulse 2s infinite;
+        }
+        
+        .advanced-section {
+            background: rgba(42, 59, 77, 0.5);
+            border-left: 4px solid var(--accent);
+            padding: 1.5rem; margin: 2rem 0;
+        }
+        
         .tab-container { display: flex; margin-bottom: -1px; }
-        .tab { padding: 0.8rem 1.5rem; background: rgba(30, 30, 30, 0.7); border: 1px solid #444; border-bottom: none; border-radius: 5px 5px 0 0; cursor: pointer; margin-right: 5px; }
+        .tab {
+            padding: 0.8rem 1.5rem; background: rgba(30, 30, 30, 0.7);
+            border: 1px solid #444; border-bottom: none; border-radius: 5px 5px 0 0;
+            cursor: pointer; margin-right: 5px;
+        }
         .tab.active { background: rgba(30, 30, 30, 0.9); border-color: var(--secondary); color: var(--accent); }
-        .tab-content { display: none; padding: 1.5rem; background: rgba(30, 30, 30, 0.9); border: 1px solid var(--secondary); border-radius: 0 8px 8px 8px; }
+        .tab-content {
+            display: none; padding: 1.5rem; background: rgba(30, 30, 30, 0.9); border: 1px solid var(--secondary);
+            border-radius: 0 8px 8px 8px;
+        }
         .tab-content.active { display: block; }
-        .save-progress { background-color: var(--success); color: white; border: none; padding: 0.5rem 1rem; border-radius: 4px; cursor: pointer; margin-top: 1rem; transition: all 0.3s; }
+        
+        .save-progress {
+            background-color: var(--success); color: white; border: none; padding: 0.5rem 1rem; border-radius: 4px; cursor: pointer; margin-top: 1rem; transition: all 0.3s;
+        }
         .save-progress:hover { background-color: #3d8b40; }
-        .explanation { background-color: rgba(58, 110, 165, 0.2); padding: 1rem; border-radius: 8px; margin: 1rem 0; display: none; }
-        .tag { display: inline-block; padding: 0.2rem 0.5rem; border-radius: 3px; font-size: 0.8rem; font-weight: bold; margin-left: 0.5rem; }
+        
+        .explanation {
+            background-color: rgba(58, 110, 165, 0.2);
+            padding: 1rem; border-radius: 8px; margin: 1rem 0; display: none;
+        }
+        .tag {
+            display: inline-block; padding: 0.2rem 0.5rem; border-radius: 3px; font-size: 0.8rem; font-weight: bold; margin-left: 0.5rem;
+        }
         .tag-advanced { background-color: rgba(255, 127, 80, 0.2); color: var(--accent); border: 1px solid var(--accent); }
         .tag-warning { background-color: rgba(255, 193, 7, 0.2); color: var(--warning); border: 1px solid var(--warning); }
-        .case-study { background-color: rgba(42, 59, 77, 0.3); padding: 1.5rem; border-radius: 8px; margin: 1.5rem 0; border-left: 4px solid var(--accent); }
+        
+        .case-study {
+            background-color: rgba(42, 59, 77, 0.3);
+            padding: 1.5rem; border-radius: 8px; margin: 1.5rem 0; border-left: 4px solid var(--accent);
+        }
+        
         @media (max-width: 768px) {
             nav ul { flex-direction: column; align-items: center; }
             nav li { margin: 5px 0; }
@@ -96,29 +315,41 @@
             .tab { margin-bottom: 5px; border-radius: 5px; border: 1px solid #444; }
             .tab-content { border-radius: 0 0 8px 8px; }
         }
-        @media (max-width: 576px) { .terminal { font-size: 0.9rem; padding: 1rem; } .command { white-space: pre-wrap; word-break: break-all; } }
+        @media (max-width: 576px) {
+            .terminal { font-size: 0.9rem; padding: 1rem; }
+            .command { white-space: pre-wrap; word-break: break-all; }
+        }
+        
         :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-        @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(255, 127, 80, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(255, 127, 80, 0); } 100% { box-shadow: 0 0 0 0 rgba(255, 127, 80, 0); } }
+        
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(255, 127, 80, 0.7); }
+            70% { box-shadow: 0 0 0 10px rgba(255, 127, 80, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(255, 127, 80, 0); }
+        }
         .pulse { animation: pulse 2s infinite; }
     </style>
 </head>
 <body>
-    <a href="#main-content" class="skip-link">跳至主要內容</a>
+    <a href="#main-content" class="skip-link">跳至主要内容</a>
+    
     <div class="container">
         <header>
             <h1>Hash-Identifier 新手教學</h1>
-            <p>學習如何快速辨識雜湊(Hash)類型，並了解雜湊家族特徵、破解策略與合法使用注意事項</p>
+            <p>快速判別雜湊（Hash）類型，為後續破解流程選擇正確字典與演算法</p>
         </header>
+        
         <nav aria-label="主要導航">
             <ul role="menubar">
                 <li role="menuitem"><a href="#introduction">基本介紹</a></li>
-                <li role="menuitem"><a href="#commands">基本指令</a></li>
+                <li role="menuitem"><a href="#commands">基本操作</a></li>
                 <li role="menuitem"><a href="#examples">實戰範例</a></li>
                 <li role="menuitem"><a href="#advanced">進階技巧</a></li>
-                <li role="menuitem"><a href="#defense">安全與限制</a></li>
+                <li role="menuitem"><a href="#defense">安全實務</a></li>
                 <li role="menuitem"><a href="#legal">法律規範</a></li>
             </ul>
         </nav>
+        
         <div class="progress-tracker">
             <h3>您的學習進度</h3>
             <div class="progress-bar">
@@ -126,222 +357,284 @@
             </div>
             <ul class="progress-steps">
                 <li class="completed">基本介紹</li>
-                <li class="active">基本指令</li>
+                <li class="active">基本操作</li>
                 <li>實戰範例</li>
                 <li>進階技巧</li>
-                <li>安全與限制</li>
+                <li>安全實務</li>
                 <li>法律規範</li>
             </ul>
             <button class="save-progress">保存進度</button>
         </div>
+        
         <main id="main-content">
             <section id="introduction">
                 <h2>Hash-Identifier 基本介紹</h2>
-                <p>Hash-Identifier 是用於 <strong>辨識雜湊字串所屬演算法</strong> 的工具。透過分析字元集、長度、前綴等特徵，它能推測可能的雜湊類型，協助後續的破解或驗證流程。</p>
+                <p>Hash-Identifier 是 Kali Linux 內常見的雜湊類型辨識工具。透過輸入雜湊字串，它會依字串長度、字元集合與常見格式，列出最可能的雜湊演算法（如 MD5、SHA-1、SHA-256、NTLM、bcrypt、SHA-512 等）。</p>
                 <div class="note">
-                    <p>Hash-Identifier 常見於 Kali Linux。辨識結果通常是 <em>可能清單</em>，請搭配其他工具 (如 <code>hashcat</code> / <code>john</code>) 進一步驗證。</p>
+                    <p>Hash-Identifier 主要用途是「辨識雜湊種類」，不會幫你還原明文。辨識後可搭配 John the Ripper、hashcat 等工具進行破解。</p>
                 </div>
+                
                 <h3>安裝方法</h3>
-                <p>在 Kali/Ubuntu 可以使用下列指令安裝或確認存在：</p>
+                <p>在 Kali Linux 中通常已預裝；若未安裝，可使用：</p>
                 <div class="terminal">
-                    <span class="command" tabindex="0" aria-label="更新套件列表，點擊複製命令">sudo apt update</span><br>
-                    <span class="command" tabindex="0" aria-label="安裝 hash-identifier，點擊複製命令">sudo apt install hash-identifier</span><br>
-                    <span class="command" tabindex="0" aria-label="執行 hash-identifier，點擊複製命令">hash-identifier</span>
+                    <span class="command" tabindex="0" role="button">sudo apt update</span><br>
+                    <span class="command" tabindex="0" role="button">sudo apt install hash-identifier</span>
                 </div>
-                <p>第一次啟動後，會顯示互動式提示，直接貼上雜湊即可辨識。</p>
+                
+                <h3>啟動方式</h3>
+                <div class="terminal">
+                    <span class="command" tabindex="0" role="button">hash-identifier</span>
+                </div>
+                <p>執行後會進入互動介面，貼上雜湊字串並按下 Enter，即可看到可能的類型清單。</p>
             </section>
+            
             <section id="commands">
-                <h2>基本指令教學</h2>
-                <p>Hash-Identifier 多為互動式使用；也可直接將雜湊管線傳入。以下為常用方式：</p>
-                <h3>互動模式</h3>
+                <h2>基本操作教學</h2>
+                <p>以下為 Hash-Identifier 常見使用流程與提示：</p>
+                
+                <h3>單一雜湊測試</h3>
                 <div class="terminal">
-                    <span class="comment"># 啟動互動介面，依提示貼上雜湊</span><br>
-                    <span class="command" tabindex="0">hash-identifier</span>
+                    <span class="comment"># 啟動互動介面</span><br>
+                    <span class="command" tabindex="0" role="button">hash-identifier</span><br><br>
+                    <span class="comment"># 在提示符貼上 MD5 範例 (32位十六進位)</span><br>
+                    <span class="command" tabindex="0" role="button">5f4dcc3b5aa765d61d8327deb882cf99</span> <span class="comment"># 可能：MD5</span>
                 </div>
-                <h3>管線方式</h3>
-                <div class="terminal">
-                    <span class="comment"># 將雜湊透過 echo 輸入 (範例為 MD5)</span><br>
-                    <span class="command" tabindex="0">echo -n "5f4dcc3b5aa765d61d8327deb882cf99" | hash-identifier</span>
-                </div>
-                <h3>常見雜湊特徵</h3>
-                <ul aria-label="雜湊長度與特徵">
-                    <li><strong>MD5</strong>: 32 位十六進位</li>
-                    <li><strong>SHA-1</strong>: 40 位十六進位</li>
-                    <li><strong>SHA-256</strong>: 64 位十六進位</li>
-                    <li><strong>SHA-512</strong>: 128 位十六進位</li>
-                    <li><strong>bcrypt</strong>: 以 <code>$2a$/$2b$/$2y$</code> 開頭，含 cost 與 22 位 Base64 salt</li>
-                    <li><strong>Argon2</strong>: 以 <code>$argon2id$</code>/<code>$argon2i$</code>/<code>$argon2d$</code> 開頭，含參數、salt、tag</li>
-                    <li><strong>NTLM</strong>: 32 位十六進位 (常與 MD5 混淆，需要情境佐證)</li>
+                
+                <h3>快速判斷技巧</h3>
+                <ul aria-label="快速判斷技巧">
+                    <li><strong>長度 32、十六進位</strong> → 多半是 MD5</li>
+                    <li><strong>長度 40、十六進位</strong> → 常見為 SHA-1</li>
+                    <li><strong>長度 64、十六進位</strong> → 常見為 SHA-256</li>
+                    <li><strong>以 <code>$2a$/$2b$/$2y$</code> 開頭、含 cost</strong> → bcrypt</li>
+                    <li><strong>以 <code>$6$</code> 開頭、含 salt</strong> → glibc SHA-512（/etc/shadow）</li>
+                    <li><strong>32位十六進位但無鹽，用於 Windows</strong> → 可能是 NTLM（MD4）</li>
                 </ul>
+                
                 <div class="quiz">
                     <h4>小測驗</h4>
-                    <p>下列哪一個最像 <strong>SHA-256</strong>？</p>
+                    <p>下列哪個特徵<strong>最可能</strong>對應 bcrypt？</p>
                     <div class="quiz-option" tabindex="0" role="button" onclick="checkAnswer(this, false)">32 位十六進位</div>
-                    <div class="quiz-option" tabindex="0" role="button" onclick="checkAnswer(this, true)">64 位十六進位</div>
-                    <div class="quiz-option" tabindex="0" role="button" onclick="checkAnswer(this, false)">128 位十六進位</div>
-                    <div class="quiz-option" tabindex="0" role="button" onclick="checkAnswer(this, false)">$2y$ 開頭且內含 cost</div>
+                    <div class="quiz-option" tabindex="0" role="button" onclick="checkAnswer(this, true)">$2b$ 開頭且含 cost 參數</div>
+                    <div class="quiz-option" tabindex="0" role="button" onclick="checkAnswer(this, false)">$6$ 開頭</div>
+                    <div class="quiz-option" tabindex="0" role="button" onclick="checkAnswer(this, false)">40 位十六進位</div>
                     <p id="quiz-feedback" style="display:none; margin-top:10px; color:var(--accent);"></p>
                     <div class="explanation">
-                        <p><strong>解析：</strong> SHA-256 的典型輸出長度為 64 位十六進位字元。</p>
+                        <p><strong>解析：</strong> bcrypt 雜湊通常以 <code>$2a$/$2b$/$2y$</code> 開頭並帶有 cost（迭代次數），格式固定。</p>
                     </div>
                 </div>
             </section>
+            
             <section id="examples">
                 <h2>實戰範例</h2>
+                
                 <div class="example">
-                    <h4>範例1: 辨識常見 MD5</h4>
+                    <h4>範例 1：辨識 MD5</h4>
                     <div class="terminal">
-                        <span class="command" tabindex="0">echo -n "5f4dcc3b5aa765d61d8327deb882cf99" | hash-identifier</span>
+                        <span class="command" tabindex="0" role="button">hash-identifier</span><br>
+                        <span class="comment"># 輸入：</span><br>
+                        <span class="command" tabindex="0" role="button">5f4dcc3b5aa765d61d8327deb882cf99</span><br>
+                        <span class="comment"># 可能類型：MD5</span>
                     </div>
-                    <p>輸入 <code>5f4d...</code>（"password" 的 MD5），工具會顯示可能類型：MD5/MD4/NTLM 等，實務上可再用 hashcat 的 <code>-m 0</code> 嘗試。</p>
+                    <p>此為 <code>"password"</code> 的經典 MD5 雜湊（無鹽）。</p>
                 </div>
+                
                 <div class="example">
-                    <h4>範例2: 辨識 bcrypt</h4>
+                    <h4>範例 2：辨識 SHA-1</h4>
                     <div class="terminal">
-                        <span class="command" tabindex="0">echo "$2y$10$abcdefghijklmnopqrstuuS9mC0Z3J7Qf2Gv1yBq8m0C3Cw3x7w" | hash-identifier</span>
+                        <span class="command" tabindex="0" role="button">hash-identifier</span><br>
+                        <span class="comment"># 輸入：</span><br>
+                        <span class="command" tabindex="0" role="button">5baa61e4c9b93f3f0682250b6cf8331b7ee68fd8</span><br>
+                        <span class="comment"># 可能類型：SHA-1</span>
                     </div>
-                    <p>以 <code>$2y$10$</code> 開頭表示 bcrypt，cost=10；破解可用 hashcat <code>-m 3200</code> 或 John 的 <code>bcrypt</code> 模組。</p>
+                    <p>長度 40、十六進位，常見對應 SHA-1。</p>
                 </div>
-                <div class="case-study">
-                    <h4>案例：小型站台憑證評估流程</h4>
-                    <ol>
-                        <li>從資料庫匯出雜湊樣本（合法授權）</li>
-                        <li>使用 Hash-Identifier 產生可能清單</li>
-                        <li>依清單挑選對應模組（hashcat 模式編號 / John 格式）</li>
-                        <li>透過字典/規則/遮罩等策略驗證可行性</li>
-                    </ol>
+                
+                <div class="example">
+                    <h4>範例 3：辨識 bcrypt</h4>
+                    <div class="terminal">
+                        <span class="command" tabindex="0" role="button">hash-identifier</span><br>
+                        <span class="comment"># 輸入：</span><br>
+                        <span class="command" tabindex="0" role="button">$2b$12$KIXIDMRks3Gk7f3uY6qNee3k3L9s9gqk8nC9cG7Q0b8k2aFZl0Zy.</span><br>
+                        <span class="comment"># 可能類型：bcrypt</span>
+                    </div>
+                    <p>bcrypt 具備 cost（此例為 12）與 Base64 字元集合。</p>
                 </div>
+                
+                <div class="example">
+                    <h4>範例 4：辨識 NTLM</h4>
+                    <div class="terminal">
+                        <span class="command" tabindex="0" role="button">hash-identifier</span><br>
+                        <span class="comment"># 輸入：</span><br>
+                        <span class="command" tabindex="0" role="button">8846f7eaee8fb117ad06bdd830b7586c</span><br>
+                        <span class="comment"># 可能類型：NTLM (MD4)</span>
+                    </div>
+                    <p>NTLM 常見為 32 位十六進位（與 MD5 外觀相似，需留意情境與來源）。</p>
+                </div>
+                
                 <div class="warning">
-                    <p>注意：辨識雜湊不等於已破解。請務必於授權與合規前提下進行測試。</p>
+                    <p>注意：以上雜湊僅供學習。請勿在未經授權的資料上操作。</p>
                 </div>
+                
                 <div class="quiz">
                     <h4>小測驗</h4>
-                    <p>看到字串以 <code>$argon2id$</code> 開頭，你會優先判定為？</p>
-                    <div class="quiz-option" tabindex="0" role="button" onclick="checkAnswer(this, true)">Argon2id</div>
-                    <div class="quiz-option" tabindex="0" role="button" onclick="checkAnswer(this, false)">SHA-512</div>
-                    <div class="quiz-option" tabindex="0" role="button" onclick="checkAnswer(this, false)">bcrypt</div>
+                    <p>64 位十六進位字串，最可能對應哪一種雜湊？</p>
+                    <div class="quiz-option" tabindex="0" role="button" onclick="checkAnswer(this, true)">SHA-256</div>
                     <div class="quiz-option" tabindex="0" role="button" onclick="checkAnswer(this, false)">MD5</div>
+                    <div class="quiz-option" tabindex="0" role="button" onclick="checkAnswer(this, false)">bcrypt</div>
+                    <div class="quiz-option" tabindex="0" role="button" onclick="checkAnswer(this, false)">NTLM</div>
                     <p id="quiz-feedback2" style="display:none; margin-top:10px; color:var(--accent);"></p>
                     <div class="explanation">
-                        <p><strong>解析：</strong> Argon2 家族以 <code>$argon2...$</code> 為前綴，包含參數（m/t/p）、salt 與 tag。</p>
+                        <p><strong>解析：</strong> SHA-256 的十六進位輸出通常為 64 字元長度。</p>
                     </div>
                 </div>
             </section>
+            
             <section id="advanced">
                 <h2>進階使用技巧</h2>
+                
                 <div class="security-warning">
-                    <p>⚠️ 僅在合法授權情境下進行雜湊辨識與測試。請先完成書面同意與資料最小化。</p>
+                    <p>⚠️ 僅在合法授權的測試或自有資料上操作雜湊辨識與破解。任何未授權的使用都可能違法。</p>
                 </div>
+                
                 <div class="tab-container">
-                    <div class="tab active" onclick="openTab(event, 'strategy')">辨識策略</div>
-                    <div class="tab" onclick="openTab(event, 'families')">常見雜湊家族</div>
-                    <div class="tab" onclick="openTab(event, 'export')">匯出與整合</div>
+                    <div class="tab active" onclick="openTab(event, 'heuristics')">雜湊判別要訣</div>
+                    <div class="tab" onclick="openTab(event, 'tooling')">與破解工具搭配</div>
+                    <div class="tab" onclick="openTab(event, 'record')">輸出與記錄</div>
                 </div>
-                <div id="strategy" class="tab-content active">
-                    <h3>提高準確率的策略</h3>
+                
+                <div id="heuristics" class="tab-content active">
+                    <h3>雜湊判別要訣</h3>
+                    <p>Hash-Identifier 依「長度、字元集合、典型前綴」推估類型。常見對照：</p>
                     <div class="terminal">
-                        <span class="comment"># 1) 先看長度與字元集</span><br>
-                        <span class="comment"># 2) 檢查是否有前綴 (如 $2y$, $6$, $argon2id$)</span><br>
-                        <span class="comment"># 3) 結合來源系統 (如 Windows 網域多見 NTLM)</span><br>
-                        <span class="comment"># 4) 交叉驗證：以 hashcat/John 嘗試小字典</span>
+                        <span class="comment"># 長度與前綴速查</span><br>
+                        <span class="command" tabindex="0" role="button">MD5 → 32 hex</span><br>
+                        <span class="command" tabindex="0" role="button">SHA-1 → 40 hex</span><br>
+                        <span class="command" tabindex="0" role="button">SHA-256 → 64 hex</span><br>
+                        <span class="command" tabindex="0" role="button">SHA-512 → 128 hex</span><br>
+                        <span class="command" tabindex="0" role="button">bcrypt → $2a$/$2b$/$2y$</span><br>
+                        <span class="command" tabindex="0" role="button">glibc SHA-512 → $6$</span><br>
+                        <span class="command" tabindex="0" role="button">NTLM → 32 hex（MD4）</span>
                     </div>
-                    <p>同長度雜湊可能對應多種算法（如 32 位：MD5/MD4/NTLM）。來源脈絡與樣本對照是關鍵。</p>
+                    
                     <div class="quiz">
                         <h4>小測驗</h4>
-                        <p>若來自 Windows AD 的 32 位十六進位，最可能是？</p>
-                        <div class="quiz-option" tabindex="0" role="button" onclick="checkAnswer(this, true)">NTLM</div>
-                        <div class="quiz-option" tabindex="0" role="button" onclick="checkAnswer(this, false)">MD5</div>
-                        <div class="quiz-option" tabindex="0" role="button" onclick="checkAnswer(this, false)">SHA-1</div>
-                        <div class="quiz-option" tabindex="0" role="button" onclick="checkAnswer(this, false)">bcrypt</div>
+                        <p>下列哪個<strong>最符合</strong> Linux /etc/shadow 常見的 SHA-512 雜湊表示？</p>
+                        <div class="quiz-option" tabindex="0" role="button" onclick="checkAnswer(this, false)">$2y$10$...</div>
+                        <div class="quiz-option" tabindex="0" role="button" onclick="checkAnswer(this, true)">$6$SALTHEX$HASH...</div>
+                        <div class="quiz-option" tabindex="0" role="button" onclick="checkAnswer(this, false)">$1$salt$hash</div>
+                        <div class="quiz-option" tabindex="0" role="button" onclick="checkAnswer(this, false)">40 位十六進位</div>
                         <p id="quiz-feedback4" style="display:none; margin-top:10px; color:var(--accent);"></p>
-                        <div class="explanation"><p><strong>解析：</strong> 情境判斷很重要；AD/Windows 環境中 NTLM 常見。</p></div>
+                        <div class="explanation">
+                            <p><strong>解析：</strong> <code>$6$</code> 代表 glibc SHA-512；<code>$1$</code> 為 MD5；<code>$2y$</code> 為 bcrypt 變體。</p>
+                        </div>
                     </div>
                 </div>
-                <div id="families" class="tab-content">
-                    <h3>雜湊家族與樣式</h3>
-                    <ul>
-                        <li><strong>MDx</strong>：MD2/MD4/MD5，多為 32 位十六進位</li>
-                        <li><strong>SHA 家族</strong>：SHA-1(40)、SHA-256(64)、SHA-512(128)</li>
-                        <li><strong>bcrypt</strong>：<code>$2y$cost$salt$hash</code>，適配 hashcat <code>-m 3200</code></li>
-                        <li><strong>PBKDF2</strong>：常見 <code>pbkdf2:sha256:it:salt:hash</code> 類格式</li>
-                        <li><strong>Argon2</strong>：<code>$argon2id$</code>/<code>$argon2i$</code>/<code>$argon2d$</code></li>
-                        <li><strong>Windows/Unix</strong>：NTLM / <code>$6$</code>(SHA-512 crypt) / <code>$5$</code>(SHA-256 crypt)</li>
-                    </ul>
+                
+                <div id="tooling" class="tab-content">
+                    <h3>與破解工具搭配（流程示意）</h3>
+                    <ol>
+                        <li>用 Hash-Identifier 判別雜湊類型（例如：NTLM）。</li>
+                        <li>選擇相應破解模式（如 hashcat <code>-m 1000</code> 代表 NTLM）。</li>
+                        <li>準備字典或規則，或用暴力／遮罩攻擊。</li>
+                        <li>根據結果調整策略與字典。</li>
+                    </ol>
+                    <div class="note">
+                        <p>Hash-Identifier 不產生破解命令，但能幫你更快選對破解模式與參數。</p>
+                    </div>
                 </div>
-                <div id="export" class="tab-content">
-                    <h3>匯出與整合</h3>
-                    <p>將辨識結果映射到破解工具：</p>
+                
+                <div id="record" class="tab-content">
+                    <h3>輸出與記錄</h3>
+                    <p>Hash-Identifier 為互動式工具，建議同時使用終端重導出功能保存結果：</p>
                     <div class="terminal">
-                        <span class="comment"># MD5 與 hashcat</span><br>
-                        <span class="command" tabindex="0">hashcat -m 0 -a 0 hash.txt rockyou.txt</span><br><br>
-                        <span class="comment"># bcrypt 與 hashcat</span><br>
-                        <span class="command" tabindex="0">hashcat -m 3200 -a 0 hash.txt wordlist.txt</span><br><br>
-                        <span class="comment"># John 指定格式 (例: NT)</span><br>
-                        <span class="command" tabindex="0">john --format=NT hashes.txt --wordlist=rockyou.txt</span>
+                        <span class="comment"># 將互動過程記錄到檔案（script 工具）</span><br>
+                        <span class="command" tabindex="0" role="button">script -c "hash-identifier" hashid.log</span>
                     </div>
-                    <p>建議建立「雜湊樣本 → 可能算法 → 對應模式編號/格式」的速查表，便於批次處理。</p>
+                    <p>或在專案報告中自行整理「雜湊 → 可能類型 → 後續破解策略」的對照表，以利追蹤。</p>
                 </div>
             </section>
+            
             <section id="defense">
-                <h2>安全與限制</h2>
-                <p>雜湊辨識的目的是確定演算法以便合規測試與修補：</p>
-                <h3>1. 強化密碼儲存</h3>
-                <p>使用具記憶體硬耗的 KDF（如 Argon2、scrypt），搭配獨立隨機 salt 與足夠迭代/成本。</p>
-                <h3>2. 設計限速與監控</h3>
-                <p>對暴力嘗試實施速率限制、MFA 與異常偵測，降低破解成功率。</p>
-                <h3>3. 管理風險與曝光</h3>
-                <p>避免在日誌或除錯輸出中留下雜湊；定期審核與輪替策略。</p>
-                <div class="note"><p>辨識到 <strong>快速雜湊</strong>（如 MD5/SHA-1）代表高風險，應優先改為針對密碼設計的演算法（bcrypt/Argon2）。</p></div>
+                <h2>安全實務</h2>
+                <p>了解雜湊辨識同時，也要知道如何<strong>正確保存密碼</strong>與<strong>降低外洩風險</strong>：</p>
+                
+                <h3>1. 採用抗 GPU 的密碼雜湊</h3>
+                <p>選用 <strong>Argon2</strong>、<strong>scrypt</strong>、<strong>bcrypt</strong> 等具備記憶體硬度或成本參數的演算法。</p>
+                
+                <h3>2. 使用 Salt / Pepper</h3>
+                <p>每筆資料使用獨立的<strong>salt</strong>；可在伺服端再加入應用層的<strong>pepper</strong>（與程式分離保管）。</p>
+                
+                <h3>3. 增加迭代次數與參數管理</h3>
+                <p>定期評估成本參數（如 bcrypt cost、Argon2 記憶體與迭代設定），隨硬體提升而調整。</p>
+                
+                <div class="note">
+                    <p>對於已知弱雜湊（如 MD5/SHA-1 無鹽），請規劃<strong>升級與重新雜湊</strong>策略。</p>
+                </div>
+                
                 <div class="quiz">
                     <h4>小測驗</h4>
-                    <p>哪一項 <em>最不適合</em> 做為密碼儲存？</p>
-                    <div class="quiz-option" tabindex="0" role="button" onclick="checkAnswer(this, true)">純 SHA-1 無 salt</div>
-                    <div class="quiz-option" tabindex="0" role="button" onclick="checkAnswer(this, false)">Argon2id（含充分參數）</div>
-                    <div class="quiz-option" tabindex="0" role="button" onclick="checkAnswer(this, false)">bcrypt（合理 cost）</div>
-                    <div class="quiz-option" tabindex="0" role="button" onclick="checkAnswer(this, false)">PBKDF2（足夠迭代）</div>
+                    <p>以下哪個做法<strong>最能</strong>減少密碼外洩後被快速破解的風險？</p>
+                    <div class="quiz-option" tabindex="0" role="button" onclick="checkAnswer(this, false)">改成 SHA-256（無鹽）</div>
+                    <div class="quiz-option" tabindex="0" role="button" onclick="checkAnswer(this, true)">改用 bcrypt/Argon2 並調整成本參數</div>
+                    <div class="quiz-option" tabindex="0" role="button" onclick="checkAnswer(this, false)">啟用 HTTPS</div>
+                    <div class="quiz-option" tabindex="0" role="button" onclick="checkAnswer(this, false)">把密碼長度限制為 8</div>
                     <p id="quiz-feedback5" style="display:none; margin-top:10px; color:var(--accent);"></p>
-                    <div class="explanation"><p><strong>解析：</strong> 快速雜湊（如 SHA-1、MD5）不適合存放密碼，容易被 GPU/ASIC 暴力破解。</p></div>
+                    <div class="explanation">
+                        <p><strong>解析：</strong> 密碼專用的記憶體硬式雜湊（如 Argon2）能有效增加破解成本；單純改 SHA-256 無鹽仍易被彩虹表與字典攻擊。</p>
+                    </div>
                 </div>
             </section>
+            
             <section id="legal">
                 <h2>法律與道德規範</h2>
-                <div class="danger"><p>重要：未經授權取得或嘗試破解他人雜湊值，可能違反個資與電腦相關法律，後果嚴重。</p></div>
+                
+                <div class="danger">
+                    <p>重要：未經授權蒐集或測試他人雜湊屬違法行為，可能構成侵害個資或電腦犯罪。</p>
+                </div>
+                
                 <h3>合法使用原則</h3>
                 <ul aria-label="合法使用原則">
-                    <li>僅分析自己擁有或已獲書面授權的資料</li>
-                    <li>資料最小化與加密保存，避免任意散布</li>
-                    <li>在測試報告中移除可識別內容</li>
-                    <li>遵守當地資安與個資法規</li>
+                    <li>僅分析自有或取得明確授權的資料</li>
+                    <li>對敏感資料進行最小化存取與脫敏</li>
+                    <li>遵循企業資安政策與資安事件處理流程</li>
+                    <li>符合在地個資與資安相關法規</li>
                 </ul>
-                <h3>道德準則</h3>
+                
+                <h3>道德黑客準則</h3>
                 <ol aria-label="道德黑客準則">
-                    <li>事前告知、事後負責任揭露</li>
-                    <li>不造成中斷與資料外洩</li>
-                    <li>尊重隱私與合約義務</li>
-                    <li>保存證據鏈與操作紀錄</li>
+                    <li>取得書面授權</li>
+                    <li>最小影響原則：不擾動生產環境</li>
+                    <li>尊重隱私與保密</li>
+                    <li>負責任揭露並協助修補</li>
                 </ol>
-                <div class="warning"><p>本教學僅供教育用途。在任何實務操作前，務必再次確認授權範圍與資料保護要求。</p></div>
+                
                 <div class="quiz">
                     <h4>小測驗</h4>
-                    <p>在進行雜湊辨識前，最重要的是？</p>
-                    <div class="quiz-option" tabindex="0" role="button" onclick="checkAnswer(this, false)">準備字典</div>
-                    <div class="quiz-option" tabindex="0" role="button" onclick="checkAnswer(this, true)">取得資料擁有者的書面授權</div>
-                    <div class="quiz-option" tabindex="0" role="button" onclick="checkAnswer(this, false)">先跑 hashcat</div>
-                    <div class="quiz-option" tabindex="0" role="button" onclick="checkAnswer(this, false)">調整 GPU 頻率</div>
+                    <p>在分析從第三方取得的雜湊清單前，最重要的是什麼？</p>
+                    <div class="quiz-option" tabindex="0" role="button" onclick="checkAnswer(this, false)">先跑 hashcat 試試看</div>
+                    <div class="quiz-option" tabindex="0" role="button" onclick="checkAnswer(this, true)">確認授權與法規遵循並脫敏</div>
+                    <div class="quiz-option" tabindex="0" role="button" onclick="checkAnswer(this, false)">把檔案上傳到雲端分享</div>
+                    <div class="quiz-option" tabindex="0" role="button" onclick="checkAnswer(this, false)">寄給同事大量測試</div>
                     <p id="quiz-feedback3" style="display:none; margin-top:10px; color:var(--accent);"></p>
-                    <div class="explanation"><p><strong>解析：</strong> 書面授權是合法性的基礎，缺乏授權即不可操作。</p></div>
+                    <div class="explanation">
+                        <p><strong>解析：</strong> 未授權即分析可能觸法；資料應最小化存取並採取脫敏處理。</p>
+                    </div>
                 </div>
             </section>
+            
             <div class="virtual-lab">
-                <div class="security-warning"><p>⚠️ 注意：此虛擬實驗室僅供示範。請僅使用測試用雜湊並於授權範圍內練習。</p></div>
+                <div class="security-warning">
+                    <p>⚠️ 注意：此虛擬實驗室僅使用教學用雜湊字串示範；請勿貼入任何真實個資或未授權取得的資料。</p>
+                </div>
                 <h3>Hash-Identifier 虛擬實驗室</h3>
                 <div class="lab-instructions">
                     <p>按照步驟完成實驗：</p>
                     <ol>
                         <li>啟動工具 <button class="btn-copy" data-cmd="hash-identifier">複製命令</button></li>
-                        <li>貼上 MD5 測試值 <button class="btn-copy" data-cmd="5f4dcc3b5aa765d61d8327deb882cf99">複製雜湊</button></li>
-                        <li>貼上 SHA-256 測試值 <button class="btn-copy" data-cmd="ef92b778bafe771e89245b89ecbc08a44a4e166c06659911881f383d4473e94f">複製雜湊</button></li>
-                        <li>貼上 bcrypt 測試值 <button class="btn-copy" data-cmd="$2y$10$abcdefghijklmnopqrstuuS9mC0Z3J7Qf2Gv1yBq8m0C3Cw3x7w">複製雜湊</button></li>
+                        <li>測試 MD5 <button class="btn-copy" data-cmd="5f4dcc3b5aa765d61d8327deb882cf99">複製雜湊</button></li>
+                        <li>測試 SHA-1 <button class="btn-copy" data-cmd="5baa61e4c9b93f3f0682250b6cf8331b7ee68fd8">複製雜湊</button></li>
+                        <li>測試 bcrypt <button class="btn-copy" data-cmd="$2b$12$KIXIDMRks3Gk7f3uY6qNee3k3L9s9gqk8nC9cG7Q0b8k2aFZl0Zy.">複製雜湊</button></li>
+                        <li>測試 NTLM <button class="btn-copy" data-cmd="8846f7eaee8fb117ad06bdd830b7586c">複製雜湊</button></li>
                     </ol>
                 </div>
                 <div class="terminal" id="virtual-terminal">
@@ -352,33 +645,42 @@
                     <div class="terminal-body" id="terminal-output">
                         <div class="welcome-message">
                             <p>歡迎使用 Hash-Identifier 虛擬終端</p>
-                            <p>輸入 "help" 查看可用命令</p>
-                            <p>嘗試輸入：<code>identify 5f4dcc3b5aa765d61d8327deb882cf99</code></p>
+                            <p>輸入 <span class="command">help</span> 以查看可用命令</p>
+                            <p>貼上雜湊字串試試看（例如：<span class="command">5f4dcc3b5aa765d61d8327deb882cf99</span>）</p>
                         </div>
                     </div>
                     <div class="terminal-input-line">
-                        <span class="prompt">hash-id &gt; </span>
+                        <span class="prompt">hashid &gt; </span>
                         <input type="text" class="terminal-input" id="terminal-input" aria-label="終端輸入">
                     </div>
                 </div>
             </div>
         </main>
+        
         <footer>
             <p>© 2025 資安教學平台 | 僅供教育用途</p>
             <p>使用本教學內容前請確保您了解並遵守相關法律法規</p>
         </footer>
     </div>
+    
     <script>
+        // 可訪問性: 頁面加載後設置焦點與初始化
         window.onload = function() {
-            document.querySelector('.skip-link').addEventListener('blur', function() { this.style.top = '-40px'; });
+            document.querySelector('.skip-link').addEventListener('blur', function() {
+                this.style.top = '-40px';
+            });
+            
             initVirtualTerminal();
             setupCopyButtons();
-            if (localStorage.getItem('hashIdProgress')) {
-                document.getElementById('learning-progress').style.width = localStorage.getItem('hashIdProgress');
-                updateProgress();
+            
+            // 恢復保存的進度
+            if (localStorage.getItem('hashIdentifierProgress')) {
+                document.getElementById('learning-progress').style.width = localStorage.getItem('hashIdentifierProgress');
+                updateProgress(); // 更新進度條狀態
             }
-            if (localStorage.getItem('hashIdCompletedQuizzes')) {
-                const completedQuizzes = JSON.parse(localStorage.getItem('hashIdCompletedQuizzes'));
+            // 恢復完成的測驗
+            if (localStorage.getItem('hashIdentifierCompletedQuizzes')) {
+                const completedQuizzes = JSON.parse(localStorage.getItem('hashIdentifierCompletedQuizzes'));
                 document.querySelectorAll('.quiz-option').forEach(opt => {
                     if (completedQuizzes.includes(opt.textContent.trim())) {
                         opt.style.backgroundColor = 'rgba(76, 175, 80, 0.3)';
@@ -387,77 +689,152 @@
                 });
             }
         };
+        
+        // 虛擬終端功能
         function initVirtualTerminal() {
             const terminalInput = document.getElementById('terminal-input');
             const terminalOutput = document.getElementById('terminal-output');
+            
             terminalInput.addEventListener('keydown', function(e) {
                 if (e.key === 'Enter') {
-                    const command = this.value.trim();
-                    if (command) {
+                    const input = this.value.trim();
+                    if (input) {
+                        // 添加輸入到輸出
                         const commandLine = document.createElement('div');
                         commandLine.className = 'command-line';
-                        commandLine.innerHTML = `<span class="prompt">hash-id &gt; </span>${command}`;
+                        commandLine.innerHTML = `<span class="prompt">hashid &gt; </span>${escapeHtml(input)}`;
                         terminalOutput.appendChild(commandLine);
-                        let output = processCommand(command);
+                        
+                        // 處理輸入
+                        let output = processHashCommand(input);
+                        
+                        // 添加輸出
                         const outputDiv = document.createElement('div');
                         outputDiv.className = 'command-output';
                         outputDiv.innerHTML = output;
                         terminalOutput.appendChild(outputDiv);
+                        
+                        // 滾動到底部
                         terminalOutput.scrollTop = terminalOutput.scrollHeight;
+                        
+                        // 清空輸入
                         this.value = '';
                     }
                 }
             });
         }
-        function processCommand(command) {
-            const lowerCmd = command.toLowerCase();
-            if (lowerCmd === 'help') {
-                return `可用命令:\nhelp - 顯示此幫助\nidentify <hash> - 嘗試辨識雜湊\nexamples - 顯示範例\nclear - 清除終端`;
-            } else if (lowerCmd === 'clear') {
+        
+        function escapeHtml(str) {
+            return str.replace(/&/g, "&amp;")
+                      .replace(/</g, "&lt;")
+                      .replace(/>/g, "&gt;")
+                      .replace(/"/g, "&quot;")
+                      .replace(/'/g, "&#039;");
+        }
+        
+        function processHashCommand(command) {
+            const lower = command.toLowerCase();
+            
+            // 幫助
+            if (lower === 'help') {
+                return `可用命令:
+help        - 顯示此幫助
+clear       - 清除終端
+hash-identifier - 顯示啟動橫幅
+<貼上雜湊>  - 嘗試辨識雜湊類型`;
+            }
+            if (lower === 'clear') {
                 document.getElementById('terminal-output').innerHTML = '';
                 return '';
-            } else if (lowerCmd === 'examples') {
-                return `範例:\nidentify 5f4dcc3b5aa765d61d8327deb882cf99\nidentify ef92b7...73e94f\nidentify $2y$10$abcdefghijklmnopqrstuuS9mC0Z3J7Qf2Gv1yBq8m0C3Cw3x7w`;
-            } else if (lowerCmd.startsWith('identify ')) {
-                const hash = command.slice(9).trim();
-                return identifyHash(hash);
-            } else {
-                return `命令 "${command}" 未找到，輸入 "help" 查看可用命令`;
             }
+            if (lower === 'hash-identifier') {
+                return `#############################################
+#         HASH IDENTIFIER (Demo Banner)       #
+#  Paste your hash and press Enter            #
+#############################################`;
+            }
+            
+            // 依長度/格式模擬辨識
+            const hexOnly = /^[a-f0-9]+$/i.test(command);
+            
+            // bcrypt
+            if (/^\$2[aby]\$\d{2}\$[./A-Za-z0-9]{53}$/.test(command)) {
+                return renderGuess(['bcrypt']);
+            }
+            // glibc SHA-512
+            if (/^\$6\$.+/.test(command)) {
+                return renderGuess(['SHA-512 (Unix Crypt, $6$)']);
+            }
+            // MD5 (32 hex)
+            if (hexOnly && command.length === 32) {
+                // 可能是 MD5 或 NTLM
+                return renderGuess(['MD5', 'NTLM (MD4)']);
+            }
+            // SHA-1 (40 hex)
+            if (hexOnly && command.length === 40) {
+                return renderGuess(['SHA-1']);
+            }
+            // SHA-256 (64 hex)
+            if (hexOnly && command.length === 64) {
+                return renderGuess(['SHA-256']);
+            }
+            // SHA-512 (128 hex)
+            if (hexOnly && command.length === 128) {
+                return renderGuess(['SHA-512']);
+            }
+            
+            // 未知/無法匹配
+            return `未能識別此雜湊格式。請檢查是否有多餘空白、大小寫或嘗試其他樣本。`;
         }
-        function identifyHash(hash) {
-            const h = hash.trim();
-            const hex = /^[0-9a-f]+$/i;
-            if (/^\$2[aby]\$\d{2}\$/.test(h)) {
-                return `[*] 可能的雜湊：bcrypt (cost=${h.match(/^\$2[aby]\$(\d{2})\$/)?.[1]||'??'})\n[建議] hashcat 模式 -m 3200`;
-            }
-            if (/^\$argon2(id|i|d)\$/.test(h)) {
-                const type = h.match(/^\$(argon2(?:id|i|d))\$/)[1];
-                return `[*] 可能的雜湊：${type}\n[提示] 驗證需提供參數/鹽，對應 cracker 模組支援`;
-            }
-            if (hex.test(h)) {
-                if (h.length === 32) return `[*] 可能的雜湊：MD5 / MD4 / NTLM\n[情境] 來源若為 Windows，優先嘗試 NTLM`;
-                if (h.length === 40) return `[*] 可能的雜湊：SHA-1`;
-                if (h.length === 56) return `[*] 可能的雜湊：SHA-224`;
-                if (h.length === 64) return `[*] 可能的雜湊：SHA-256`;
-                if (h.length === 96) return `[*] 可能的雜湊：SHA-384`;
-                if (h.length === 128) return `[*] 可能的雜湊：SHA-512`;
-            }
-            if (/^[A-F0-9]{32}$/.test(h)) {
-                return `[*] 可能的雜湊：LM / NTLM / MD5（需脈絡）`;
-            }
-            return `未能判定，請檢查是否為 Base64 或含前綴格式，或改用多工具交叉驗證`;
+        
+        function renderGuess(types) {
+            let html = `可能的雜湊類型：<br>`;
+            html += `<ul>`;
+            types.forEach(t => { html += `<li>${escapeHtml(t)}</li>`; });
+            html += `</ul>`;
+            html += `<div class="note">提示：請依資料來源與情境（如作業系統、應用程式）交叉驗證；外觀相近的雜湊（如 MD5 與 NTLM）需特別留意。</div>`;
+            return html;
         }
+        
+        // 設置命令/雜湊複製按鈕
         function setupCopyButtons() {
             document.querySelectorAll('.command').forEach(cmd => {
-                cmd.addEventListener('click', function() { const t = this.textContent.trim(); copyToClipboard(t); showTooltip(this, '已複製到剪貼簿!'); });
-                cmd.addEventListener('keydown', function(e) { if (e.key === 'Enter' || e.key === ' ') { const t = this.textContent.trim(); copyToClipboard(t); showTooltip(this, '已複製到剪貼簿!'); } });
+                cmd.addEventListener('click', function() {
+                    const commandText = this.textContent.trim();
+                    copyToClipboard(commandText);
+                    showTooltip(this, '已複製到剪貼簿!');
+                });
+                
+                // 鍵盤支持
+                cmd.addEventListener('keydown', function(e) {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                        const commandText = this.textContent.trim();
+                        copyToClipboard(commandText);
+                        showTooltip(this, '已複製到剪貼簿!');
+                    }
+                });
             });
+            
             document.querySelectorAll('.btn-copy').forEach(btn => {
-                btn.addEventListener('click', function() { const command = this.getAttribute('data-cmd'); copyToClipboard(command); showTooltip(this, '已複製!'); });
+                btn.addEventListener('click', function() {
+                    const command = this.getAttribute('data-cmd');
+                    copyToClipboard(command);
+                    showTooltip(this, '內容已複製!');
+                });
             });
         }
-        function copyToClipboard(text) { const textarea = document.createElement('textarea'); textarea.value = text; document.body.appendChild(textarea); textarea.select(); document.execCommand('copy'); document.body.removeChild(textarea); }
+        
+        // 複製到剪貼簿
+        function copyToClipboard(text) {
+            const textarea = document.createElement('textarea');
+            textarea.value = text;
+            document.body.appendChild(textarea);
+            textarea.select();
+            document.execCommand('copy');
+            document.body.removeChild(textarea);
+        }
+        
+        // 顯示工具提示
         function showTooltip(element, message) {
             const tooltip = document.createElement('div');
             tooltip.className = 'custom-tooltip';
@@ -469,61 +846,105 @@
             tooltip.style.borderRadius = '4px';
             tooltip.style.zIndex = '1000';
             tooltip.style.fontSize = '0.9rem';
+            
             const rect = element.getBoundingClientRect();
             tooltip.style.left = `${rect.left}px`;
             tooltip.style.top = `${rect.top - 35}px`;
+            
             document.body.appendChild(tooltip);
-            setTimeout(() => { tooltip.style.opacity = '0'; tooltip.style.transition = 'opacity 0.5s'; setTimeout(() => tooltip.remove(), 500); }, 1500);
+            
+            setTimeout(() => {
+                tooltip.style.opacity = '0';
+                tooltip.style.transition = 'opacity 0.5s';
+                setTimeout(() => tooltip.remove(), 500);
+            }, 1500);
         }
+        
+        // 標籤頁切換功能
         function openTab(evt, tabName) {
-            const tabContents = document.getElementsByClassName('tab-content');
-            for (let i = 0; i < tabContents.length; i++) tabContents[i].classList.remove('active');
-            const tabs = document.getElementsByClassName('tab');
-            for (let i = 0; i < tabs.length; i++) tabs[i].classList.remove('active');
-            document.getElementById(tabName).classList.add('active');
-            evt.currentTarget.classList.add('active');
+            const tabContents = document.getElementsByClassName("tab-content");
+            for (let i = 0; i < tabContents.length; i++) {
+                tabContents[i].classList.remove("active");
+            }
+            const tabs = document.getElementsByClassName("tab");
+            for (let i = 0; i < tabs.length; i++) {
+                tabs[i].classList.remove("active");
+            }
+            document.getElementById(tabName).classList.add("active");
+            evt.currentTarget.classList.add("active");
             updateProgress();
         }
+        
+        // 測驗功能
         function checkAnswer(selectedOption, isCorrect) {
             const feedbackId = selectedOption.parentElement.querySelector('p[id^="quiz-feedback"]').id;
             const feedbackElement = document.getElementById(feedbackId);
             const explanation = selectedOption.parentElement.nextElementSibling;
-            selectedOption.parentElement.querySelectorAll('.quiz-option').forEach(opt => { opt.style.backgroundColor = ''; opt.style.borderLeft = ''; });
+            
+            // 移除所有選項的高亮
+            selectedOption.parentElement.querySelectorAll('.quiz-option').forEach(opt => {
+                opt.style.backgroundColor = '';
+                opt.style.borderLeft = '';
+            });
+            
             if (isCorrect) {
                 selectedOption.style.backgroundColor = 'rgba(76, 175, 80, 0.3)';
                 selectedOption.style.borderLeft = '4px solid var(--success)';
                 feedbackElement.textContent = '✓ 正確!';
-                if (explanation && explanation.classList.contains('explanation')) explanation.style.display = 'block';
+                
+                if (explanation && explanation.classList.contains('explanation')) {
+                    explanation.style.display = 'block';
+                }
             } else {
                 selectedOption.style.backgroundColor = 'rgba(244, 67, 54, 0.3)';
                 selectedOption.style.borderLeft = '4px solid var(--danger)';
                 feedbackElement.textContent = '✗ 不正確，請再試一次。';
             }
+            
             feedbackElement.style.display = 'block';
-            if (isCorrect) updateProgress();
+            
+            // 更新進度
+            if (isCorrect) {
+                updateProgress();
+            }
         }
+        
+        // 保存進度功能
         function saveProgress() {
             const progress = document.getElementById('learning-progress').style.width;
-            localStorage.setItem('hashIdProgress', progress);
+            localStorage.setItem('hashIdentifierProgress', progress);
+            
             const completedQuizzes = [];
-            document.querySelectorAll('.quiz-option[style*="background-color: rgba(76, 175, 80, 0.3)"]').forEach(opt => { completedQuizzes.push(opt.textContent.trim()); });
-            localStorage.setItem('hashIdCompletedQuizzes', JSON.stringify(completedQuizzes));
+            document.querySelectorAll('.quiz-option[style*="background-color: rgba(76, 175, 80, 0.3)"]').forEach(opt => {
+                completedQuizzes.push(opt.textContent.trim());
+            });
+            localStorage.setItem('hashIdentifierCompletedQuizzes', JSON.stringify(completedQuizzes));
+            
             const saveButton = document.querySelector('.save-progress');
             const originalText = saveButton.textContent;
             saveButton.textContent = '✓ 進度已保存';
             saveButton.style.backgroundColor = '#3d8b40';
-            setTimeout(() => { saveButton.textContent = originalText; saveButton.style.backgroundColor = ''; }, 2000);
+            
+            setTimeout(() => {
+                saveButton.textContent = originalText;
+                saveButton.style.backgroundColor = '';
+            }, 2000);
         }
+        
+        // 更新學習進度
         function updateProgress() {
             const completedQuizzes = document.querySelectorAll('.quiz-option[style*="background-color: rgba(76, 175, 80, 0.3)"]').length;
             const progress = Math.min(100, 20 + (completedQuizzes * 15));
             document.getElementById('learning-progress').style.width = `${progress}%`;
+            
             const progressSteps = document.querySelectorAll('.progress-steps li');
             if (progress >= 30) { progressSteps[2].classList.add('active'); progressSteps[1].classList.remove('active'); progressSteps[1].classList.add('completed'); }
             if (progress >= 45) { progressSteps[3].classList.add('active'); progressSteps[2].classList.remove('active'); progressSteps[2].classList.add('completed'); }
             if (progress >= 60) { progressSteps[4].classList.add('active'); progressSteps[3].classList.remove('active'); progressSteps[3].classList.add('completed'); }
             if (progress >= 75) { progressSteps[5].classList.add('active'); progressSteps[4].classList.remove('active'); progressSteps[4].classList.add('completed'); }
         }
+        
+        // 綁定保存進度按鈕
         document.querySelector('.save-progress').addEventListener('click', saveProgress);
     </script>
 </body>
