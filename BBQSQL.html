@@ -1,0 +1,610 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BBQSQL 半自動盲注 | 資安模擬學習</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        /* --- 1. BBQSQL 主題美術風格 (Charcoal & Ember) --- */
+        
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Consolas', 'Monaco', 'Courier New', monospace; }
+        body { line-height: 1.6; color: #ffcc99; background-color: #050200; position: relative; overflow-x: hidden; font-family: 'Segoe UI', sans-serif; }
+
+        /* 背景特效：餘燼與熱浪 */
+        .bbq-background {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1;
+            background: 
+                radial-gradient(circle at 50% 120%, #331100 0%, #000 70%),
+                repeating-linear-gradient(0deg, transparent, transparent 2px, #1a0500 2px, #1a0500 4px);
+        }
+        
+        /* 飄升的火星 */
+        .spark {
+            position: fixed; bottom: -10px; width: 3px; height: 3px; background: #ff5500;
+            border-radius: 50%; animation: riseSpark 4s linear infinite; opacity: 0; z-index: -1;
+            box-shadow: 0 0 5px #ff8800;
+        }
+        .spark:nth-child(1) { left: 20%; animation-duration: 5s; animation-delay: 0s; }
+        .spark:nth-child(2) { left: 40%; animation-duration: 7s; animation-delay: 2s; }
+        .spark:nth-child(3) { left: 60%; animation-duration: 4s; animation-delay: 1s; }
+        .spark:nth-child(4) { left: 80%; animation-duration: 6s; animation-delay: 3s; }
+        .spark:nth-child(5) { left: 50%; animation-duration: 5.5s; animation-delay: 0.5s; }
+
+        @keyframes riseSpark {
+            0% { transform: translateY(0) scale(1); opacity: 1; }
+            100% { transform: translateY(-100vh) scale(0.5); opacity: 0; }
+        }
+
+        /* 容器 */
+        .container { width: 90%; max-width: 1400px; margin: 0 auto; padding: 20px; position: relative; }
+
+        /* 頁首 */
+        header {
+            background: rgba(20, 5, 0, 0.95); padding: 4rem 0; text-align: center; margin-bottom: 2rem;
+            border-radius: 4px; border: 1px solid #ff5500; border-bottom: 4px solid #ff5500;
+            box-shadow: 0 0 30px rgba(255, 85, 0, 0.2); position: relative; overflow: hidden;
+        }
+        header h1 {
+            font-size: 2.8rem; margin-bottom: 1rem; color: #ff5500;
+            text-shadow: 0 0 10px rgba(255, 69, 0, 0.6); letter-spacing: 2px;
+        }
+        header p { font-size: 1.2rem; color: #ffaa66; max-width: 800px; margin: 0 auto; }
+
+        /* 導覽列 */
+        nav {
+            background: #110500; padding: 1rem; border-radius: 4px; border: 1px solid #ff5500;
+            position: sticky; top: 0; z-index: 100; margin-bottom: 30px; box-shadow: 0 5px 15px rgba(0,0,0,0.8);
+        }
+        nav ul { display: flex; justify-content: center; list-style: none; gap: 20px; flex-wrap: wrap; }
+        nav a {
+            text-decoration: none; color: #ffaa66; font-weight: bold; padding: 8px 16px;
+            border-radius: 2px; transition: 0.3s; border: 1px solid transparent;
+        }
+        nav a:hover { background: rgba(255, 85, 0, 0.2); color: #fff; border-color: #ff5500; }
+
+        /* --- 佈局 --- */
+        .grid-layout { display: grid; grid-template-columns: 2fr 1fr; gap: 30px; margin-bottom: 40px; }
+        .full-width { width: 100%; margin-bottom: 2rem; }
+        @media (max-width: 1024px) { .grid-layout { grid-template-columns: 1fr; } }
+
+        /* 卡片樣式 */
+        article {
+            background: rgba(15, 5, 0, 0.9); padding: 30px; border-radius: 4px; border: 1px solid #662200; margin-bottom: 30px;
+        }
+        h2 { color: #ff5500; margin-bottom: 20px; padding-bottom: 10px; border-bottom: 1px solid #662200; font-size: 1.8rem; display: flex; align-items: center; gap: 10px; }
+        h3 { color: #ff8800; margin: 25px 0 15px 0; font-size: 1.4rem; }
+        p, li { margin-bottom: 10px; color: #e6e6e6; font-size: 1.05rem; }
+        ul { margin-left: 20px; }
+
+        /* 側邊欄 */
+        aside {
+            background: rgba(15, 5, 0, 0.9); padding: 25px; border-radius: 4px; border: 1px solid #ff5500;
+            height: fit-content; box-shadow: 0 0 20px rgba(255, 85, 0, 0.1); position: sticky; top: 100px;
+        }
+
+        /* 提示框 */
+        .info-box { background: rgba(255, 136, 0, 0.1); border-left: 5px solid #ff8800; padding: 20px; margin: 20px 0; border-radius: 4px; }
+        .danger-box { background: rgba(255, 0, 0, 0.15); border-left: 5px solid #ff3333; padding: 20px; margin: 20px 0; border-radius: 4px; }
+
+        /* --- 模擬器樣式 (BBQSQL Style) --- */
+        .simulator-wrapper {
+            background: #000; border: 2px solid #ff5500; border-radius: 4px; overflow: hidden;
+            box-shadow: 0 0 50px rgba(255, 85, 0, 0.15); margin: 20px 0;
+            display: flex; flex-direction: column; height: 800px;
+        }
+
+        .sim-header {
+            background: #1a0800; padding: 12px 20px; border-bottom: 1px solid #ff5500;
+            display: flex; justify-content: space-between; align-items: center; color: #ff5500; font-family: monospace; font-weight: bold;
+        }
+
+        .sim-grid {
+            display: grid; grid-template-columns: 240px 1fr 340px; flex: 1; overflow: hidden;
+        }
+
+        /* 控制區 */
+        .sim-controls { background: #0a0300; border-right: 1px solid #662200; padding: 20px; overflow-y: auto; }
+        .sim-btn {
+            width: 100%; padding: 15px; margin-bottom: 12px; background: rgba(255, 85, 0, 0.05); border: 1px solid #662200;
+            color: #ffaa66; text-align: left; cursor: pointer; border-radius: 2px; transition: all 0.2s; font-family: monospace;
+        }
+        .sim-btn:hover { background: rgba(255, 85, 0, 0.15); color: #fff; border-color: #ff5500; }
+        .sim-btn.active { background: rgba(255, 85, 0, 0.25); border-color: #ff5500; color: #fff; border-left: 4px solid #ff5500; box-shadow: 0 0 15px rgba(255, 85, 0, 0.2); font-weight: bold; }
+        .sim-btn strong { display: block; font-size: 1rem; margin-bottom: 4px; }
+
+        /* 終端機 */
+        .sim-terminal {
+            background: #000; padding: 0; display: flex; flex-direction: column; 
+            font-family: 'Consolas', 'Courier New', monospace; position: relative;
+        }
+        .term-body { 
+            flex: 1; padding: 20px; overflow-y: auto; color: #ffcc99; 
+            font-size: 1rem; line-height: 1.5; white-space: pre-wrap; 
+        }
+        .prompt { color: #ff5500; font-weight: bold; margin-right: 10px; }
+        .cursor { display: inline-block; width: 10px; height: 18px; background: #ff5500; animation: blink 1s infinite; vertical-align: text-bottom; }
+
+        /* 解析區 */
+        .sim-decoder { background: #110500; border-left: 1px solid #662200; display: flex; flex-direction: column; }
+        .decoder-header { padding: 15px; background: #1a0800; border-bottom: 1px solid #662200; color: #ff5500; font-weight: bold; font-size: 1.1rem; }
+        .decoder-content { padding: 25px; flex: 1; overflow-y: auto; }
+        
+        .explanation-card { 
+            background: rgba(255, 85, 0, 0.08); border-left: 4px solid #ff5500; 
+            padding: 20px; border-radius: 4px; animation: slideIn 0.3s ease;
+        }
+        .analogy { 
+            margin-top: 15px; padding: 10px; background: rgba(255, 255, 255, 0.05); 
+            border-radius: 4px; color: #ffcc99; font-style: italic; border: 1px dashed #ff5500;
+        }
+
+        /* 重置按鈕 */
+        .reset-btn {
+            background: transparent; border: 1px solid #ff5500; color: #ff5500; 
+            padding: 4px 12px; font-size: 0.8rem; border-radius: 4px; cursor: pointer; transition: 0.3s;
+            font-family: monospace; text-transform: uppercase;
+        }
+        .reset-btn:hover { background: #ff5500; color: #000; }
+
+        /* 表格排版 (琥珀版) */
+        .tech-table { 
+            width: 100%; border-collapse: collapse; margin-top: 15px; 
+            background: rgba(255, 85, 0, 0.02); border: 1px solid #662200;
+        }
+        .tech-table th { 
+            text-align: left; padding: 12px; 
+            background: rgba(255, 85, 0, 0.1); color: #ffaa00; 
+            border-bottom: 2px solid #ffaa00; 
+        }
+        .tech-table td { 
+            padding: 12px; border-bottom: 1px dashed #662200; 
+            vertical-align: top; font-size: 0.95rem; color: #e6e6e6;
+        }
+        .tech-table tr:hover { background: rgba(255, 85, 0, 0.05); }
+
+        /* 代碼膠囊 */
+        .code-pill {
+            display: inline-block; background: #331100; color: #ffaa00;
+            border: 1px solid #ffaa00; padding: 2px 8px; border-radius: 4px;
+            font-family: monospace; font-weight: bold; font-size: 0.9rem;
+        }
+
+        /* 盲注進度條 */
+        .blind-progress { margin-top: 10px; color: #888; font-family: monospace; font-size: 0.9rem; }
+        .progress-char { color: #ff5500; font-weight: bold; }
+
+        @keyframes blink { 50% { opacity: 0; } }
+        @keyframes slideIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* RWD */
+        @media (max-width: 1200px) { .sim-grid { grid-template-columns: 200px 1fr 280px; } }
+        @media (max-width: 900px) {
+            .sim-grid { grid-template-columns: 1fr; grid-template-rows: auto 400px auto; }
+            .sim-decoder { border-left: none; border-top: 1px solid #662200; height: 350px; }
+            .simulator-wrapper { height: auto; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="bbq-background"></div>
+    <div class="spark"></div>
+    <div class="spark"></div>
+    <div class="spark"></div>
+    <div class="spark"></div>
+    <div class="spark"></div>
+
+    <header>
+        <div class="container">
+            <h1><i class="fas fa-fire"></i> BBQSQL 半自動盲注</h1>
+            <p>資料庫的慢火烹調 • 專為盲注設計的半自動工具</p>
+        </div>
+    </header>
+
+    <nav>
+        <div class="container">
+            <ul>
+                <li><a href="#intro">工具介紹</a></li>
+                <li><a href="#install">環境準備</a></li>
+                <li><a href="#simulation">盲注流程演示</a></li>
+                <li><a href="#features">核心特點</a></li>
+                <li><a href="#ethics">法律規範</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <div class="container">
+        
+        <div class="grid-layout">
+            <div class="content-left">
+                <article id="intro">
+                    <h2><i class="fas fa-utensils"></i> 什麼是 BBQSQL？</h2>
+                    <p><strong>BBQSQL</strong> 是一款用 Python 編寫的輕量級、參數化盲注（Blind SQL Injection）工具。當 SQLMap 因為網站防火牆 (WAF) 或複雜的資料庫結構而失效時，BBQSQL 是資安專家的最後手段。</p>
+                    <p>它的特點是<strong>「半自動」</strong>：你需要告訴它注入點在哪裡，但一旦設定好，它的猜解速度（利用二分法）非常驚人。</p>
+                    
+                    <div class="info-box">
+                        <p><strong><i class="fas fa-eye-slash"></i> 什麼是盲注 (Blind Injection)？</strong></p>
+                        <p>就像玩「20 個問題」猜謎遊戲。你問資料庫：「密碼第一個字是 A 嗎？」，資料庫只會回答「對」或「錯」（通過頁面回應差異），駭客就這樣一個字一個字把資料「問」出來。</p>
+                    </div>
+                </article>
+
+                <article id="install">
+                    <h2><i class="fas fa-terminal"></i> 安裝與啟動</h2>
+                    <p>BBQSQL 內建於 Kali Linux，也可以透過 pip 安裝。</p>
+                    <pre><code style="color:#ffaa00;"># 安裝 (Python 2 環境)
+pip install bbqsql
+
+# 啟動工具
+bbqsql</code></pre>
+                </article>
+            </div>
+
+            <aside>
+                <div style="margin-bottom: 30px;">
+                    <h3 style="margin-top:0; border-bottom:1px solid #662200; padding-bottom:10px;">
+                        <i class="fas fa-laptop-code"></i> 實驗配置
+                    </h3>
+                    <ul style="list-style: none; margin: 0; padding: 0;">
+                        <li style="padding: 10px 0; border-bottom: 1px solid #662200;">
+                            <i class="fas fa-check" style="color:#ff5500; margin-right:8px;"></i> 系統: Kali Linux
+                        </li>
+                        <li style="padding: 10px 0; border-bottom: 1px solid #662200;">
+                            <i class="fas fa-bullseye" style="color:#ff5500; margin-right:8px;"></i> 靶機: vulnerable_app
+                        </li>
+                        <li style="padding: 10px 0; border-bottom: 1px solid #662200;">
+                            <i class="fas fa-bug" style="color:#ffaa00; margin-right:8px;"></i> 漏洞: Blind SQLi
+                        </li>
+                        <li style="padding: 10px 0;">
+                            <i class="fas fa-search" style="color:#ff8800; margin-right:8px;"></i> 技術: Binary Search
+                        </li>
+                    </ul>
+                </div>
+                
+                <div>
+                    <h3 style="margin-top:0; border-bottom:1px solid #662200; padding-bottom:10px;">
+                        <i class="fas fa-book"></i> 章節導覽
+                    </h3>
+                    <ul style="list-style: none; margin: 0; padding: 0;">
+                        <li style="padding: 8px 0;"><a href="#intro" style="color:#ffaa66; text-decoration:none;">1. 工具介紹</a></li>
+                        <li style="padding: 8px 0;"><a href="#install" style="color:#ffaa66; text-decoration:none;">2. 環境準備</a></li>
+                        <li style="padding: 8px 0;"><a href="#simulation" style="color:#ffaa66; text-decoration:none;">3. 盲注流程演示</a></li>
+                        <li style="padding: 8px 0;"><a href="#features" style="color:#ffaa66; text-decoration:none;">4. 核心特點</a></li>
+                        <li style="padding: 8px 0;"><a href="#ethics" style="color:#ffaa66; text-decoration:none;">5. 法律規範</a></li>
+                    </ul>
+                </div>
+            </aside>
+        </div>
+
+        <div class="full-width">
+            <article id="simulation" style="border: 2px solid #ff5500; box-shadow: 0 0 30px rgba(255, 85, 0, 0.15);">
+                <h2><i class="fas fa-fire-alt"></i> 極致盲注實戰 (Blind Injection Lab)</h2>
+                <p>現在，我們面對一個「沈默」的網站。它不會報錯，也不會顯示資料。我們將使用 BBQSQL 的二分法搜尋，強行猜出資料庫版本。</p>
+                
+                <div class="simulator-wrapper">
+                    <div class="sim-header">
+                        <div><i class="fas fa-terminal"></i> KALI TERMINAL (BBQSQL)</div>
+                        <button class="reset-btn" onclick="resetSim()">
+                            <i class="fas fa-redo"></i> 重置模擬器
+                        </button>
+                    </div>
+
+                    <div class="sim-grid">
+                        <div class="sim-controls">
+                            <button class="sim-btn" onclick="runStep(1)" id="btn-1">
+                                <strong>Step 1: 啟動與設定</strong><span>Set URL & Method</span>
+                            </button>
+                            <button class="sim-btn" onclick="runStep(2)" id="btn-2">
+                                <strong>Step 2: 設定注入查詢</strong><span>Query: user()</span>
+                            </button>
+                            <button class="sim-btn" onclick="runStep(3)" id="btn-3">
+                                <strong>Step 3: 設定比對特徵</strong><span>Comparison: "Login Success"</span>
+                            </button>
+                            <button class="sim-btn" onclick="runStep(4)" id="btn-4">
+                                <strong>Step 4: 設定搜尋技術</strong><span>Technique: Binary Search</span>
+                            </button>
+                            <button class="sim-btn" onclick="runStep(5)" id="btn-5" style="border-left: 3px solid #ff5500; background: rgba(255,85,0,0.05);">
+                                <strong style="color:#ff5500;">Step 5: 開始猜解 (Run)</strong><span>Guessing characters...</span>
+                            </button>
+                        </div>
+
+                        <div class="sim-terminal">
+                            <div class="term-body" id="term-body">
+                                <div>Kali GNU/Linux Rolling [Version 2024.1]</div>
+                                <br>
+                                <div id="prompt-line" style="display:flex; flex-wrap:wrap;">
+                                    <span class="prompt" id="prompt-text">root@kali:~#</span>
+                                    <span id="typing-area"></span><span class="cursor"></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="sim-decoder">
+                            <div class="decoder-header"><i class="fas fa-brain"></i> 猜解邏輯</div>
+                            <div class="decoder-content" id="decoder-content">
+                                <div style="text-align: center; color: #ffaa66; margin-top: 100px;">
+                                    <i class="fas fa-question-circle fa-3x" style="margin-bottom: 20px;"></i><br>
+                                    準備就緒<br>點擊左側 <strong>Step 1</strong> 開始配置
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </article>
+        </div>
+
+        <div class="grid-layout">
+            
+            <div class="content-left">
+                <article id="features">
+                    <h2><i class="fas fa-cogs"></i> BBQSQL 強大之處</h2>
+                    <p>為什麼在有 SQLMap 的情況下還需要 BBQSQL？</p>
+                    
+                    <table class="tech-table">
+                        <thead>
+                            <tr>
+                                <th width="30%">特點</th>
+                                <th>說明</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><span class="code-pill">Semi-Automatic</span></td>
+                                <td><strong style="color:#ffcc99;">半自動化</strong><br>允許使用者精確控制每一個參數，適合處理非標準的注入場景。</td>
+                            </tr>
+                            <tr>
+                                <td><span class="code-pill">Binary Search</span></td>
+                                <td><strong style="color:#ff5500;">二分法搜尋</strong><br>比如猜數字 1-100。它不會問「是1嗎？」，而是問「大於50嗎？」。速度極快。</td>
+                            </tr>
+                            <tr>
+                                <td><span class="code-pill">Hooks</span></td>
+                                <td><strong style="color:#ffaa00;">自定義鉤子</strong><br>可以在發送請求前或後執行 Python 腳本，用來繞過登入驗證或處理 Hash。</td>
+                            </tr>
+                            <tr>
+                                <td><span class="code-pill">Concurrency</span></td>
+                                <td><strong style="color:#ffcc99;">高併發</strong><br>使用 Gevent 協程技術，發送請求的速度極快。</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </article>
+            </div>
+
+            <div class="content-right">
+                <article id="ethics">
+                    <h2><i class="fas fa-gavel"></i> 法律與道德</h2>
+                    
+                    <div class="danger-box">
+                        <h3><i class="fas fa-exclamation-triangle"></i> 違法警告</h3>
+                        <p>盲注攻擊會產生大量異常流量，極易被 WAF 偵測並封鎖 IP。未經授權測試同樣違反<strong>刑法第 358 條</strong>。</p>
+                    </div>
+
+                    <div style="margin-bottom:20px;">
+                        <h4 style="color:#ff5500; margin-bottom:10px;">防禦建議</h4>
+                        <ul>
+                            <li>使用參數化查詢 (Prepared Statements)</li>
+                            <li>關閉詳細錯誤訊息</li>
+                            <li>使用 WAF 阻擋 SQL 關鍵字</li>
+                        </ul>
+                    </div>
+
+                    <div class="info-box" style="text-align: center;">
+                        <h4 style="margin-top: 0; color: #fff;">資安倫理</h4>
+                        <p>我們學習攻擊，是為了修補漏洞。</p>
+                        <p style="color: #ff5500; font-weight: bold; margin-top: 10px;">
+                            Patch it before they find it.
+                        </p>
+                    </div>
+                </article>
+            </div>
+        </div>
+
+    </div>
+
+    <footer>
+        <div class="container">
+            <p>© 2025 BBQSQL 半自動盲注 | 僅供資安教育用途</p>
+            <p>請務必遵守法律與道德規範</p>
+        </div>
+    </footer>
+
+    <script>
+        const termBody = document.getElementById('term-body');
+        const promptLine = document.getElementById('prompt-line');
+        const promptText = document.getElementById('prompt-text');
+        const typingArea = document.getElementById('typing-area');
+        const decoderContent = document.getElementById('decoder-content');
+        
+        let isTyping = false;
+        let typingTimer = null;
+        let currentPromptStr = "root@kali:~#";
+
+        // 模擬數據
+        const scenarios = {
+            1: {
+                cmd: "bbqsql",
+                info: `
+                    <div class="explanation-card">
+                        <h4>Step 1: 啟動並設定目標</h4>
+                        <p style="color:#ccc;">啟動 BBQSQL 後，我們看到的是配置選單。</p>
+                        <p style="color:#ccc;">我們設定 URL 為 <code>http://target.com/login</code>，HTTP Method 為 <code>POST</code>。</p>
+                        <div class="analogy">
+                            <strong>💡 白話文比喻：</strong>我們正在設定「發問機器人」。告訴它要去哪裡問問題（URL），以及用什麼方式問（POST）。
+                        </div>
+                    </div>`,
+                output: [
+                    { text: "BBQSQL - Blind SQL Injection Exploitation Tool", style: "color:#ff5500; font-weight:bold;", wait: 500 },
+                    { text: "[*] Setting up configuration...", wait: 800 },
+                    { text: "URL: http://target.com/login", wait: 1000 },
+                    { text: "Method: POST", wait: 1200 },
+                    { text: "Data: user=admin&pass=^INJECT^", color: "#ffaa00", wait: 1400 },
+                    { text: "bbqsql> ", type: "prompt", wait: 1600 }
+                ]
+            },
+            2: {
+                cmd: "set query 'SELECT user()'",
+                info: `
+                    <div class="explanation-card">
+                        <h4>Step 2: 設定注入查詢 (Query)</h4>
+                        <p style="color:#ccc;">我們想知道現在連線資料庫的是誰，所以查詢 <code>user()</code>。</p>
+                        <p style="color:#ccc;">BBQSQL 會把這段 SQL 語法拆解，一個字一個字去問資料庫。</p>
+                    </div>`,
+                output: [
+                    { text: "Query set to: SELECT user()", color: "#ffcc99", wait: 300 },
+                    { text: "bbqsql> ", type: "prompt", wait: 600 }
+                ]
+            },
+            3: {
+                cmd: "set comparison 'Welcome'",
+                info: `
+                    <div class="explanation-card">
+                        <h4>Step 3: 設定比對特徵 (Comparison)</h4>
+                        <p style="color:#ccc;">這是盲注的關鍵！</p>
+                        <p style="color:#ccc;">我們告訴工具：如果網頁回應中包含 <strong>"Welcome"</strong>，代表我們猜對了（True）；如果沒有，代表猜錯了（False）。</p>
+                        <div class="analogy">
+                            <strong>💡 白話文比喻：</strong>你跟機器人約定：「如果燈亮了（Welcome），就代表是 YES；燈沒亮，就是 NO。」
+                        </div>
+                    </div>`,
+                output: [
+                    { text: "Comparison string set to: 'Welcome'", color: "#ffcc99", wait: 300 },
+                    { text: "bbqsql> ", type: "prompt", wait: 600 }
+                ]
+            },
+            4: {
+                cmd: "set technique binary_search",
+                info: `
+                    <div class="explanation-card">
+                        <h4>Step 4: 設定搜尋技術 (Technique)</h4>
+                        <p style="color:#ccc;">選擇 <strong>二分法搜尋 (Binary Search)</strong>。</p>
+                        <p style="color:#ccc;">這是最快的方法。如果要猜的字 ASCII 碼是 100，它會問：大於 64 嗎？(Yes) 大於 96 嗎？(Yes) 大於 112 嗎？(No)... 迅速縮小範圍。</p>
+                    </div>`,
+                output: [
+                    { text: "Technique set to: binary_search", color: "#ffcc99", wait: 300 },
+                    { text: "bbqsql> ", type: "prompt", wait: 600 }
+                ]
+            },
+            5: {
+                cmd: "run",
+                info: `
+                    <div class="explanation-card" style="border-color:#ff5500; background:rgba(255,85,0,0.1);">
+                        <h4 style="color:#ff5500;">Step 5: 執行猜解 (Execution)</h4>
+                        <p style="color:#ccc;">看右邊的終端機！BBQSQL 正在瘋狂發問。</p>
+                        <p style="color:#ccc;">它快速猜出了資料庫使用者是 <strong>root@localhost</strong>。</p>
+                        <div class="analogy">
+                            <strong>🎉 任務達成：</strong>透過數百次的快速問答，我們拼湊出了完整的答案，就像是在玩拼字遊戲一樣。
+                        </div>
+                    </div>`,
+                output: [
+                    { text: "[*] Starting SQL Injection...", wait: 300 },
+                    { text: "Retrieving length of output...", wait: 500 },
+                    { text: "Output length: 14", color: "#888", wait: 800 },
+                    { text: "Retrieving data...", wait: 1000 },
+                    { text: "[1] Char: r (114) | >64?Y >96?Y <112?N >120?N... Found!", wait: 1200 },
+                    { text: "[2] Char: o (111) | Found!", wait: 1400 },
+                    { text: "[3] Char: o (111) | Found!", wait: 1500 },
+                    { text: "[4] Char: t (116) | Found!", wait: 1600 },
+                    { text: "[5] Char: @ (64)  | Found!", wait: 1700 },
+                    { text: "[...] Skipping...", color: "#888", wait: 1900 },
+                    { text: "\n[+] Result: root@localhost", color: "#ff5500", style: "font-weight:bold; font-size:1.2rem; background:rgba(255,85,0,0.2); display:inline-block;", wait: 2200 },
+                    { text: "bbqsql> ", type: "prompt", wait: 2500 }
+                ]
+            }
+        };
+
+        function runStep(id) {
+            if (isTyping) return;
+            isTyping = true;
+            
+            const data = scenarios[id];
+            document.querySelectorAll('.sim-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById('btn-' + id).classList.add('active');
+
+            typeCommand(data.cmd, () => {
+                addHistoryLog(currentPromptStr, data.cmd);
+                decoderContent.innerHTML = data.info;
+                
+                let maxWait = 0;
+                if(data.output) {
+                    data.output.forEach(line => {
+                        setTimeout(() => {
+                            if(line.type === 'prompt') {
+                                updatePrompt(line.text);
+                            } else {
+                                printText(line.text, line.color, line.style);
+                            }
+                        }, line.wait);
+                        if(line.wait > maxWait) maxWait = line.wait;
+                    });
+                }
+                setTimeout(() => {
+                    isTyping = false;
+                }, maxWait + 200);
+            });
+        }
+
+        function typeCommand(text, callback) {
+            typingArea.textContent = "";
+            let i = 0;
+            typingTimer = setInterval(() => {
+                typingArea.textContent += text.charAt(i);
+                i++;
+                if (i >= text.length) {
+                    clearInterval(typingTimer);
+                    setTimeout(() => {
+                        typingArea.textContent = ""; 
+                        callback();
+                    }, 300);
+                }
+            }, 30);
+        }
+
+        function addHistoryLog(p, c) {
+            const div = document.createElement('div');
+            div.innerHTML = `<span class="prompt">${p}</span> ${c}`;
+            termBody.insertBefore(div, promptLine);
+            scrollToBottom();
+        }
+
+        function printText(text, color, style) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            if(color) div.style.color = color;
+            if(style) div.setAttribute('style', div.getAttribute('style') + `; ${style}`);
+            termBody.insertBefore(div, promptLine);
+            scrollToBottom();
+        }
+
+        function updatePrompt(text) {
+            currentPromptStr = text;
+            promptText.textContent = text;
+            scrollToBottom();
+        }
+
+        function scrollToBottom() {
+            termBody.scrollTop = termBody.scrollHeight;
+        }
+
+        function resetSim() {
+            if(isTyping) return;
+            const logs = termBody.querySelectorAll('div:not(#prompt-line)');
+            for(let i=1; i<logs.length; i++) logs[i].remove();
+            
+            const welcome1 = document.createElement('div');
+            welcome1.textContent = "Kali GNU/Linux Rolling [Version 2024.1]";
+            termBody.insertBefore(welcome1, promptLine);
+            const br = document.createElement('div');
+            br.innerHTML = "<br>";
+            termBody.insertBefore(br, promptLine);
+
+            updatePrompt("root@kali:~#");
+            typingArea.textContent = "";
+
+            decoderContent.innerHTML = `
+                <div style="text-align: center; color: #ffcc99; margin-top: 100px;">
+                    <i class="fas fa-question-circle fa-3x" style="margin-bottom: 20px;"></i><br>
+                    準備就緒<br>點擊左側 <strong>Step 1</strong> 開始配置
+                </div>`;
+            document.querySelectorAll('.sim-btn').forEach(b => b.classList.remove('active'));
+        }
+    </script>
+</body>
+</html>
