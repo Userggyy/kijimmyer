@@ -1,0 +1,645 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wifite 自動化無線攻擊 | 資安模擬學習</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        /* --- 1. Wifite 主題美術風格 (Neon Pink + Cyan) --- */
+        
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Consolas', 'Monaco', 'Courier New', monospace; }
+        body { line-height: 1.6; color: #ffccff; background-color: #0a000a; position: relative; overflow-x: hidden; font-family: 'Segoe UI', sans-serif; }
+
+        /* 背景特效：流動數據波 */
+        .neon-background {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1;
+            background: 
+                linear-gradient(rgba(10, 0, 10, 0.95), rgba(10, 0, 10, 0.95)),
+                repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(255, 0, 255, 0.05) 10px, rgba(255, 0, 255, 0.05) 20px);
+        }
+        
+        .wave-line {
+            position: fixed; left: 0; width: 200%; height: 2px;
+            background: linear-gradient(90deg, transparent, #ff00ff, #00ffff, transparent);
+            animation: waveFlow 5s linear infinite; opacity: 0.5; z-index: -1;
+        }
+        .wave-line:nth-child(1) { top: 20%; animation-duration: 8s; }
+        .wave-line:nth-child(2) { top: 40%; animation-duration: 12s; animation-direction: reverse; }
+        .wave-line:nth-child(3) { top: 60%; animation-duration: 6s; }
+        .wave-line:nth-child(4) { top: 80%; animation-duration: 10s; animation-direction: reverse; }
+
+        @keyframes waveFlow { 0% { transform: translateX(-50%); } 100% { transform: translateX(0%); } }
+
+        /* 容器 */
+        .container { width: 90%; max-width: 1400px; margin: 0 auto; padding: 20px; position: relative; }
+
+        /* 頁首 */
+        header {
+            background: rgba(30, 0, 30, 0.95); padding: 4rem 0; text-align: center; margin-bottom: 2rem;
+            border-radius: 12px; border: 1px solid #ff00ff; box-shadow: 0 0 30px rgba(255, 0, 255, 0.2);
+            position: relative; overflow: hidden;
+        }
+        header::before {
+            content: ''; position: absolute; top: 0; left: -100%; width: 100%; height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(0, 255, 255, 0.3), transparent);
+            animation: shine 4s infinite;
+        }
+        @keyframes shine { 0% { left: -100%; } 100% { left: 100%; } }
+        header h1 {
+            font-size: 2.8rem; margin-bottom: 1rem; color: #ff00ff;
+            text-shadow: 2px 2px 0px #00ffff; letter-spacing: 2px;
+        }
+        header p { font-size: 1.2rem; color: #ff88ff; max-width: 800px; margin: 0 auto; }
+
+        /* 導覽列 */
+        nav {
+            background: #1a001a; padding: 1rem; border-radius: 8px; border: 1px solid #ff00ff;
+            position: sticky; top: 0; z-index: 100; margin-bottom: 30px; box-shadow: 0 5px 20px rgba(0,0,0,0.8);
+        }
+        nav ul { display: flex; justify-content: center; list-style: none; gap: 20px; flex-wrap: wrap; }
+        nav a {
+            text-decoration: none; color: #ffccff; font-weight: bold; padding: 8px 16px;
+            border-radius: 4px; transition: 0.3s; border: 1px solid transparent;
+        }
+        nav a:hover { background: rgba(255, 0, 255, 0.2); color: #fff; border-color: #ff00ff; box-shadow: 0 0 10px #ff00ff; }
+
+        /* --- 佈局 --- */
+        .grid-layout { display: grid; grid-template-columns: 2fr 1fr; gap: 30px; margin-bottom: 40px; }
+        .full-width { width: 100%; margin-bottom: 2rem; }
+        @media (max-width: 1024px) { .grid-layout { grid-template-columns: 1fr; } }
+
+        /* 卡片樣式 */
+        article {
+            background: rgba(20, 5, 20, 0.9); padding: 30px; border-radius: 8px; border: 1px solid #660066; margin-bottom: 30px;
+        }
+        h2 { color: #ff00ff; margin-bottom: 20px; padding-bottom: 10px; border-bottom: 1px solid #660066; font-size: 1.8rem; display: flex; align-items: center; gap: 10px; }
+        h3 { color: #00ffff; margin: 25px 0 15px 0; font-size: 1.4rem; }
+        p, li { margin-bottom: 10px; color: #e6e6e6; font-size: 1.05rem; }
+        ul { margin-left: 20px; }
+
+        /* 側邊欄 */
+        aside {
+            background: rgba(20, 5, 20, 0.9); padding: 25px; border-radius: 8px; border: 1px solid #ff00ff;
+            height: fit-content; box-shadow: 0 0 20px rgba(255, 0, 255, 0.1); position: sticky; top: 100px;
+        }
+
+        /* 提示框 */
+        .info-box { background: rgba(0, 255, 255, 0.1); border-left: 5px solid #00ffff; padding: 20px; margin: 20px 0; border-radius: 4px; }
+        .danger-box { background: rgba(255, 50, 80, 0.15); border-left: 5px solid #ff3355; padding: 20px; margin: 20px 0; border-radius: 4px; }
+
+        /* --- 模擬器樣式 (Wifite Style) --- */
+        .simulator-wrapper {
+            background: #000; border: 2px solid #ff00ff; border-radius: 12px; overflow: hidden;
+            box-shadow: 0 0 50px rgba(255, 0, 255, 0.15); margin: 20px 0;
+            display: flex; flex-direction: column; height: 750px;
+        }
+
+        .sim-header {
+            background: #1a001a; padding: 12px 20px; border-bottom: 1px solid #ff00ff;
+            display: flex; justify-content: space-between; align-items: center;
+        }
+
+        .sim-grid {
+            display: grid; grid-template-columns: 240px 1fr 340px; flex: 1; overflow: hidden;
+        }
+
+        /* 控制區 */
+        .sim-controls { background: #0f000f; border-right: 1px solid #660066; padding: 20px; overflow-y: auto; }
+        .sim-btn {
+            width: 100%; padding: 15px; margin-bottom: 12px; background: rgba(255, 0, 255, 0.05); border: 1px solid #660066;
+            color: #ffccff; text-align: left; cursor: pointer; border-radius: 6px; transition: all 0.2s;
+        }
+        .sim-btn:hover { background: rgba(255, 0, 255, 0.15); color: #fff; border-color: #ff00ff; }
+        .sim-btn.active { background: rgba(255, 0, 255, 0.25); border-color: #ff00ff; color: #fff; border-left: 4px solid #ff00ff; box-shadow: 0 0 15px rgba(255, 0, 255, 0.2); font-weight: bold; }
+        .sim-btn strong { display: block; font-size: 1rem; margin-bottom: 4px; }
+
+        /* 終端機 */
+        .sim-terminal {
+            background: #000; padding: 0; display: flex; flex-direction: column; 
+            font-family: 'Consolas', 'Courier New', monospace; position: relative;
+        }
+        .term-body { 
+            flex: 1; padding: 20px; overflow-y: auto; color: #e0e0e0; 
+            font-size: 1rem; line-height: 1.5; white-space: pre-wrap; 
+        }
+        .prompt { color: #00ffff; font-weight: bold; margin-right: 10px; }
+        .cursor { display: inline-block; width: 10px; height: 18px; background: #ff00ff; animation: blink 1s infinite; vertical-align: text-bottom; }
+
+        /* Wifite 列表樣式 */
+        .wifite-header { color: #ff00ff; border-bottom: 1px dashed #ff00ff; margin-bottom: 5px; }
+        .wifite-row { color: #fff; }
+        .wifite-target { color: #00ffff; font-weight: bold; }
+        .wifite-success { color: #00ff00; font-weight: bold; }
+        .wifite-fail { color: #ff3355; }
+
+        /* 解析區 */
+        .sim-decoder { background: #1a001a; border-left: 1px solid #660066; display: flex; flex-direction: column; }
+        .decoder-header { padding: 15px; background: #0f000f; border-bottom: 1px solid #660066; color: #ff00ff; font-weight: bold; font-size: 1.1rem; }
+        .decoder-content { padding: 25px; flex: 1; overflow-y: auto; }
+        
+        .explanation-card { 
+            background: rgba(255, 0, 255, 0.08); border-left: 4px solid #ff00ff; 
+            padding: 20px; border-radius: 4px; animation: slideIn 0.3s ease;
+        }
+        .analogy { 
+            margin-top: 15px; padding: 10px; background: rgba(0, 255, 255, 0.05); 
+            border-radius: 4px; color: #00ffff; font-style: italic; border: 1px dashed #00ffff;
+        }
+
+        /* 重置按鈕 */
+        .reset-btn {
+            background: transparent; border: 1px solid #ff00ff; color: #ff00ff; 
+            padding: 4px 12px; font-size: 0.8rem; border-radius: 4px; cursor: pointer; transition: 0.3s;
+        }
+        .reset-btn:hover { background: #ff00ff; color: #fff; }
+
+        /* 攻擊特徵卡片 */
+        .feature-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; }
+        .feature-card { background: rgba(255,0,255,0.05); border: 1px solid #660066; padding: 15px; border-radius: 6px; }
+        .feature-card h4 { color: #00ffff; border-bottom: 1px solid #660066; padding-bottom: 5px; margin-bottom: 10px; }
+
+        @keyframes blink { 50% { opacity: 0; } }
+        @keyframes slideIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* RWD */
+        @media (max-width: 1200px) { .sim-grid { grid-template-columns: 200px 1fr 280px; } }
+        @media (max-width: 900px) {
+            .sim-grid { grid-template-columns: 1fr; grid-template-rows: auto 400px auto; }
+            .sim-decoder { border-left: none; border-top: 1px solid #660066; height: 350px; }
+            .simulator-wrapper { height: auto; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="neon-background"></div>
+    <div class="wave-line"></div>
+    <div class="wave-line"></div>
+    <div class="wave-line"></div>
+    <div class="wave-line"></div>
+
+    <header>
+        <div class="container">
+            <h1><i class="fas fa-robot"></i> Wifite 自動化無線攻擊</h1>
+            <p>懶人救星 • 全自動 WiFi 滲透測試 • 一鍵完成攻擊鏈</p>
+        </div>
+    </header>
+
+    <nav>
+        <div class="container">
+            <ul>
+                <li><a href="#intro">工具介紹</a></li>
+                <li><a href="#install">環境準備</a></li>
+                <li><a href="#simulation">自動化攻擊演示</a></li>
+                <li><a href="#features">攻擊特徵</a></li>
+                <li><a href="#ethics">法律規範</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <div class="container">
+        
+        <div class="grid-layout">
+            <div class="content-left">
+                <article id="intro">
+                    <h2><i class="fas fa-magic"></i> 什麼是 Wifite？</h2>
+                    
+                    <p><strong>Wifite</strong> 是一款 Python 編寫的自動化無線滲透測試工具。它的設計理念是：<strong>「讓 WiFi 破解變得像呼吸一樣簡單」</strong>。</p>
+                    <p>相比於 Aircrack-ng 需要手動執行每一個步驟（開啟監聽、掃描、抓包、破解），Wifite 將這些繁瑣的過程全部自動化。你只需要選擇目標，剩下的工作它全包了。</p>
+                    
+                    <div class="info-box">
+                        <p><strong><i class="fas fa-star"></i> 為什麼選它？</strong></p>
+                        <ul>
+                            <li><strong>全自動流程</strong>：自動開啟 Monitor Mode，自動掃描。</li>
+                            <li><strong>多重攻擊向量</strong>：自動嘗試 WPS (Pixie Dust)、WPA (Handshake)、PMKID 攻擊。</li>
+                            <li><strong>去複雜化</strong>：不需要記住複雜的參數。</li>
+                        </ul>
+                    </div>
+                </article>
+
+                <article id="install">
+                    <h2><i class="fas fa-server"></i> 安裝與啟動</h2>
+                    <p>Wifite 內建於 Kali Linux，但建議使用最新版 (v2) 以支援 PMKID 攻擊。</p>
+                    <pre><code style="color:#ff00ff;"># 安裝
+sudo apt install wifite
+
+# 啟動 (需要 root)
+sudo wifite
+
+# 強力模式 (殺死干擾進程)
+sudo wifite --kill</code></pre>
+                </article>
+            </div>
+
+            <aside>
+                <div style="margin-bottom: 30px;">
+                    <h3 style="margin-top:0; border-bottom:1px solid #660066; padding-bottom:10px;">
+                        <i class="fas fa-laptop-code"></i> 實驗配置
+                    </h3>
+                    <ul style="list-style: none; margin: 0; padding: 0;">
+                        <li style="padding: 10px 0; border-bottom: 1px solid #660066;">
+                            <i class="fas fa-check" style="color:#ff00ff; margin-right:8px;"></i> 系統: Kali Linux
+                        </li>
+                        <li style="padding: 10px 0; border-bottom: 1px solid #660066;">
+                            <i class="fas fa-wifi" style="color:#ff00ff; margin-right:8px;"></i> 網卡: wlan0 (Monitor)
+                        </li>
+                        <li style="padding: 10px 0; border-bottom: 1px solid #660066;">
+                            <i class="fas fa-bullseye" style="color:#00ffff; margin-right:8px;"></i> 目標: Home_WiFi
+                        </li>
+                        <li style="padding: 10px 0;">
+                            <i class="fas fa-robot" style="color:#ff00ff; margin-right:8px;"></i> 模式: Auto Attack
+                        </li>
+                    </ul>
+                </div>
+                
+                <div>
+                    <h3 style="margin-top:0; border-bottom:1px solid #660066; padding-bottom:10px;">
+                        <i class="fas fa-book"></i> 章節導覽
+                    </h3>
+                    <ul style="list-style: none; margin: 0; padding: 0;">
+                        <li style="padding: 8px 0;"><a href="#intro" style="color:#ffccff; text-decoration:none;">1. 工具介紹</a></li>
+                        <li style="padding: 8px 0;"><a href="#install" style="color:#ffccff; text-decoration:none;">2. 環境準備</a></li>
+                        <li style="padding: 8px 0;"><a href="#simulation" style="color:#ffccff;  text-decoration:none;">3. 自動化攻擊演示</a></li>
+                        <li style="padding: 8px 0;"><a href="#features" style="color:#ffccff; text-decoration:none;">4. 攻擊特徵</a></li>
+                        <li style="padding: 8px 0;"><a href="#ethics" style="color:#ffccff; text-decoration:none;">5. 法律規範</a></li>
+                    </ul>
+                </div>
+            </aside>
+        </div>
+
+        <div class="full-width">
+            <article id="simulation" style="border: 2px solid #ff00ff; box-shadow: 0 0 30px rgba(255, 0, 255, 0.1);">
+                <h2><i class="fas fa-gamepad"></i> 互動虛擬實驗室</h2>
+                <p>現在，我們來體驗 Wifite 的「一鍵攻擊」。請依序操作，觀察它是如何自動切換多種攻擊手法的。</p>
+                
+                <div class="simulator-wrapper">
+                    <div class="sim-header">
+                        <div><i class="fas fa-terminal"></i> KALI ROOT TERMINAL (WIFITE)</div>
+                        <button class="reset-btn" onclick="resetSim()">
+                            <i class="fas fa-redo"></i> 重置模擬器
+                        </button>
+                    </div>
+
+                    <div class="sim-grid">
+                        <div class="sim-controls">
+                            <button class="sim-btn" onclick="runStep(1)" id="btn-1">
+                                <strong>Step 1: 啟動工具</strong><span>sudo wifite --kill</span>
+                            </button>
+                            <button class="sim-btn" onclick="runStep(2)" id="btn-2">
+                                <strong>Step 2: 掃描目標 (Auto)</strong><span>Scanning...</span>
+                            </button>
+                            <button class="sim-btn" onclick="runStep(3)" id="btn-3">
+                                <strong>Step 3: 停止掃描</strong><span>Ctrl + C</span>
+                            </button>
+                            <button class="sim-btn" onclick="runStep(4)" id="btn-4">
+                                <strong>Step 4: 選擇目標</strong><span>Select target: 1</span>
+                            </button>
+                            <button class="sim-btn" onclick="runStep(5)" id="btn-5" style="border-left: 3px solid #00ffff; background: rgba(0,255,255,0.05);">
+                                <strong>Step 5: 自動攻擊 (PMKID)</strong><span>Attack 1: PMKID</span>
+                            </button>
+                            <button class="sim-btn" onclick="runStep(6)" id="btn-6" style="border-left: 3px solid #ff00ff; background: rgba(255,0,255,0.05);">
+                                <strong>Step 6: 自動攻擊 (WPA)</strong><span>Attack 2: Handshake</span>
+                            </button>
+                        </div>
+
+                        <div class="sim-terminal">
+                            <div class="term-body" id="term-body">
+                                <div>Kali GNU/Linux Rolling [Version 2024.1]</div>
+                                <br>
+                                <div id="prompt-line" style="display:flex; flex-wrap:wrap;">
+                                    <span class="prompt" id="prompt-text">root@kali:~#</span>
+                                    <span id="typing-area"></span><span class="cursor"></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="sim-decoder">
+                            <div class="decoder-header"><i class="fas fa-robot"></i> 腳本解析</div>
+                            <div class="decoder-content" id="decoder-content">
+                                <div style="text-align: center; color: #ff88ff; margin-top: 100px;">
+                                    <i class="fas fa-cogs fa-3x" style="margin-bottom: 20px;"></i><br>
+                                    機器人準備就緒<br>點擊左側 <strong>Step 1</strong> 啟動
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </article>
+        </div>
+
+        <div class="grid-layout">
+            
+            <div class="content-left">
+                <article id="features">
+                    <h2><i class="fas fa-layer-group"></i> 自動化攻擊策略</h2>
+                    <p>Wifite 之所以強大，是因為它會依序嘗試以下策略，直到成功為止：</p>
+                    
+                    <div class="feature-grid">
+                        <div class="feature-card">
+                            <h4><i class="fas fa-fingerprint"></i> PMKID 攻擊</h4>
+                            <p>針對 WPA2 的新式攻擊。<strong>不需要使用者在線</strong>，直接與路由器溝通即可抓取雜湊值。這是 Wifite 的首選。</p>
+                        </div>
+                        <div class="feature-card">
+                            <h4><i class="fas fa-handshake"></i> WPA 握手包</h4>
+                            <p>傳統攻擊。Wifite 會自動發送斷線封包 (Deauth)，強迫使用者重連，藉此抓取 Handshake。</p>
+                        </div>
+                        <div class="feature-card">
+                            <h4><i class="fas fa-magic"></i> WPS Pixie Dust</h4>
+                            <p>針對 WPS 的離線暴力破解。如果路由器有漏洞，幾秒鐘內就能算出 PIN 碼和密碼。</p>
+                        </div>
+                        <div class="feature-card">
+                            <h4><i class="fas fa-book"></i> 自動破解</h4>
+                            <p>抓到包後，Wifite 會自動呼叫 Aircrack-ng 並載入字典檔 (wordlist) 進行破解，完全不需人工介入。</p>
+                        </div>
+                    </div>
+                </article>
+            </div>
+
+            <div class="content-right">
+                <article id="ethics">
+                    <h2><i class="fas fa-gavel"></i> 法律與道德</h2>
+                    
+                    <div class="danger-box">
+                        <h3><i class="fas fa-exclamation-triangle"></i> 腳本小子的陷阱</h3>
+                        <p>自動化工具很容易讓人「誤觸法網」。Wifite 預設會攻擊所有目標 (<code>--all</code>)，若不小心攻擊到鄰居或公共網路，即構成<strong>刑事犯罪</strong>。</p>
+                    </div>
+
+                    <div style="margin-bottom:20px;">
+                        <h4 style="color:#ff00ff; margin-bottom:10px;">安全建議</h4>
+                        <ul>
+                            <li>務必指定單一目標 (<code>-b</code> 或選單選擇)</li>
+                            <li>不要在公共場所執行</li>
+                        </ul>
+                    </div>
+
+                    <div class="info-box" style="text-align: center;">
+                        <h4 style="margin-top: 0; color: #fff;">資安倫理</h4>
+                        <p>工具是為了省時，不是為了犯罪。</p>
+                    </div>
+                </article>
+            </div>
+        </div>
+
+    </div>
+
+    <footer>
+        <div class="container">
+            <p>© 2025 Wifite 自動化無線攻擊 | 僅供資安教育用途</p>
+            <p>請務必遵守法律與道德規範</p>
+        </div>
+    </footer>
+
+    <script>
+        const termBody = document.getElementById('term-body');
+        const promptLine = document.getElementById('prompt-line');
+        const promptText = document.getElementById('prompt-text');
+        const typingArea = document.getElementById('typing-area');
+        const decoderContent = document.getElementById('decoder-content');
+        
+        let isTyping = false;
+        let typingTimer = null;
+        let currentPromptStr = "root@kali:~#";
+
+        // 模擬數據
+        const scenarios = {
+            1: {
+                cmd: "wifite --kill",
+                info: `
+                    <div class="explanation-card">
+                        <h4>Step 1: 啟動工具</h4>
+                        <p style="color:#ccc;">參數 <code>--kill</code> 會先殺死可能干擾無線網卡的背景程式 (如 NetworkManager)。</p>
+                        <p style="color:#ccc;">Wifite 會自動將網卡切換到監聽模式 (Monitor Mode)。</p>
+                        <div class="analogy">
+                            <strong>💡 白話文比喻：</strong>機器人啟動！它先清空工作檯上的雜物，確保等一下工作時不會有人打擾。
+                        </div>
+                    </div>`,
+                output: [
+                    { html: `<pre style="color:#ff00ff; font-weight:bold;">
+   .               .    
+ .´  ·  .     .  ·  \`.  wifite 2.5.8
+ :  :  :  (¯)  :  :  :  automated wireless auditor
+ \`.  ·  \` /¯\\ ´  ·  .´  https://github.com/derv82/wifite2
+   \`     /¯¯¯\\     ´    
+</pre>`, wait: 500 },
+                    { text: "[+] Option: --kill given. Killing conflicting processes...", wait: 1000 },
+                    { text: "[+] Enabling monitor mode on wlan0...", color: "#00ffff", wait: 1500 },
+                    { text: "[+] Monitor mode enabled on wlan0mon", wait: 2000 },
+                    { text: "[+] Scanning. Found 0 target(s), 0 client(s). Ctrl+C when ready", wait: 2500 }
+                ]
+            },
+            2: {
+                cmd: "", // 被動掃描
+                info: `
+                    <div class="explanation-card">
+                        <h4>Step 2: 掃描環境 (Scanning)</h4>
+                        <p style="color:#ccc;">Wifite 開始每 5 秒刷新一次列表。它會顯示找到的 AP、加密方式、訊號強度 (POWER)。</p>
+                        <p style="color:#ccc;">注意目標：<strong>Home_WiFi</strong> (WPA2, 50db)。</p>
+                        <div class="analogy">
+                            <strong>💡 白話文比喻：</strong>機器人打開雷達，螢幕上開始出現一個個紅點，這是它偵測到的所有獵物。
+                        </div>
+                    </div>`,
+                output: [
+                    { html: `<div class="wifite-header">NUM ESSID             CH  ENCR  POWER  WPS?  CLIENT</div>`, wait: 200 },
+                    { html: `<div class="wifite-row"> 1  <span class="wifite-target">Home_WiFi</span>         6  WPA2  50db   no    1</div>`, wait: 500 },
+                    { html: `<div class="wifite-row"> 2  Starbucks         1  OPEN  30db   no    5</div>`, wait: 1000 },
+                    { html: `<div class="wifite-row"> 3  Office_Guest     11  WPA2  75db   yes   0</div>`, wait: 1500 }
+                ]
+            },
+            3: {
+                cmd: "^C", // 模擬 Ctrl+C
+                info: `
+                    <div class="explanation-card">
+                        <h4>Step 3: 停止掃描</h4>
+                        <p style="color:#ccc;">當我們看到目標出現後，按下 <code>Ctrl + C</code> 停止掃描，準備進入攻擊選單。</p>
+                    </div>`,
+                output: [
+                    { text: "^C", wait: 200 },
+                    { text: "[+] Scanning stopped", wait: 500 },
+                    { text: "[+] Select target(s) (1-3) separated by commas, or 'all': ", type: "prompt", wait: 800 }
+                ]
+            },
+            4: {
+                cmd: "1",
+                info: `
+                    <div class="explanation-card">
+                        <h4>Step 4: 選擇目標</h4>
+                        <p style="color:#ccc;">輸入 <code>1</code> 選擇 <strong>Home_WiFi</strong>。</p>
+                        <p style="color:#ccc;">Wifite 也可以輸入 <code>1,3</code> 同時攻擊多個，或 <code>all</code> 攻擊全部（非常危險，不要亂試）。</p>
+                        <div class="analogy">
+                            <strong>💡 白話文比喻：</strong>你指著雷達上的一號目標，對機器人說：「就決定是它了，上吧！」
+                        </div>
+                    </div>`,
+                output: [
+                    { text: "[+] 1 target selected.", wait: 500 },
+                    { text: "[+] (1/1) Starting attacks against Home_WiFi (AA:BB:CC:DD:EE:FF)", color: "#ff00ff", wait: 800 }
+                ]
+            },
+            5: {
+                cmd: "", // 自動攻擊流程
+                info: `
+                    <div class="explanation-card">
+                        <h4>Step 5: 自動攻擊 - PMKID</h4>
+                        <p style="color:#ccc;">Wifite 首先嘗試 <strong>PMKID 攻擊</strong>。</p>
+                        <p style="color:#ccc;">這是較新的攻擊方式，不需要使用者在線。如果失敗，它會自動切換到下一種方法。</p>
+                        <div class="analogy">
+                            <strong>💡 白話文比喻：</strong>機器人先試著用萬能鑰匙開後門（PMKID）。發現後門鎖著（Failed），它立刻轉身準備去前門按電鈴（Handshake）。完全不用你下指令。
+                        </div>
+                    </div>`,
+                output: [
+                    { text: "    [1/2] PMKID Attack: Waiting for PMKID...", wait: 500 },
+                    { text: "    [1/2] PMKID Attack: Failed", color: "#ff3355", wait: 1500 }
+                ]
+            },
+            6: {
+                cmd: "", // 自動攻擊流程 2
+                info: `
+                    <div class="explanation-card">
+                        <h4>Step 6: 自動攻擊 - WPA Handshake</h4>
+                        <p style="color:#ccc;">PMKID 失敗，自動切換到 <strong>WPA Handshake</strong> 攻擊。</p>
+                        <p style="color:#ccc;">它會發送 Deauth 封包把使用者踢下線，然後抓取重新連線的握手包。<strong>Captured!</strong></p>
+                        <div class="analogy">
+                            <strong>🎉 任務達成：</strong>機器人按了電鈴並躲起來，錄下了屋主開門的聲音。任務完成，檔案已儲存。
+                        </div>
+                    </div>`,
+                output: [
+                    { text: "    [2/2] WPA Handshake capture: Disovered new client: 00:11:22...", wait: 500 },
+                    { text: "    [2/2] WPA Handshake capture: Sending Deauth to all clients...", wait: 1200 },
+                    { text: "    [2/2] WPA Handshake capture: Captured!", color: "#00ff00", style: "font-weight:bold;", wait: 2000 },
+                    { text: "[+] Finished attacking Home_WiFi", color: "#ff00ff", wait: 2500 },
+                    { text: "[+] Saved handshake to hs/Home_WiFi.cap", wait: 2800 },
+                    { text: "root@kali:~#", type: "prompt", wait: 3200 }
+                ]
+            }
+        };
+
+        // 執行步驟
+        function runStep(id) {
+            if (isTyping) return;
+            isTyping = true;
+            
+            const data = scenarios[id];
+            document.querySelectorAll('.sim-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById('btn-' + id).classList.add('active');
+
+            if (id === 2 || id === 5 || id === 6) {
+                // 這些是被動觸發，不需要模擬打字
+                processOutput(data);
+            } else {
+                typeCommand(data.cmd, () => {
+                    addHistoryLog(currentPromptStr, data.cmd);
+                    processOutput(data);
+                });
+            }
+        }
+
+        function processOutput(data) {
+            decoderContent.innerHTML = data.info;
+            let maxWait = 0;
+            if(data.output) {
+                data.output.forEach(line => {
+                    setTimeout(() => {
+                        if(line.type === 'prompt') {
+                            updatePrompt(line.text);
+                        } else if (line.html) {
+                            printHtml(line.html);
+                        } else {
+                            printText(line.text, line.color, line.style);
+                        }
+                    }, line.wait);
+                    if(line.wait > maxWait) maxWait = line.wait;
+                });
+            }
+            setTimeout(() => {
+                isTyping = false;
+            }, maxWait + 200);
+        }
+
+        // 打字動畫
+        function typeCommand(text, callback) {
+            typingArea.textContent = "";
+            let i = 0;
+            typingTimer = setInterval(() => {
+                typingArea.textContent += text.charAt(i);
+                i++;
+                if (i >= text.length) {
+                    clearInterval(typingTimer);
+                    setTimeout(() => {
+                        typingArea.textContent = ""; 
+                        callback();
+                    }, 300);
+                }
+            }, 30);
+        }
+
+        function addHistoryLog(p, c) {
+            const div = document.createElement('div');
+            div.innerHTML = `<span class="prompt">${p}</span> ${c}`;
+            termBody.insertBefore(div, promptLine);
+            scrollToBottom();
+        }
+
+        function printText(text, color, style) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            if(color) div.style.color = color;
+            if(style) div.setAttribute('style', `color:${color}; ${style}`);
+            termBody.insertBefore(div, promptLine);
+            scrollToBottom();
+        }
+
+        function printHtml(html) {
+            const div = document.createElement('div');
+            div.innerHTML = html;
+            termBody.insertBefore(div, promptLine);
+            scrollToBottom();
+        }
+
+        function updatePrompt(text) {
+            currentPromptStr = text;
+            // Wifite 有時會隱藏 prompt
+            if (text.includes("Select target")) {
+                promptText.textContent = text;
+                promptLine.style.display = "flex";
+            } else {
+                promptText.textContent = text;
+                promptLine.style.display = "flex";
+            }
+            
+            // 如果是 Step 2 (Scanning)，隱藏 prompt
+            if (text === "") {
+                promptLine.style.display = "none";
+            }
+            scrollToBottom();
+        }
+
+        function scrollToBottom() {
+            termBody.scrollTop = termBody.scrollHeight;
+        }
+
+        function resetSim() {
+            if(isTyping) return;
+            const logs = termBody.querySelectorAll('div:not(#prompt-line)');
+            for(let i=1; i<logs.length; i++) logs[i].remove();
+            
+            const welcome1 = document.createElement('div');
+            welcome1.textContent = "Kali GNU/Linux Rolling [Version 2024.1]";
+            termBody.insertBefore(welcome1, promptLine);
+            const br = document.createElement('div');
+            br.innerHTML = "<br>";
+            termBody.insertBefore(br, promptLine);
+
+            updatePrompt("root@kali:~#");
+            promptLine.style.display = "flex";
+            typingArea.textContent = "";
+
+            decoderContent.innerHTML = `
+                <div style="text-align: center; color: #ff88ff; margin-top: 100px;">
+                    <i class="fas fa-cogs fa-3x" style="margin-bottom: 20px;"></i><br>
+                    機器人準備就緒<br>點擊左側 <strong>Step 1</strong> 啟動
+                </div>`;
+            document.querySelectorAll('.sim-btn').forEach(b => b.classList.remove('active'));
+        }
+    </script>
+</body>
+</html>

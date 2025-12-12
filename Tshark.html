@@ -1,0 +1,599 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title> Tshark 封包分析與解碼 | 資安模擬學習</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        /* --- 1. Tshark 主題美術風格 (Deep Ocean / Shark Blue) --- */
+        
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Consolas', 'Monaco', 'Courier New', monospace; }
+        body { line-height: 1.6; color: #e0f0ff; background-color: #020810; position: relative; overflow-x: hidden; font-family: 'Segoe UI', sans-serif; }
+
+        /* 深海動態背景 */
+        .ocean-background {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1;
+            background: 
+                radial-gradient(circle at 50% 0%, rgba(0, 255, 255, 0.1) 0%, transparent 60%),
+                linear-gradient(180deg, #020810 0%, #001a33 100%);
+        }
+        
+        /* 聲納/波紋效果 */
+        .sonar-wave {
+            position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            width: 100vw; height: 100vw;
+            border: 1px solid rgba(0, 255, 255, 0.05); border-radius: 50%;
+            animation: ripple 8s linear infinite; z-index: -1;
+        }
+        .sonar-wave:nth-child(2) { animation-delay: 2s; }
+        .sonar-wave:nth-child(3) { animation-delay: 4s; }
+
+        @keyframes ripple { 
+            0% { width: 0; height: 0; opacity: 0.5; border-width: 5px; } 
+            100% { width: 150vw; height: 150vw; opacity: 0; border-width: 0px; } 
+        }
+
+        /* 容器 */
+        .container { width: 90%; max-width: 1400px; margin: 0 auto; padding: 20px; position: relative; }
+
+        /* 頁首 */
+        header {
+            background: rgba(0, 26, 51, 0.95); padding: 4rem 0; text-align: center; margin-bottom: 2rem;
+            border-radius: 8px; border: 1px solid #00aaff; box-shadow: 0 0 30px rgba(0, 170, 255, 0.2);
+            position: relative; overflow: hidden;
+        }
+        header h1 {
+            font-size: 2.8rem; margin-bottom: 1rem; color: #00ffff;
+            text-shadow: 0 0 15px rgba(0, 255, 255, 0.5); letter-spacing: 1px;
+        }
+        header p { font-size: 1.2rem; color: #88ccff; max-width: 800px; margin: 0 auto; }
+
+        /* 導覽列 */
+        nav {
+            background: #001122; padding: 1rem; border-radius: 4px; border: 1px solid #00aaff;
+            position: sticky; top: 0; z-index: 100; margin-bottom: 30px; box-shadow: 0 5px 20px rgba(0,0,0,0.5);
+        }
+        nav ul { display: flex; justify-content: center; list-style: none; gap: 20px; flex-wrap: wrap; }
+        nav a {
+            text-decoration: none; color: #88ccff; font-weight: bold; padding: 8px 16px;
+            border-radius: 4px; transition: 0.3s; border: 1px solid transparent;
+        }
+        nav a:hover { background: rgba(0, 170, 255, 0.15); color: #00ffff; border-color: #00ffff; }
+
+        /* --- 佈局 --- */
+        .grid-layout { display: grid; grid-template-columns: 2fr 1fr; gap: 2rem; margin-bottom: 2rem; }
+        .full-width { width: 100%; margin-bottom: 2rem; }
+        @media (max-width: 1024px) { .grid-layout { grid-template-columns: 1fr; } }
+
+        /* 區塊樣式 */
+        article {
+            background: rgba(0, 26, 51, 0.9); padding: 30px; border-radius: 6px; border: 1px solid #004466; margin-bottom: 30px;
+        }
+        
+        h2 { color: #00ffff; margin-bottom: 20px; padding-bottom: 10px; border-bottom: 1px solid #004466; font-size: 1.8rem; display: flex; align-items: center; gap: 10px; }
+        h3 { color: #00aaff; margin: 25px 0 15px 0; font-size: 1.4rem; }
+        p, li { margin-bottom: 10px; color: #ccddff; font-size: 1.05rem; }
+        ul { margin-left: 20px; list-style-type: disc; }
+        li::marker { color: #00ffff; }
+
+        /* 側邊欄 */
+        aside {
+            background: rgba(0, 26, 51, 0.9); padding: 25px; border-radius: 6px; border: 1px solid #00aaff;
+            height: fit-content; position: sticky; top: 100px;
+        }
+
+        /* 提示框 (Blue Theme) */
+        .info-box { background: rgba(0, 170, 255, 0.1); border-left: 4px solid #00aaff; padding: 1rem; margin-bottom: 1.5rem; }
+        .danger-box { background: rgba(255, 50, 50, 0.1); border-left: 4px solid #ff3333; padding: 1rem; margin-bottom: 1.5rem; }
+
+        /* --- 模擬器樣式 (Tshark 風格) --- */
+        .simulator-wrapper {
+            background: #000810; border: 2px solid #00ffff; border-radius: 6px; overflow: hidden;
+            box-shadow: 0 0 40px rgba(0, 255, 255, 0.1); margin: 20px 0;
+            display: flex; flex-direction: column; height: 750px;
+        }
+
+        .sim-header {
+            background: #001a33; padding: 10px 15px; border-bottom: 1px solid #00ffff;
+            display: flex; justify-content: space-between; align-items: center; color: #00ffff; font-family: monospace;
+        }
+
+        .sim-grid {
+            display: grid; grid-template-columns: 240px 1fr 340px; flex: 1; overflow: hidden;
+        }
+
+        /* 控制區 */
+        .sim-controls { background: #000c1a; border-right: 1px solid #004466; padding: 15px; overflow-y: auto; }
+        .sim-btn {
+            width: 100%; padding: 15px; margin-bottom: 12px; background: rgba(0, 255, 255, 0.05); border: 1px solid #004466;
+            color: #88ccff; text-align: left; cursor: pointer; border-radius: 4px; transition: all 0.2s; font-family: monospace;
+        }
+        .sim-btn:hover { background: rgba(0, 255, 255, 0.15); color: #fff; border-color: #00ffff; }
+        .sim-btn.active { background: rgba(0, 255, 255, 0.25); border-color: #00ffff; color: #fff; border-left: 4px solid #00ffff; font-weight: bold; }
+        .sim-btn strong { display: block; font-size: 1rem; margin-bottom: 4px; }
+
+        /* 終端機 */
+        .sim-terminal {
+            background: #000; padding: 0; display: flex; flex-direction: column; 
+            font-family: 'Consolas', 'Courier New', monospace; position: relative;
+        }
+        .term-body { 
+            flex: 1; padding: 20px; overflow-y: auto; color: #ccddff; 
+            font-size: 0.9rem; line-height: 1.4; white-space: pre-wrap; 
+        }
+        .prompt { color: #00ffff; font-weight: bold; margin-right: 8px; }
+        .cursor { display: inline-block; width: 10px; height: 18px; background: #00ffff; animation: blink 1s infinite; vertical-align: text-bottom; }
+
+        /* 解析區 */
+        .sim-decoder { background: #001122; border-left: 1px solid #004466; display: flex; flex-direction: column; }
+        .decoder-header { padding: 15px; background: #001a33; border-bottom: 1px solid #004466; color: #00aaff; font-weight: bold; }
+        .decoder-content { padding: 20px; flex: 1; overflow-y: auto; }
+        
+        .explanation-card { 
+            background: rgba(0, 255, 255, 0.05); border-left: 3px solid #00ffff; 
+            padding: 15px; border-radius: 4px; animation: slideIn 0.3s ease; margin-bottom: 15px;
+        }
+        .analogy { 
+            margin-top: 10px; padding: 10px; background: rgba(0, 100, 255, 0.1); 
+            border-radius: 4px; color: #88ccff; font-style: italic; border: 1px dashed #00aaff;
+        }
+
+        /* 重置按鈕 */
+        .reset-btn {
+            background: transparent; border: 1px solid #00ffff; color: #00ffff; 
+            padding: 4px 12px; font-size: 0.8rem; cursor: pointer; transition: 0.3s;
+            font-family: monospace; text-transform: uppercase;
+        }
+        .reset-btn:hover { background: #00ffff; color: #000; }
+
+        /* 表格 */
+        table { width: 100%; border-collapse: collapse; margin: 1.5rem 0; font-family: monospace; }
+        th, td { padding: 10px; text-align: left; border-bottom: 1px solid #004466; }
+        th { background-color: rgba(0, 170, 255, 0.15); color: #00ffff; }
+        
+        @keyframes blink { 50% { opacity: 0; } }
+        @keyframes slideIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* RWD */
+        @media (max-width: 900px) { .sim-grid { grid-template-columns: 1fr; grid-template-rows: auto 400px auto; } .sim-decoder { border-left: none; border-top: 1px solid #004466; height: 300px; } }
+    </style>
+</head>
+<body>
+
+    <div class="ocean-background"></div>
+    <div class="sonar-wave"></div>
+    <div class="sonar-wave"></div>
+
+    <header>
+        <div class="container">
+            <h1><i class="fas fa-water"></i> Tshark 封包分析與解碼</h1>
+            <p>Wireshark 的命令行兄弟•深度封包解析•自動化分析工具</p>
+        </div>
+    </header>
+
+    <nav>
+        <div class="container">
+            <ul>
+                <li><a href="#intro">工具介紹</a></li>
+                <li><a href="#install">安裝指令</a></li>
+                <li><a href="#simulation">封包分析演練</a></li>
+                <li><a href="#syntax">參數語法</a></li>
+                <li><a href="#ethics">法律規範</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <div class="container">
+        
+        <div class="grid-layout">
+            <div class="content-left">
+                <article id="intro">
+                    <h2><i class="fas fa-search"></i> 什麼是 Tshark？</h2>
+                    <p><strong>Tshark</strong> 是全球最流行的封包分析軟體 Wireshark 的命令行 (CLI) 版本。如果說 Tcpdump 是快速的攔截工具，Tshark 就是精密的<strong>「封包解剖師」</strong>。</p>
+                    <p>它擁有與 Wireshark 相同的強大解碼引擎，可以識別數千種協定，並且能將封包內的細微欄位（如 User-Agent、DNS Query）精準提取出來。</p>
+                    
+                    <div class="info-box">
+                        <p><strong><i class="fas fa-lightbulb"></i> Tshark vs Tcpdump：</strong></p>
+                        <ul>
+                            <li><strong>Tcpdump</strong>：擅長「抓」。輕量、快速、適合看表層資訊。</li>
+                            <li><strong>Tshark</strong>：擅長「解」。能讀懂封包內容，適合做統計、過濾特定欄位。</li>
+                        </ul>
+                    </div>
+                </article>
+
+                <article id="install">
+                    <h2><i class="fas fa-download"></i> 安裝與啟動</h2>
+                    <p>Tshark 通常包含在 Wireshark 套件中。在 Kali Linux 是預裝的。</p>
+                    <pre><code style="color:#00ffff;"># 安裝 (Debian/Ubuntu)
+sudo apt install tshark
+
+# 檢查版本
+tshark -v
+
+# 互動模式 (類似 Wireshark 的文字版)
+tshark</code></pre>
+                </article>
+            </div>
+
+            <aside>
+                <div style="margin-bottom: 30px;">
+                    <h3 style="margin-top:0; border-bottom:1px solid #004466; padding-bottom:10px;">
+                        <i class="fas fa-laptop-code"></i> 實驗需求
+                    </h3>
+                    <ul style="list-style: none; margin: 0; padding: 0;">
+                        <li style="padding: 10px 0; border-bottom: 1px solid #004466;">
+                            <i class="fas fa-check" style="color:#00ffff; margin-right:8px;"></i> Kali Linux (Root)
+                        </li>
+                        <li style="padding: 10px 0; border-bottom: 1px solid #004466;">
+                            <i class="fas fa-file-alt" style="color:#00ffff; margin-right:8px;"></i> 範例檔案: traffic.pcap
+                        </li>
+                        <li style="padding: 10px 0;">
+                            <i class="fas fa-filter" style="color:#00aaff; margin-right:8px;"></i> 學習 Display Filter
+                        </li>
+                    </ul>
+                </div>
+                
+                <div>
+                    <h3 style="margin-top:0; border-bottom:1px solid #004466; padding-bottom:10px;">
+                        <i class="fas fa-book"></i> 章節導覽
+                    </h3>
+                    <ul style="list-style: none; margin: 0; padding: 0;">
+                        <li style="padding: 8px 0;"><a href="#intro" style="color:#88ccff; text-decoration:none;">1. 工具介紹</a></li>
+                        <li style="padding: 8px 0;"><a href="#install" style="color:#88ccff; text-decoration:none;">2. 安裝指令</a></li>
+                        <li style="padding: 8px 0;"><a href="#simulation" style="color:#88ccff; text-decoration:none;">3. 封包分析演練</a></li>
+                        <li style="padding: 8px 0;"><a href="#syntax" style="color:#88ccff; text-decoration:none;">4. 參數語法</a></li>
+                        <li style="padding: 8px 0;"><a href="#ethics" style="color:#88ccff; text-decoration:none;">5. 法律規範</a></li>
+                    </ul>
+                </div>
+            </aside>
+        </div>
+
+        <div class="full-width">
+            <article id="simulation" style="border: 2px solid #00ffff; box-shadow: 0 0 30px rgba(0, 255, 255, 0.15);">
+                <h2><i class="fas fa-microscope"></i> 互動虛擬實驗室</h2>
+                <p>現在進入 Tshark 的強項。我們將從一個雜亂的封包檔中，精準提取出我們感興趣的「機密資訊」。</p>
+                
+                <div class="simulator-wrapper">
+                    <div class="sim-header">
+                        <div><i class="fas fa-terminal"></i> KALI TERMINAL (TSHARK)</div>
+                        <button class="reset-btn" onclick="resetSim()">
+                            <i class="fas fa-redo"></i> 重置模擬器
+                        </button>
+                    </div>
+
+                    <div class="sim-grid">
+                        <div class="sim-controls">
+                            <button class="sim-btn" onclick="runStep(1)" id="btn-1">
+                                <strong>Step 1: 讀取封包檔</strong><span>tshark -r traffic.pcap</span>
+                            </button>
+                            <button class="sim-btn" onclick="runStep(2)" id="btn-2">
+                                <strong>Step 2: 顯示過濾 (HTTP)</strong><span>-Y "http.request"</span>
+                            </button>
+                            <button class="sim-btn" onclick="runStep(3)" id="btn-3">
+                                <strong>Step 3: 提取特定欄位 (重點!)</strong><span>-T fields -e http.host</span>
+                            </button>
+                            <button class="sim-btn" onclick="runStep(4)" id="btn-4">
+                                <strong>Step 4: 輸出 CSV 格式</strong><span>-E separator=,</span>
+                            </button>
+                            <button class="sim-btn" onclick="runStep(5)" id="btn-5">
+                                <strong>Step 5: 統計協議分佈</strong><span>-z io,phs</span>
+                            </button>
+                            <button class="sim-btn" onclick="runStep(6)" id="btn-6" style="border-left: 3px solid #ff3333; background: rgba(255,0,0,0.1);">
+                                <strong>Step 6: 抓取 User-Agent</strong><span>識別惡意掃描器</span>
+                            </button>
+                        </div>
+
+                        <div class="sim-terminal">
+                            <div class="term-body" id="term-body">
+                                <div>Kali GNU/Linux Rolling [Version 2024.1]</div>
+                                <br>
+                                <div id="prompt-line" style="display:flex; flex-wrap:wrap;">
+                                    <span class="prompt" id="prompt-text">root@kali:~#</span>
+                                    <span id="typing-area"></span><span class="cursor"></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="sim-decoder">
+                            <div class="decoder-header"><i class="fas fa-info-circle"></i> 分析師筆記</div>
+                            <div class="decoder-content" id="decoder-content">
+                                <div style="text-align: center; color: #4488aa; margin-top: 100px;">
+                                    <i class="fas fa-water fa-3x" style="margin-bottom: 20px;"></i><br>
+                                    準備就緒<br>點擊左側 <strong>Step 1</strong> 載入 Pcap 檔
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </article>
+        </div>
+
+        <div class="grid-layout">
+            
+            <div class="content-left">
+                <article id="syntax">
+                    <h2><i class="fas fa-code"></i> 常用參數速查</h2>
+                    <p>Tshark 的參數比 Tcpdump 複雜，但功能更強大。記得 Tshark 使用的是 Wireshark 的過濾語法。</p>
+                    
+                    <table>
+                        <thead>
+                            <tr>
+                                <th width="25%">參數</th>
+                                <th>功能說明</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><code>-r [file]</code></td>
+                                <td>讀取 (Read) 封包檔案 (.pcap)。</td>
+                            </tr>
+                            <tr>
+                                <td><code>-Y [filter]</code></td>
+                                <td><strong>顯示過濾器</strong> (Display Filter)。例如 <code>http</code> 或 <code>ip.addr==1.1.1.1</code>。</td>
+                            </tr>
+                            <tr>
+                                <td><code>-T fields</code></td>
+                                <td>指定輸出格式為「欄位」。配合 <code>-e</code> 使用。</td>
+                            </tr>
+                            <tr>
+                                <td><code>-e [field]</code></td>
+                                <td>提取特定欄位。如 <code>-e ip.src</code> (來源IP)、<code>-e http.host</code> (網址)。</td>
+                            </tr>
+                            <tr>
+                                <td><code>-z [stats]</code></td>
+                                <td>執行統計功能。如 <code>-z io,phs</code> (Protocol Hierarchy Statistics)。</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </article>
+            </div>
+
+            <div class="content-right">
+                <article id="ethics">
+                    <h2><i class="fas fa-gavel"></i> 法律與道德</h2>
+                    
+                    <div class="danger-box">
+                        <h3><i class="fas fa-exclamation-triangle"></i> 隱私紅線</h3>
+                        <p>使用 Tshark 深度解析他人通訊內容（如提取 Cookies、對話紀錄），違反<strong>刑法第 315-1 條</strong>。</p>
+                    </div>
+
+                    <div style="margin-bottom:20px;">
+                        <h4 style="color:#00ffff; margin-bottom:10px;">合法使用原則</h4>
+                        <ul>
+                            <li>企業內部的惡意流量分析</li>
+                            <li>CTF 資安競賽</li>
+                            <li>自身程式的除錯</li>
+                        </ul>
+                    </div>
+
+                    <div class="info-box" style="text-align: center;">
+                        <h4 style="margin-top: 0; color: #fff;">資安倫理</h4>
+                        <p>分析是為了防禦，不是為了窺探。</p>
+                    </div>
+                </article>
+            </div>
+        </div>
+
+    </div>
+
+    <footer>
+        <div class="container">
+            <p>© 2025 Tshark 封包分析與解碼 | 僅供資安教育用途</p>
+            <p>請務必遵守法律與道德規範</p>
+        </div>
+    </footer>
+
+    <script>
+        const termBody = document.getElementById('term-body');
+        const promptLine = document.getElementById('prompt-line');
+        const typingArea = document.getElementById('typing-area');
+        const decoderContent = document.getElementById('decoder-content');
+        
+        let isTyping = false;
+        let typingTimer = null;
+
+        // 模擬數據
+        const scenarios = {
+            1: {
+                cmd: "tshark -r traffic.pcap",
+                info: `
+                    <div class="explanation-card">
+                        <h4>Step 1: 讀取封包檔</h4>
+                        <p style="color:#ccc;">我們載入了一個名為 <code>traffic.pcap</code> 的封包側錄檔。</p>
+                        <p style="color:#ccc;">Tshark 預設會顯示簡要資訊 (Info Column)，這跟 Wireshark 主介面的列表很像。</p>
+                        <div class="analogy">
+                            <strong>💡 白話文比喻：</strong>這就像你把昨天錄好的監視器畫面拿出來播放。如果不快轉或過濾，畫面會非常多且雜亂。
+                        </div>
+                    </div>`,
+                output: [
+                    { text: "    1 0.000000 192.168.1.100 → 8.8.8.8      DNS 74 Standard query 0x1234 A google.com", wait: 500 },
+                    { text: "    2 0.012345      8.8.8.8 → 192.168.1.100 DNS 90 Standard query response 0x1234 A 142.250.1.1", wait: 800 },
+                    { text: "    3 0.020000 192.168.1.100 → 142.250.1.1  TCP 66 54321 → 80 [SYN] Seq=0 Win=64240 Len=0", color: "#00aaff", wait: 1200 },
+                    { text: "    4 0.035000 142.250.1.1 → 192.168.1.100  TCP 66 80 → 54321 [SYN, ACK] Seq=0 Ack=1 Win=65535 Len=0", color: "#00aaff", wait: 1500 },
+                    { text: "    5 0.035100 192.168.1.100 → 142.250.1.1  TCP 54 54321 → 80 [ACK] Seq=1 Ack=1 Win=64240 Len=0", color: "#00aaff", wait: 1800 },
+                    { text: "    6 0.035200 192.168.1.100 → 142.250.1.1  HTTP 215 GET /index.html HTTP/1.1", color: "#00ffff", wait: 2100 },
+                    { text: "root@kali:~#", type: "prompt", wait: 2500 }
+                ]
+            },
+            2: {
+                cmd: "tshark -r traffic.pcap -Y \"http.request\"",
+                info: `
+                    <div class="explanation-card">
+                        <h4>Step 2: 顯示過濾 (Display Filter)</h4>
+                        <p style="color:#ccc;">參數 <code>-Y</code> 是 Tshark 的顯示過濾器。</p>
+                        <p style="color:#ccc;">我們輸入 <code>"http.request"</code>，只顯示 HTTP 的請求封包 (GET/POST)，忽略掉 TCP 握手和 DNS。</p>
+                        <div class="analogy">
+                            <strong>💡 白話文比喻：</strong>這就像在圖書館找書，你對管理員說：「我只要看『小說』類別的書，其他的教科書都先收起來。」
+                        </div>
+                    </div>`,
+                output: [
+                    { text: "    6 0.035200 192.168.1.100 → 142.250.1.1  HTTP 215 GET /index.html HTTP/1.1", color: "#00ffff", wait: 500 },
+                    { text: "   15 2.123456 192.168.1.100 → 10.0.0.5     HTTP 340 POST /login.php HTTP/1.1", color: "#00ffff", wait: 800 },
+                    { text: "   28 5.678901 192.168.1.100 → 10.0.0.5     HTTP 220 GET /admin_dashboard.php HTTP/1.1", color: "#00ffff", wait: 1100 },
+                    { text: "root@kali:~#", type: "prompt", wait: 1500 }
+                ]
+            },
+            3: {
+                cmd: "tshark -r traffic.pcap -Y \"http.request\" -T fields -e http.host -e http.request.uri",
+                info: `
+                    <div class="explanation-card">
+                        <h4>Step 3: 提取特定欄位 (Extract Fields)</h4>
+                        <p style="color:#ccc;">這就是 Tshark 最強的地方！<code>-T fields</code>。</p>
+                        <p style="color:#ccc;">我們指定提取 <code>http.host</code> (網站) 和 <code>http.request.uri</code> (路徑)。輸出瞬間變乾淨了！</p>
+                        <div class="analogy">
+                            <strong>💡 白話文比喻：</strong>你有一堆信件，但你不想看內容，你只想把每封信的「寄件地址」和「主旨」抄錄到一本筆記本上，做成清單。
+                        </div>
+                    </div>`,
+                output: [
+                    { text: "google.com      /index.html", color: "#88ccff", wait: 500 },
+                    { text: "internal-site.local     /login.php", color: "#88ccff", wait: 800 },
+                    { text: "internal-site.local     /admin_dashboard.php", color: "#88ccff", wait: 1100 },
+                    { text: "root@kali:~#", type: "prompt", wait: 1500 }
+                ]
+            },
+            4: {
+                cmd: "tshark -r traffic.pcap -T fields -e ip.src -e http.user_agent -E separator=,",
+                info: `
+                    <div class="explanation-card">
+                        <h4>Step 4: 輸出 CSV 格式</h4>
+                        <p style="color:#ccc;">加上 <code>-E separator=,</code>，我們可以用逗號分隔欄位。</p>
+                        <p style="color:#ccc;">這樣產生的輸出就是標準的 CSV 格式，可以直接用 Excel 打開做統計分析。</p>
+                        <div class="analogy">
+                            <strong>💡 白話文比喻：</strong>你把剛剛抄錄的清單整理好，畫上格線，讓它變成一張標準的報表，方便老闆閱讀。
+                        </div>
+                    </div>`,
+                output: [
+                    { text: "192.168.1.100,Mozilla/5.0 (Windows NT 10.0; Win64; x64)...", color: "#ccddff", wait: 500 },
+                    { text: "192.168.1.100,Mozilla/5.0 (Windows NT 10.0; Win64; x64)...", color: "#ccddff", wait: 800 },
+                    { text: "192.168.1.100,Mozilla/5.0 (Windows NT 10.0; Win64; x64)...", color: "#ccddff", wait: 1100 },
+                    { text: "root@kali:~#", type: "prompt", wait: 1500 }
+                ]
+            },
+            5: {
+                cmd: "tshark -r traffic.pcap -z io,phs",
+                info: `
+                    <div class="explanation-card">
+                        <h4>Step 5: 統計協議分佈 (Protocol Hierarchy)</h4>
+                        <p style="color:#ccc;">參數 <code>-z io,phs</code> 會顯示協議分佈樹狀圖。</p>
+                        <p style="color:#ccc;">你可以一眼看出這個 Pcap 檔裡有多少是 TCP、多少是 HTTP、多少是圖片檔。</p>
+                        <div class="analogy">
+                            <strong>💡 白話文比喻：</strong>這就像對整個人口做普查，直接告訴你：這個城市有 50% 是工程師，30% 是醫生，20% 是老師。宏觀分析非常有用。
+                        </div>
+                    </div>`,
+                output: [
+                    { text: "===================================================================", wait: 300 },
+                    { text: "Protocol Hierarchy Statistics", wait: 500 },
+                    { text: "Filter: <none>", wait: 600 },
+                    { text: "eth                                      frames:120 bytes:84560", wait: 800 },
+                    { text: "  ip                                     frames:120 bytes:84560", wait: 900 },
+                    { text: "    tcp                                  frames:110 bytes:82000", wait: 1000 },
+                    { text: "      http                               frames:45  bytes:32000", color: "#00ffff", wait: 1200 },
+                    { text: "        image-gif                        frames:10  bytes:15000", wait: 1300 },
+                    { text: "    udp                                  frames:10  bytes:2560", wait: 1400 },
+                    { text: "      dns                                frames:10  bytes:2560", wait: 1500 },
+                    { text: "===================================================================", wait: 1800 },
+                    { text: "root@kali:~#", type: "prompt", wait: 2000 }
+                ]
+            },
+            6: {
+                cmd: "tshark -r traffic.pcap -Y \"http.user_agent contains 'sqlmap'\"",
+                info: `
+                    <div class="explanation-card" style="border-color: #ff3333;">
+                        <h4 style="color:#ff3333;">Step 6: 抓取惡意 User-Agent</h4>
+                        <p style="color:#ccc;">駭客工具通常會留下特徵。我們過濾包含 'sqlmap' 的 User-Agent。</p>
+                        <p style="color:#ccc;">Bingo！我們發現了自動化攻擊的痕跡。</p>
+                        <div class="analogy">
+                            <strong>💡 白話文比喻：</strong>就像警察在檢查飯店的入住名單，發現有人在簽名欄寫了「我是小偷」。很多攻擊工具如果不設定隱藏，就會像這樣直接暴露。
+                        </div>
+                    </div>`,
+                output: [
+                    { text: "  105 15.555555 10.0.0.66 → 192.168.1.5  HTTP 450 GET /?id=1' AND 1=1-- sqlmap/1.5.2...", color: "#ff3333", wait: 800 },
+                    { text: "  106 15.666666 10.0.0.66 → 192.168.1.5  HTTP 450 GET /?id=1' UNION SELECT... sqlmap/1.5.2...", color: "#ff3333", wait: 1200 },
+                    { text: "root@kali:~#", type: "prompt", wait: 1500 }
+                ]
+            }
+        };
+
+        function runStep(id) {
+            if (isTyping) return;
+            isTyping = true;
+            
+            const data = scenarios[id];
+            document.querySelectorAll('.sim-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById('btn-' + id).classList.add('active');
+
+            typeCommand(data.cmd, () => {
+                addHistoryLog("root@kali:~#", data.cmd);
+                decoderContent.innerHTML = data.info;
+                
+                let maxWait = 0;
+                if(data.output) {
+                    data.output.forEach(line => {
+                        setTimeout(() => {
+                            if(line.type === 'prompt') updatePrompt();
+                            else printText(line.text, line.color);
+                        }, line.wait);
+                        if(line.wait > maxWait) maxWait = line.wait;
+                    });
+                }
+                setTimeout(() => {
+                    isTyping = false;
+                }, maxWait + 200);
+            });
+        }
+
+        function typeCommand(text, callback) {
+            typingArea.textContent = "";
+            let i = 0;
+            typingTimer = setInterval(() => {
+                typingArea.textContent += text.charAt(i);
+                i++;
+                if (i >= text.length) {
+                    clearInterval(typingTimer);
+                    setTimeout(() => {
+                        typingArea.textContent = "";
+                        callback();
+                    }, 300);
+                }
+            }, 30);
+        }
+
+        function addHistoryLog(p, c) {
+            const div = document.createElement('div');
+            div.innerHTML = `<span class="prompt">${p}</span> ${c}`;
+            termBody.insertBefore(div, promptLine);
+            scrollToBottom();
+        }
+
+        function printText(text, color) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            if(color) div.style.color = color;
+            termBody.insertBefore(div, promptLine);
+            scrollToBottom();
+        }
+
+        function updatePrompt() {
+            scrollToBottom();
+        }
+
+        function scrollToBottom() {
+            termBody.scrollTop = termBody.scrollHeight;
+        }
+
+        function resetSim() {
+            if(isTyping) return;
+            const logs = termBody.querySelectorAll('div:not(#prompt-line)');
+            for(let i=1; i<logs.length; i++) logs[i].remove();
+            
+            decoderContent.innerHTML = `
+                <div style="text-align: center; color: #4488aa; margin-top: 100px;">
+                    <i class="fas fa-water fa-3x" style="margin-bottom: 20px;"></i><br>
+                    準備就緒<br>點擊左側 <strong>Step 1</strong> 載入 Pcap 檔
+                </div>`;
+            document.querySelectorAll('.sim-btn').forEach(b => b.classList.remove('active'));
+        }
+    </script>
+</body>
+</html>

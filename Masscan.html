@@ -1,0 +1,584 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Masscan 極速掃描 | 資安模擬學習</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        /* --- 1. Masscan 主題美術風格 (警示橘 + 深紅) --- */
+        
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body { line-height: 1.6; color: #e0e0e0; background-color: #0d1117; position: relative; overflow-x: hidden; }
+
+        /* 動態背景 (橘色系) */
+        .cyber-background {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1;
+            background: 
+                radial-gradient(circle at 20% 80%, rgba(255, 85, 0, 0.15) 0%, transparent 50%),
+                radial-gradient(circle at 80% 20%, rgba(255, 170, 0, 0.1) 0%, transparent 50%);
+            animation: backgroundShift 20s ease-in-out infinite;
+        }
+        .grid-lines {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background-image: 
+                linear-gradient(rgba(255, 85, 0, 0.05) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255, 85, 0, 0.05) 1px, transparent 1px);
+            background-size: 50px 50px; z-index: -1;
+            animation: gridMove 20s linear infinite;
+        }
+        /* 掃描線 (紅色) */
+        .scan-line {
+            position: fixed; top: 0; left: 0; width: 100%; height: 4px;
+            background: linear-gradient(90deg, transparent, rgba(255, 69, 0, 0.8), transparent);
+            animation: scan 1.5s linear infinite; z-index: -1; /* Masscan 比較快，動畫加速 */
+        }
+
+        @keyframes backgroundShift { 0%, 100% { background-position: 0% 0%, 100% 100%; } 50% { background-position: 100% 100%, 0% 0%; } }
+        @keyframes gridMove { 0% { transform: translate(0, 0); } 100% { transform: translate(50px, 50px); } }
+        @keyframes scan { 0% { top: 0%; } 100% { top: 100%; } }
+
+        /* 容器 */
+        .container { width: 90%; max-width: 1400px; margin: 0 auto; padding: 20px; position: relative; }
+
+        /* 頁首 */
+        header {
+            background: rgba(13, 17, 23, 0.9); padding: 4rem 0; text-align: center; margin-bottom: 2rem;
+            border-radius: 10px; border: 1px solid #ff5500; box-shadow: 0 0 30px rgba(255, 85, 0, 0.2);
+            position: relative; overflow: hidden;
+        }
+        header::before {
+            content: ''; position: absolute; top: 0; left: -100%; width: 100%; height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 85, 0, 0.2), transparent);
+            animation: headerShine 3s infinite;
+        }
+        @keyframes headerShine { 0% { left: -100%; } 100% { left: 100%; } }
+        header h1 {
+            font-size: 2.8rem; margin-bottom: 1rem;
+            background: linear-gradient(135deg, #ff5500, #ffaa00);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+        }
+        header p { font-size: 1.2rem; max-width: 800px; margin: 0 auto; color: #8b949e; }
+
+        /* 導覽列 */
+        nav {
+            background: rgba(13, 17, 23, 0.95); padding: 1rem 0; margin-bottom: 2rem;
+            border-radius: 8px; border: 1px solid #ff5500; position: sticky; top: 0; z-index: 100;
+        }
+        nav ul { display: flex; justify-content: center; list-style: none; flex-wrap: wrap; }
+        nav li { margin: 0 1rem; }
+        nav a {
+            text-decoration: none; color: #8b949e; font-weight: 500; padding: 0.5rem 1rem;
+            border-radius: 4px; transition: all 0.3s ease; border: 1px solid transparent;
+        }
+        nav a:hover { background-color: #1c2128; color: #ff5500; border-color: #ff5500; }
+
+        /* --- 佈局：上層左右欄，中層全寬，下層左右欄 --- */
+        .grid-layout { display: grid; grid-template-columns: 2fr 1fr; gap: 2rem; margin-bottom: 2rem; }
+        .full-width { width: 100%; margin-bottom: 2rem; }
+        
+        @media (max-width: 900px) { .grid-layout { grid-template-columns: 1fr; } }
+
+        /* 區塊樣式 */
+        article { background: rgba(13, 17, 23, 0.9); padding: 2rem; border-radius: 8px; border: 1px solid #30363d; margin-bottom: 2rem; }
+        
+        h2 { color: #ff5500; margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 2px solid #30363d; font-size: 1.8rem; }
+        h3 { color: #ffaa00; margin: 1.5rem 0 1rem 0; font-size: 1.3rem; }
+        p, li { margin-bottom: 0.8rem; color: #e0e0e0; }
+        ul, ol { margin-left: 1.5rem; margin-bottom: 1.5rem; }
+
+        /* 側邊欄 */
+        aside { 
+            background: rgba(13, 17, 23, 0.9); padding: 1.5rem; border-radius: 8px; border: 1px solid #ff5500; 
+            height: fit-content; position: sticky; top: 100px;
+        }
+
+        /* 提示框 (改為橘色系) */
+        .info-box { background: rgba(255, 170, 0, 0.1); border-left: 4px solid #ffaa00; padding: 1rem; margin-bottom: 1.5rem; }
+        .success-box { background: rgba(255, 85, 0, 0.1); border-left: 4px solid #ff5500; padding: 1rem; margin-bottom: 1.5rem; }
+        .danger-box { background: rgba(255, 0, 0, 0.1); border-left: 4px solid #ff0000; padding: 1rem; margin-bottom: 1.5rem; }
+
+        /* --- 模擬器樣式 (全寬版 - Masscan 風格) --- */
+        .simulator-wrapper {
+            background: rgba(20, 10, 5, 0.95); border: 2px solid #ff5500; border-radius: 8px; overflow: hidden;
+            box-shadow: 0 10px 50px rgba(255, 85, 0, 0.2); display: flex; flex-direction: column; height: 750px;
+        }
+        .sim-header { 
+            background: #1f100a; padding: 10px 15px; border-bottom: 1px solid #ff5500; 
+            display: flex; justify-content: space-between; align-items: center; color: #ffaa00; font-size: 0.85rem;
+        }
+        
+        .sim-grid { display: grid; grid-template-columns: 240px 1fr 340px; flex: 1; overflow: hidden; }
+        
+        /* 控制區 */
+        .sim-controls { background: #0f0502; border-right: 1px solid #30363d; padding: 15px; overflow-y: auto; }
+        .sim-btn {
+            width: 100%; padding: 15px; margin-bottom: 12px; background: rgba(255,255,255,0.03); border: 1px solid #30363d;
+            color: #8b949e; text-align: left; cursor: pointer; border-radius: 6px; transition: all 0.2s;
+        }
+        .sim-btn:hover { background: rgba(255, 85, 0, 0.1); color: #fff; border-color: #ff5500; }
+        
+        /* 橘色系按鈕 */
+        .sim-btn.active { color: #fff; background: rgba(255, 85, 0, 0.15); border-left: 4px solid #ff5500; border-color: #ff5500; box-shadow: 0 0 15px rgba(255, 85, 0, 0.1); }
+        .sim-btn strong { display: block; font-size: 1rem; margin-bottom: 4px; }
+
+        /* 終端機 */
+        .sim-terminal { background: #000; display: flex; flex-direction: column; font-family: 'Courier New', monospace; position: relative; }
+        .term-body { flex: 1; padding: 15px; overflow-y: auto; color: #ccc; font-size: 0.95rem; white-space: pre-wrap; }
+        .prompt { color: #ff5500; font-weight: bold; margin-right: 8px; }
+        .cursor { display: inline-block; width: 8px; height: 16px; background: #ff5500; animation: blink 1s infinite; vertical-align: text-bottom; }
+
+        /* 解析區 */
+        .sim-decoder { background: #161b22; border-left: 1px solid #30363d; display: flex; flex-direction: column; }
+        .decoder-header { padding: 12px; background: #0f0502; border-bottom: 1px solid #30363d; color: #ffaa00; font-weight: bold; font-size: 0.95rem; }
+        .decoder-content { padding: 20px; flex: 1; overflow-y: auto; }
+        .explanation-card { background: rgba(255, 85, 0, 0.05); border-left: 3px solid #ff5500; padding: 15px; border-radius: 4px; animation: slideIn 0.3s ease; }
+        .explanation-card h4 { color: #fff; font-size: 1.1rem; margin-bottom: 8px; }
+        .analogy { margin-top: 10px; padding: 8px; background: rgba(255, 170, 0, 0.1); border-radius: 4px; color: #ffaa00; font-style: italic; }
+
+        /* 重置按鈕 */
+        .reset-btn {
+            background: transparent; border: 1px solid #ff5500; color: #ff5500; 
+            padding: 4px 12px; font-size: 0.8rem; border-radius: 4px; cursor: pointer; transition: 0.3s;
+        }
+        .reset-btn:hover { background: #ff5500; color: white; }
+
+        /* 表格 */
+        table { width: 100%; border-collapse: collapse; margin: 1.5rem 0; }
+        th, td { padding: 0.75rem; text-align: left; border-bottom: 1px solid #30363d; }
+        th { background-color: rgba(255, 85, 0, 0.1); color: #ff5500; }
+
+        /* 道德規範網格 */
+        .ethics-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 25px; }
+        .ethics-item { background: rgba(255,255,255,0.03); padding: 20px; border-radius: 8px; border: 1px solid #30363d; }
+        .ethics-item h4 { color: #ffaa00; margin-bottom: 10px; font-size: 1.2rem; border-bottom: 1px solid #333; padding-bottom: 5px; }
+
+        @keyframes blink { 50% { opacity: 0; } }
+        @keyframes slideIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        
+        @media (max-width: 900px) { .sim-grid { grid-template-columns: 1fr; grid-template-rows: auto 300px auto; } .sim-decoder { border-left: none; border-top: 1px solid #30363d; height: 300px; } }
+    </style>
+</head>
+<body>
+
+    <div class="cyber-background"></div>
+    <div class="grid-lines"></div>
+    <div class="scan-line"></div>
+
+    <header>
+        <div class="container">
+            <h1><i class="fas fa-bolt"></i> Masscan 極速掃描</h1>
+            <p>高速端口掃描利器 | 30秒內掃描整個網路 | 新手實戰教學</p>
+        </div>
+    </header>
+
+    <nav>
+        <div class="container">
+            <ul>
+                <li><a href="#intro">工具介紹</a></li>
+                <li><a href="#install">安裝與設定</a></li>
+                <li><a href="#simulation">掃描模擬</a></li>
+                <li><a href="#output">結果解析</a></li>
+                <li><a href="#ethics">道德規範</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <div class="container">
+        
+        <div class="grid-layout">
+            <div class="content-left">
+                <article id="intro">
+                    <h2><i class="fas fa-info-circle"></i> Masscan 是什麼？</h2>
+                    <p><strong>Masscan</strong> 是目前世界上最快的網際網路端口掃描器。它採用非同步傳輸（Asynchronous transmission）技術，類似於 <code>scanrand</code>、<code>unicornscan</code>，但速度更快。</p>
+                    
+                    <h3>Masscan vs Nmap</h3>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>特性</th>
+                                <th>Masscan</th>
+                                <th>Nmap</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><strong>掃描速度</strong></td>
+                                <td><span style="color:#ff5500;">極快 (每秒 1000萬+ 封包)</span></td>
+                                <td>較慢 (適合精細掃描)</td>
+                            </tr>
+                            <tr>
+                                <td><strong>主要用途</strong></td>
+                                <td>大規模 IP 範圍偵查</td>
+                                <td>單一主機深層漏洞檢測</td>
+                            </tr>
+                            <tr>
+                                <td><strong>準確度</strong></td>
+                                <td>較低 (可能會漏包)</td>
+                                <td><span style="color:#ffaa00;">極高 (三向交握完整)</span></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </article>
+
+                <article id="install">
+                    <h2><i class="fas fa-download"></i> 安裝與使用</h2>
+                    <div class="info-box">
+                        <p>Masscan 需要 <strong>Root 權限</strong> 才能發送原始封包。在 Kali Linux 中通常已預裝。</p>
+                    </div>
+                    <pre><code># 1. 安裝 Masscan
+sudo apt-get install masscan
+
+# 2. 查詢網卡名稱 (重要!)
+ip addr
+
+# 3. 基礎語法
+sudo masscan -p80,443 192.168.1.0/24 --rate=1000</code></pre>
+                </article>
+            </div>
+
+            <aside>
+                <div style="margin-bottom: 30px;">
+                    <h3 style="margin-top:0; border-bottom:1px solid #30363d; padding-bottom:10px; font-size:1.1rem;">
+                        <i class="fas fa-laptop-code"></i> 實驗需求
+                    </h3>
+                    <ul style="list-style: none; margin: 0; padding: 0;">
+                        <li style="padding: 10px 0; border-bottom: 1px solid #30363d;">
+                            <i class="fas fa-check" style="color:#ff5500; margin-right:8px;"></i> Kali Linux (Root)
+                        </li>
+                        <li style="padding: 10px 0; border-bottom: 1px solid #30363d;">
+                            <i class="fas fa-check" style="color:#ff5500; margin-right:8px;"></i> 目標網段: 192.168.1.0/24
+                        </li>
+                        <li style="padding: 10px 0;">
+                            <i class="fas fa-exclamation-triangle" style="color:#ffaa00; margin-right:8px;"></i> <strong>必須使用 sudo</strong>
+                        </li>
+                    </ul>
+                </div>
+                
+                <div>
+                    <h3 style="margin-top:0; border-bottom:1px solid #30363d; padding-bottom:10px; font-size:1.1rem;">
+                        <i class="fas fa-book"></i> 章節導覽
+                    </h3>
+                    <ul style="list-style: none; margin: 0; padding: 0;">
+                        <li style="padding: 8px 0;"><a href="#intro" style="color:#ffaa00; text-decoration:none;">1. 工具介紹</a></li>
+                        <li style="padding: 8px 0;"><a href="#install" style="color:#ffaa00; text-decoration:none;">2. 安裝設定</a></li>
+                        <li style="padding: 8px 0;"><a href="#simulation" style="color:#ffaa00; text-decoration:none;">3. 掃描模擬</a></li>
+                        <li style="padding: 8px 0;"><a href="#output" style="color:#ffaa00; text-decoration:none;">4. 結果解析</a></li>
+                        <li style="padding: 8px 0;"><a href="#ethics" style="color:#ffaa00; text-decoration:none;">5. 道德規範</a></li>
+                    </ul>
+                </div>
+            </aside>
+        </div>
+
+        <div class="full-width">
+            <article id="simulation" style="border: 2px solid #ff5500; box-shadow: 0 0 20px rgba(255, 85, 0, 0.1);">
+                <h2><i class="fas fa-bolt"></i> 互動虛擬實驗室</h2>
+                <p>體驗 Masscan 的威力！請依序點擊左側步驟。注意：Masscan 的掃描結果通常非常簡潔，只有開放的端口。</p>
+                
+                <div class="simulator-wrapper">
+                    <div class="sim-header">
+                        <div><i class="fas fa-terminal"></i> KALI ROOT TERMINAL</div>
+                        <button class="reset-btn" onclick="resetSim()">
+                            <i class="fas fa-redo"></i> 重置模擬器
+                        </button>
+                    </div>
+
+                    <div class="sim-grid">
+                        <div class="sim-controls">
+                            <button class="sim-btn" onclick="runStep(1)" id="btn-1">
+                                <strong>Step 1: 單一 IP 掃描</strong><span>-p80 192.168.1.150</span>
+                            </button>
+                            <button class="sim-btn" onclick="runStep(2)" id="btn-2">
+                                <strong>Step 2: 網段掃描 (Subnet)</strong><span>192.168.1.0/24</span>
+                            </button>
+                            <button class="sim-btn" onclick="runStep(3)" id="btn-3">
+                                <strong>Step 3: 提速！(Rate Limit)</strong><span>--rate=10000</span>
+                            </button>
+                            <button class="sim-btn" onclick="runStep(4)" id="btn-4">
+                                <strong>Step 4: 全端口掃描</strong><span>-p0-65535</span>
+                            </button>
+                            <button class="sim-btn" onclick="runStep(5)" id="btn-5">
+                                <strong>Step 5: 輸出 JSON</strong><span>-oJ results.json</span>
+                            </button>
+                        </div>
+
+                        <div class="sim-terminal">
+                            <div class="term-body" id="term-body">
+                                <div>Kali GNU/Linux Rolling [Version 2024.1]</div>
+                                <br>
+                                <div id="prompt-line" style="display:flex; flex-wrap:wrap;">
+                                    <span class="prompt" id="prompt-text">root@kali:~#</span>
+                                    <span id="typing-area"></span><span class="cursor"></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="sim-decoder">
+                            <div class="decoder-header"><i class="fas fa-book-open"></i> 白話文戰術解析</div>
+                            <div class="decoder-content" id="decoder-content">
+                                <div style="text-align: center; color: #666; margin-top: 100px;">
+                                    <i class="fas fa-rocket fa-3x" style="margin-bottom: 20px;"></i><br>
+                                    準備就緒<br>點擊左側 <strong>Step 1</strong> 開始極速掃描
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </article>
+        </div>
+
+        <div class="grid-layout">
+            
+            <div class="content-left">
+                <article id="output">
+                    <h2><i class="fas fa-file-code"></i> 理解輸出結果</h2>
+                    <p>Masscan 的輸出非常直觀，它只會告訴你發現了什麼（Discovered），而不會告訴你什麼沒發現。</p>
+                    
+                    <div class="success-box">
+                        <h4>標準輸出範例：</h4>
+                        <pre><code>Discovered open port 80/tcp on 192.168.1.150
+Discovered open port 22/tcp on 192.168.1.150
+Discovered open port 443/tcp on 192.168.1.100</code></pre>
+                    </div>
+
+                    <h3><i class="fas fa-lightbulb"></i> 為什麼要用 --rate?</h3>
+                    <p>這是 Masscan 的核心。如果不設定速率，它可能會試圖以網卡的極限速度發送封包（每秒百萬級），這會導致：</p>
+                    <ul>
+                        <li><strong>家用路由器當機</strong>：大多數路由器無法處理這麼多並發連線。</li>
+                        <li><strong>被防火牆封鎖</strong>：極高頻率的掃描會立刻觸發 IDS/IPS。</li>
+                        <li><strong>自身網路癱瘓</strong>：你的網路頻寬會被佔滿，無法上網。</li>
+                    </ul>
+                </article>
+            </div>
+
+            <div class="content-right">
+                <article id="ethics">
+                    <h2><i class="fas fa-gavel"></i> 法律與道德</h2>
+                    
+                    <div class="danger-box">
+                        <h3><i class="fas fa-exclamation-triangle"></i> 特別警告</h3>
+                        <p>Masscan 的攻擊性比 Nmap 更強！因為它會瞬間產生大量流量，極易被視為 <strong>DoS 攻擊</strong>。</p>
+                    </div>
+
+                    <div class="ethics-item" style="margin-bottom: 20px;">
+                        <h4><i class="fas fa-check"></i> 合法使用範圍</h4>
+                        <ul>
+                            <li>掃描自己擁有的 IP 範圍</li>
+                            <li>完全隔離的虛擬機內網</li>
+                            <li><strong>嚴禁</strong>掃描網際網路</li>
+                        </ul>
+                    </div>
+
+                    <div class="info-box" style="text-align: center;">
+                        <h4 style="margin-top: 0; color: #fff;">白帽駭客守則</h4>
+                        <p>能力越大，責任越大</p>
+                        <p style="color: #ff5500; font-weight: bold; margin-top: 10px;">
+                            切勿因一時好奇而觸法！
+                        </p>
+                    </div>
+                </article>
+            </div>
+        </div>
+
+    </div>
+
+    <footer>
+        <div class="container">
+            <p>© 2025 Masscan 極速掃描 | 僅供資安教育用途</p>
+            <p>請務必遵守法律與道德規範</p>
+        </div>
+    </footer>
+
+    <script>
+        const termBody = document.getElementById('term-body');
+        const promptLine = document.getElementById('prompt-line');
+        const typingArea = document.getElementById('typing-area');
+        const decoderContent = document.getElementById('decoder-content');
+        
+        let isTyping = false;
+        let typingTimer = null;
+
+        const scenarios = {
+            1: {
+                cmd: "masscan -p80 192.168.1.150",
+                info: `
+                    <div class="explanation-card">
+                        <h4>Step 1: 單一 IP 掃描</h4>
+                        <p style="color:#ccc;">最基礎的用法。我們只掃描目標 IP 的 80 端口（Web 服務）。</p>
+                        <div class="analogy">
+                            <strong>💡 白話文比喻：</strong>就像你拿著一把鑰匙，只去試試看鄰居家的大門（Port 80）有沒有鎖。Masscan 的速度非常快，幾乎是瞬間完成。
+                        </div>
+                    </div>`,
+                output: [
+                    { text: "Starting masscan 1.3.2 at 2024-05-20 10:00:00 GMT", wait: 200 },
+                    { text: " -- forced options: -sS -Pn -n --randomize-hosts -v --send-eth", color: "#8b949e", wait: 400 },
+                    { text: "Initiating SYN Stealth Scan", wait: 600 },
+                    { text: "Scanning 1 hosts [1 ports/host]", wait: 800 },
+                    { text: "Discovered open port 80/tcp on 192.168.1.150", color: "#ff5500", wait: 1200 },
+                    { text: "root@kali:~#", type: "prompt", wait: 1500 }
+                ]
+            },
+            2: {
+                cmd: "masscan 192.168.1.0/24 -p80",
+                info: `
+                    <div class="explanation-card">
+                        <h4>Step 2: 網段掃描 (Subnet)</h4>
+                        <p style="color:#ccc;">掃描整個 C Class 網段（255 個 IP）。Masscan 會隨機排列 IP 順序以避免被防火牆偵測。</p>
+                        <div class="analogy">
+                            <strong>💡 白話文比喻：</strong>你要找整個社區裡誰家的大門沒關。Nmap 會從 1 號開始按門鈴，Masscan 則是隨機跳著按（先按 5 號，再按 100 號），讓警衛很難抓到規律。
+                        </div>
+                    </div>`,
+                output: [
+                    { text: "Starting masscan 1.3.2...", wait: 200 },
+                    { text: "Scanning 256 hosts [1 ports/host]", wait: 500 },
+                    { text: "Discovered open port 80/tcp on 192.168.1.1", color: "#ff5500", wait: 800 },
+                    { text: "Discovered open port 80/tcp on 192.168.1.150", color: "#ff5500", wait: 1000 },
+                    { text: "Discovered open port 80/tcp on 192.168.1.200", color: "#ff5500", wait: 1200 },
+                    { text: "root@kali:~#", type: "prompt", wait: 1500 }
+                ]
+            },
+            3: {
+                cmd: "masscan 192.168.1.0/24 -p80 --rate=10000",
+                info: `
+                    <div class="explanation-card">
+                        <h4>Step 3: 提速！(Rate Limit)</h4>
+                        <p style="color:#ccc;">加上 <code>--rate=10000</code>，代表每秒發送 1 萬個封包。這就是 Masscan 恐怖的地方。</p>
+                        <div class="analogy">
+                            <strong>💡 白話文比喻：</strong>原本你是用走路去按門鈴，現在你開著法拉利在社區狂飆，一秒鐘按完 100 戶的電鈴。速度極快，但也非常吵雜，所有人都知道你在掃描。
+                        </div>
+                    </div>`,
+                output: [
+                    { text: "Starting masscan 1.3.2...", wait: 200 },
+                    { text: "Rate limit: 10000 packets/s", color: "#ffaa00", wait: 400 },
+                    { text: "Scanning 256 hosts...", wait: 600 },
+                    { text: "Discovered open port 80/tcp on 192.168.1.1", color: "#ff5500", wait: 700 },
+                    { text: "Discovered open port 80/tcp on 192.168.1.150", color: "#ff5500", wait: 750 },
+                    { text: "Discovered open port 80/tcp on 192.168.1.254", color: "#ff5500", wait: 800 },
+                    { text: "Scan finished in 0.05 seconds", color: "#ffaa00", wait: 1000 },
+                    { text: "root@kali:~#", type: "prompt", wait: 1200 }
+                ]
+            },
+            4: {
+                cmd: "masscan -p0-65535 192.168.1.150 --rate=100000",
+                info: `
+                    <div class="explanation-card">
+                        <h4>Step 4: 全端口掃描</h4>
+                        <p style="color:#ccc;">掃描目標的每一個端口 (0-65535)。我們將速率拉到 10 萬。</p>
+                        <div class="analogy">
+                            <strong>💡 白話文比喻：</strong>你把那棟房子從煙囪到地下室所有的窗戶縫隙全部檢查一遍。如果沒有超高速率，這通常要花好幾小時，但 Masscan 幾秒鐘就解決了。
+                        </div>
+                    </div>`,
+                output: [
+                    { text: "Starting masscan...", wait: 200 },
+                    { text: "Rate limit: 100000 packets/s", color: "#ff0000", wait: 400 },
+                    { text: "Scanning 1 hosts [65536 ports/host]", wait: 600 },
+                    { text: "Discovered open port 21/tcp on 192.168.1.150", color: "#ff5500", wait: 800 },
+                    { text: "Discovered open port 22/tcp on 192.168.1.150", color: "#ff5500", wait: 900 },
+                    { text: "Discovered open port 80/tcp on 192.168.1.150", color: "#ff5500", wait: 1000 },
+                    { text: "Discovered open port 3306/tcp on 192.168.1.150", color: "#ff5500", wait: 1100 },
+                    { text: "root@kali:~#", type: "prompt", wait: 1400 }
+                ]
+            },
+            5: {
+                cmd: "masscan 192.168.1.0/24 -p80 -oJ results.json",
+                info: `
+                    <div class="explanation-card">
+                        <h4>Step 5: 輸出 JSON</h4>
+                        <p style="color:#ccc;">Masscan 的終端機輸出很難閱讀，通常我們會存成 JSON 檔，方便後續用程式分析。</p>
+                        <div class="analogy">
+                            <strong>💡 白話文比喻：</strong>與其把檢查結果用喊的（螢幕顯示），不如寫成一份整齊的 Excel 表格（JSON 檔），這樣你可以帶回去慢慢研究，或者交給機器人處理。
+                        </div>
+                    </div>`,
+                output: [
+                    { text: "Starting masscan...", wait: 200 },
+                    { text: "Saving results to 'results.json'", color: "#ffaa00", wait: 500 },
+                    { text: "Scanning 256 hosts...", wait: 800 },
+                    { text: "Discovered open port 80/tcp on 192.168.1.150", color: "#ff5500", wait: 1200 },
+                    { text: "Waiting for file write...", wait: 1500 },
+                    { text: "root@kali:~#", type: "prompt", wait: 1800 }
+                ]
+            }
+        };
+
+        function runStep(id) {
+            if (isTyping) return;
+            isTyping = true;
+            
+            const data = scenarios[id];
+            document.querySelectorAll('.sim-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById('btn-' + id).classList.add('active');
+
+            typeCommand(data.cmd, () => {
+                addHistoryLog("root@kali:~#", data.cmd);
+                decoderContent.innerHTML = data.info;
+                
+                let maxWait = 0;
+                if(data.output) {
+                    data.output.forEach(line => {
+                        setTimeout(() => {
+                            if(line.type === 'prompt') updatePrompt();
+                            else printText(line.text, line.color);
+                        }, line.wait);
+                        if(line.wait > maxWait) maxWait = line.wait;
+                    });
+                }
+                setTimeout(() => {
+                    isTyping = false;
+                }, maxWait + 200);
+            });
+        }
+
+        function typeCommand(text, callback) {
+            typingArea.textContent = "";
+            let i = 0;
+            typingTimer = setInterval(() => {
+                typingArea.textContent += text.charAt(i);
+                i++;
+                if (i >= text.length) {
+                    clearInterval(typingTimer);
+                    setTimeout(() => {
+                        typingArea.textContent = "";
+                        callback();
+                    }, 300);
+                }
+            }, 30);
+        }
+
+        function addHistoryLog(p, c) {
+            const div = document.createElement('div');
+            div.innerHTML = `<span class="prompt">${p}</span> ${c}`;
+            termBody.insertBefore(div, promptLine);
+            scrollToBottom();
+        }
+
+        function printText(text, color) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            if(color) div.style.color = color;
+            termBody.insertBefore(div, promptLine);
+            scrollToBottom();
+        }
+
+        function updatePrompt() {
+            scrollToBottom();
+        }
+
+        function scrollToBottom() {
+            termBody.scrollTop = termBody.scrollHeight;
+        }
+
+        function resetSim() {
+            if(isTyping) return;
+            const logs = termBody.querySelectorAll('div:not(#prompt-line)');
+            for(let i=1; i<logs.length; i++) logs[i].remove();
+            
+            decoderContent.innerHTML = `
+                <div style="text-align: center; color: #666; margin-top: 100px;">
+                    <i class="fas fa-rocket fa-3x" style="margin-bottom: 20px;"></i><br>
+                    準備就緒<br>點擊左側 <strong>Step 1</strong> 開始極速掃描
+                </div>`;
+            document.querySelectorAll('.sim-btn').forEach(b => b.classList.remove('active'));
+        }
+    </script>
+</body>
+</html>

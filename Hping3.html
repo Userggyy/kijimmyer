@@ -1,0 +1,590 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hping3 封包工匠 | 資安模擬學習</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        /* --- 1. Hping3 主題美術風格 (極客藍 + 電路風格) --- */
+        
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body { line-height: 1.6; color: #e0e0e0; background-color: #050a14; position: relative; overflow-x: hidden; }
+
+        /* 動態背景 */
+        .cyber-background {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1;
+            background: 
+                radial-gradient(circle at 10% 20%, rgba(0, 200, 255, 0.1) 0%, transparent 40%),
+                radial-gradient(circle at 90% 80%, rgba(0, 100, 255, 0.1) 0%, transparent 40%);
+            animation: pulseBg 10s ease-in-out infinite;
+        }
+        .grid-lines {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background-image: 
+                linear-gradient(rgba(0, 242, 255, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0, 242, 255, 0.03) 1px, transparent 1px);
+            background-size: 40px 40px; z-index: -1;
+        }
+        /* 數據流動畫 */
+        .data-stream {
+            position: fixed; top: 0; left: 20%; width: 1px; height: 100%;
+            background: linear-gradient(180deg, transparent, #00f2ff, transparent);
+            animation: stream 3s linear infinite; opacity: 0.5; z-index: -1;
+        }
+        .data-stream:nth-child(2) { left: 80%; animation-delay: 1.5s; }
+
+        @keyframes pulseBg { 0%, 100% { opacity: 0.8; } 50% { opacity: 1; } }
+        @keyframes stream { 0% { top: -100%; } 100% { top: 100%; } }
+
+        /* 容器 */
+        .container { width: 90%; max-width: 1400px; margin: 0 auto; padding: 20px; position: relative; }
+
+        /* 頁首 */
+        header {
+            background: rgba(10, 15, 25, 0.95); padding: 4rem 0; text-align: center; margin-bottom: 2rem;
+            border-radius: 10px; border: 1px solid #00f2ff; box-shadow: 0 0 25px rgba(0, 242, 255, 0.15);
+            position: relative; overflow: hidden;
+        }
+        header h1 {
+            font-size: 2.8rem; margin-bottom: 1rem;
+            background: linear-gradient(135deg, #00f2ff, #0099ff);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            text-shadow: 0 0 10px rgba(0, 242, 255, 0.3);
+        }
+        header p { font-size: 1.2rem; max-width: 800px; margin: 0 auto; color: #8ba4b9; }
+
+        /* 導覽列 */
+        nav {
+            background: rgba(10, 15, 25, 0.95); padding: 1rem 0; margin-bottom: 2rem;
+            border-radius: 8px; border: 1px solid #00f2ff; position: sticky; top: 0; z-index: 100;
+        }
+        nav ul { display: flex; justify-content: center; list-style: none; flex-wrap: wrap; }
+        nav li { margin: 0 1rem; }
+        nav a {
+            text-decoration: none; color: #8ba4b9; font-weight: 500; padding: 0.5rem 1rem;
+            border-radius: 4px; transition: all 0.3s ease; border: 1px solid transparent;
+        }
+        nav a:hover { background-color: rgba(0, 242, 255, 0.1); color: #00f2ff; border-color: #00f2ff; }
+
+        /* --- 佈局：上層左右欄，中層全寬，下層左右欄 --- */
+        .grid-layout { display: grid; grid-template-columns: 2fr 1fr; gap: 2rem; margin-bottom: 2rem; }
+        .full-width { width: 100%; margin-bottom: 2rem; }
+        
+        @media (max-width: 900px) { .grid-layout { grid-template-columns: 1fr; } }
+
+        /* 區塊樣式 */
+        article { background: rgba(10, 15, 25, 0.9); padding: 2rem; border-radius: 8px; border: 1px solid #1e3a5f; margin-bottom: 2rem; }
+        
+        h2 { color: #00f2ff; margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 2px solid #1e3a5f; font-size: 1.8rem; }
+        h3 { color: #0099ff; margin: 1.5rem 0 1rem 0; font-size: 1.3rem; }
+        p, li { margin-bottom: 0.8rem; color: #cfd8dc; }
+        ul, ol { margin-left: 1.5rem; margin-bottom: 1.5rem; }
+
+        /* 側邊欄 */
+        aside { 
+            background: rgba(10, 15, 25, 0.9); padding: 1.5rem; border-radius: 8px; border: 1px solid #00f2ff; 
+            height: fit-content; position: sticky; top: 100px;
+        }
+
+        /* 提示框 */
+        .info-box { background: rgba(0, 153, 255, 0.1); border-left: 4px solid #0099ff; padding: 1rem; margin-bottom: 1.5rem; }
+        .success-box { background: rgba(0, 242, 255, 0.1); border-left: 4px solid #00f2ff; padding: 1rem; margin-bottom: 1.5rem; }
+        .danger-box { background: rgba(255, 50, 50, 0.1); border-left: 4px solid #ff3232; padding: 1rem; margin-bottom: 1.5rem; }
+
+        /* --- 模擬器樣式 (Hping3 風格) --- */
+        .simulator-wrapper {
+            background: #000; border: 2px solid #00f2ff; border-radius: 8px; overflow: hidden;
+            box-shadow: 0 0 30px rgba(0, 242, 255, 0.15); display: flex; flex-direction: column; height: 750px;
+        }
+        .sim-header { 
+            background: #0a1018; padding: 10px 15px; border-bottom: 1px solid #00f2ff; 
+            display: flex; justify-content: space-between; align-items: center; color: #00f2ff; font-size: 0.85rem;
+        }
+        
+        .sim-grid { display: grid; grid-template-columns: 240px 1fr 340px; flex: 1; overflow: hidden; }
+        
+        /* 控制區 */
+        .sim-controls { background: #05080c; border-right: 1px solid #1e3a5f; padding: 15px; overflow-y: auto; }
+        .sim-btn {
+            width: 100%; padding: 15px; margin-bottom: 12px; background: rgba(0, 242, 255, 0.05); border: 1px solid #1e3a5f;
+            color: #8ba4b9; text-align: left; cursor: pointer; border-radius: 6px; transition: all 0.2s;
+        }
+        .sim-btn:hover { background: rgba(0, 242, 255, 0.1); color: #fff; border-color: #00f2ff; }
+        .sim-btn.active { color: #000; background: #00f2ff; border-color: #00f2ff; box-shadow: 0 0 15px rgba(0, 242, 255, 0.4); font-weight: bold; }
+        .sim-btn strong { display: block; font-size: 1rem; margin-bottom: 4px; }
+
+        /* 終端機 */
+        .sim-terminal { background: #000; display: flex; flex-direction: column; font-family: 'Courier New', monospace; position: relative; }
+        .term-body { flex: 1; padding: 15px; overflow-y: auto; color: #00f2ff; font-size: 0.95rem; white-space: pre-wrap; line-height: 1.4; }
+        .prompt { color: #ff00ea; font-weight: bold; margin-right: 8px; } /* Kali 紫色提示符 */
+        .cursor { display: inline-block; width: 8px; height: 16px; background: #00f2ff; animation: blink 1s infinite; vertical-align: text-bottom; }
+
+        /* 解析區 */
+        .sim-decoder { background: #0a1018; border-left: 1px solid #1e3a5f; display: flex; flex-direction: column; }
+        .decoder-header { padding: 12px; background: #05080c; border-bottom: 1px solid #1e3a5f; color: #0099ff; font-weight: bold; font-size: 0.95rem; }
+        .decoder-content { padding: 20px; flex: 1; overflow-y: auto; }
+        .explanation-card { background: rgba(0, 153, 255, 0.08); border-left: 3px solid #0099ff; padding: 15px; border-radius: 4px; animation: slideIn 0.3s ease; }
+        .explanation-card h4 { color: #fff; font-size: 1.1rem; margin-bottom: 8px; }
+        .analogy { margin-top: 10px; padding: 8px; background: rgba(255, 255, 255, 0.05); border-radius: 4px; color: #00f2ff; font-style: italic; }
+
+        /* 重置按鈕 */
+        .reset-btn {
+            background: transparent; border: 1px solid #00f2ff; color: #00f2ff; 
+            padding: 4px 12px; font-size: 0.8rem; border-radius: 4px; cursor: pointer; transition: 0.3s;
+        }
+        .reset-btn:hover { background: #00f2ff; color: #000; }
+
+        /* TCP Flag 表格 */
+        table { width: 100%; border-collapse: collapse; margin: 1.5rem 0; }
+        th, td { padding: 0.75rem; text-align: left; border-bottom: 1px solid #1e3a5f; }
+        th { background-color: rgba(0, 242, 255, 0.1); color: #00f2ff; }
+        .flag-tag { display: inline-block; padding: 2px 6px; border-radius: 3px; font-size: 0.8rem; font-weight: bold; }
+        .bg-syn { background: #00ffaa; color: #000; }
+        .bg-ack { background: #0099ff; color: #fff; }
+        .bg-rst { background: #ff3232; color: #fff; }
+
+        /* 道德規範網格 */
+        .ethics-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 25px; }
+        .ethics-item { background: rgba(255,255,255,0.03); padding: 20px; border-radius: 8px; border: 1px solid #1e3a5f; }
+        .ethics-item h4 { color: #00f2ff; margin-bottom: 10px; font-size: 1.2rem; border-bottom: 1px solid #1e3a5f; padding-bottom: 5px; }
+
+        @keyframes blink { 50% { opacity: 0; } }
+        @keyframes slideIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        
+        @media (max-width: 900px) { .sim-grid { grid-template-columns: 1fr; grid-template-rows: auto 300px auto; } .sim-decoder { border-left: none; border-top: 1px solid #1e3a5f; height: 300px; } }
+    </style>
+</head>
+<body>
+
+    <div class="cyber-background"></div>
+    <div class="grid-lines"></div>
+    <div class="data-stream"></div>
+    <div class="data-stream"></div>
+
+    <header>
+        <div class="container">
+            <h1>Hping3 封包工匠：TCP/IP 的手術刀</h1>
+            <p>不只是 Ping，而是精準的封包製造與防火牆測試工具 | 手工打造網路流量</p>
+        </div>
+    </header>
+
+    <nav>
+        <div class="container">
+            <ul>
+                <li><a href="#intro">工具介紹</a></li>
+                <li><a href="#install">安裝指令</a></li>
+                <li><a href="#simulation">封包工廠</a></li>
+                <li><a href="#flags">TCP Flags 解析</a></li>
+                <li><a href="#ethics">法律規範</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <div class="container">
+        
+        <div class="grid-layout">
+            <div class="content-left">
+                <article id="intro">
+                    <h2><i class="fas fa-microchip"></i> 什麼是 Hping3？</h2>
+                    
+                    <p>如果說 Nmap 是全自動步槍，<strong>Hping3</strong> 就是一把精準的手術刀。它是一個命令行導向的封包組合與分析工具，允許你「手工打造」TCP、IP、UDP 或 ICMP 封包。</p>
+                    
+                    <div class="info-box">
+                        <p><strong><i class="fas fa-question-circle"></i> 為什麼需要它？</strong></p>
+                        <ul>
+                            <li><strong>防火牆測試</strong>：測試防火牆是否真的擋住了特定封包（如 FIN 或 NULL）。</li>
+                            <li><strong>進階掃描</strong>：當標準 Ping (ICMP) 被封鎖時，用 TCP ACK 來探測主機。</li>
+                            <li><strong>網路壓力測試</strong>：可以自訂發送頻率來測試伺服器抗壓性。</li>
+                        </ul>
+                    </div>
+                </article>
+
+                <article id="install">
+                    <h2><i class="fas fa-terminal"></i> 安裝與基礎語法</h2>
+                    <pre><code># 1. 安裝 (Kali 內建)
+sudo apt install hping3
+
+# 2. 基礎語法
+# hping3 [參數] [目標IP]
+sudo hping3 -S -p 80 192.168.1.150</code></pre>
+                    <div class="danger-box">
+                        <p><strong>注意：</strong> Hping3 需要 <code>root</code> 權限才能構造原始封包 (Raw Socket)。</p>
+                    </div>
+                </article>
+            </div>
+
+            <aside>
+                <div style="margin-bottom: 30px;">
+                    <h3 style="margin-top:0; border-bottom:1px solid #1e3a5f; padding-bottom:10px; font-size:1.1rem;">
+                        <i class="fas fa-laptop-code"></i> 實驗需求
+                    </h3>
+                    <ul style="list-style: none; margin: 0; padding: 0;">
+                        <li style="padding: 10px 0; border-bottom: 1px solid #1e3a5f;">
+                            <i class="fas fa-check" style="color:#00f2ff; margin-right:8px;"></i> Kali Linux (Root)
+                        </li>
+                        <li style="padding: 10px 0; border-bottom: 1px solid #1e3a5f;">
+                            <i class="fas fa-check" style="color:#00f2ff; margin-right:8px;"></i> 目標 IP: 192.168.1.150
+                        </li>
+                        <li style="padding: 10px 0;">
+                            <i class="fas fa-wifi" style="color:#0099ff; margin-right:8px;"></i> 理解 TCP 三向交握
+                        </li>
+                    </ul>
+                </div>
+                
+                <div>
+                    <h3 style="margin-top:0; border-bottom:1px solid #1e3a5f; padding-bottom:10px; font-size:1.1rem;">
+                        <i class="fas fa-book"></i> 章節導覽
+                    </h3>
+                    <ul style="list-style: none; margin: 0; padding: 0;">
+                        <li style="padding: 8px 0;"><a href="#intro" style="color:#0099ff; text-decoration:none;">1. 工具介紹</a></li>
+                        <li style="padding: 8px 0;"><a href="#install" style="color:#0099ff; text-decoration:none;">2. 安裝指令</a></li>
+                        <li style="padding: 8px 0;"><a href="#simulation" style="color:#00f2ff; text-decoration:none; font-weight:bold;">3. 封包工廠</a></li>
+                        <li style="padding: 8px 0;"><a href="#flags" style="color:#0099ff; text-decoration:none;">4. TCP Flags</a></li>
+                        <li style="padding: 8px 0;"><a href="#ethics" style="color:#0099ff; text-decoration:none;">5. 法律規範</a></li>
+                    </ul>
+                </div>
+            </aside>
+        </div>
+
+        <div class="full-width">
+            <article id="simulation" style="border: 2px solid #00f2ff; box-shadow: 0 0 30px rgba(0, 242, 255, 0.1);">
+                <h2><i class="fas fa-cogs"></i> 封包製造工廠 (Packet Crafting Lab)</h2>
+                <p>在這裡，你不再只是「掃描」，而是親手打造封包並觀察伺服器的回應。請依照左側步驟操作。</p>
+                
+                <div class="simulator-wrapper">
+                    <div class="sim-header">
+                        <div><i class="fas fa-terminal"></i> KALI ROOT TERMINAL</div>
+                        <button class="reset-btn" onclick="resetSim()">
+                            <i class="fas fa-redo"></i> 重置模擬器
+                        </button>
+                    </div>
+
+                    <div class="sim-grid">
+                        <div class="sim-controls">
+                            <button class="sim-btn" onclick="runStep(1)" id="btn-1">
+                                <strong>Step 1: SYN Ping</strong><span>-S -p 80 -c 4 (測試存活)</span>
+                            </button>
+                            <button class="sim-btn" onclick="runStep(2)" id="btn-2">
+                                <strong>Step 2: ACK 探測</strong><span>-A -p 80 -c 4 (穿透防火牆?)</span>
+                            </button>
+                            <button class="sim-btn" onclick="runStep(3)" id="btn-3">
+                                <strong>Step 3: 掃描關閉的 Port</strong><span>-S -p 22 (觀察 RST)</span>
+                            </button>
+                            <button class="sim-btn" onclick="runStep(4)" id="btn-4">
+                                <strong>Step 4: 手動 Traceroute</strong><span>--traceroute -V -1</span>
+                            </button>
+                            <button class="sim-btn" onclick="runStep(5)" id="btn-5">
+                                <strong>Step 5: SYN 洪水攻擊</strong><span>--flood (壓力測試)</span>
+                            </button>
+                        </div>
+
+                        <div class="sim-terminal">
+                            <div class="term-body" id="term-body">
+                                <div>Kali GNU/Linux Rolling [Version 2024.1]</div>
+                                <br>
+                                <div id="prompt-line" style="display:flex; flex-wrap:wrap;">
+                                    <span class="prompt" id="prompt-text">root@kali:~#</span>
+                                    <span id="typing-area"></span><span class="cursor"></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="sim-decoder">
+                            <div class="decoder-header"><i class="fas fa-book-open"></i> 封包解碼器</div>
+                            <div class="decoder-content" id="decoder-content">
+                                <div style="text-align: center; color: #666; margin-top: 100px;">
+                                    <i class="fas fa-microchip fa-3x" style="margin-bottom: 20px;"></i><br>
+                                    準備就緒<br>點擊左側 <strong>Step 1</strong> 發送封包
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </article>
+        </div>
+
+        <div class="grid-layout">
+            
+            <div class="content-left">
+                <article id="flags">
+                    <h2><i class="fas fa-flag"></i> 讀懂 TCP Flags (暗號解析)</h2>
+                    <p>Hping3 的回傳結果中最重要的是 <code>flags=...</code>，這代表伺服器對你的封包做出了什麼反應。</p>
+                    
+                    <table>
+                        <thead>
+                            <tr>
+                                <th width="15%">標記</th>
+                                <th width="20%">全名</th>
+                                <th>含義與白話解釋</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><span class="flag-tag bg-syn">SA</span></td>
+                                <td>SYN + ACK</td>
+                                <td><strong>Port 是開的 (Open)</strong><br>伺服器說：「我收到你的連線請求(SYN)了，我同意(ACK)。」</td>
+                            </tr>
+                            <tr>
+                                <td><span class="flag-tag bg-rst">RA</span></td>
+                                <td>RST + ACK</td>
+                                <td><strong>Port 是關的 (Closed)</strong><br>伺服器說：「這裡沒有服務，重置連線(RST)，請滾。」</td>
+                            </tr>
+                            <tr>
+                                <td><span class="flag-tag bg-ack">A</span></td>
+                                <td>ACK</td>
+                                <td><strong>回應確認</strong><br>通常用於 Ping 回應，表示主機活著。</td>
+                            </tr>
+                            <tr>
+                                <td><span class="flag-tag" style="background:#555; color:#fff;">(無)</span></td>
+                                <td>(Timeout)</td>
+                                <td><strong>被過濾 (Filtered)</strong><br>完全沒有回應，通常是被防火牆丟棄了封包。</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </article>
+            </div>
+
+            <div class="content-right">
+                <article id="ethics">
+                    <h2><i class="fas fa-gavel"></i> 法律與道德</h2>
+                    
+                    <div class="danger-box">
+                        <h3><i class="fas fa-exclamation-triangle"></i> 禁止 DoS 攻擊</h3>
+                        <p>Hping3 的 <code>--flood</code> 功能極其危險，對未經授權的目標使用此功能構成<strong>阻斷服務攻擊 (DoS)</strong>，是嚴重犯罪行為。</p>
+                    </div>
+
+                    <div class="ethics-item" style="margin-bottom: 20px;">
+                        <h4><i class="fas fa-check"></i> 合法使用範圍</h4>
+                        <ul>
+                            <li>防火牆規則測試</li>
+                            <li>自有網路壓力測試</li>
+                            <li>TCP/IP 協議研究</li>
+                        </ul>
+                    </div>
+
+                    <div class="info-box" style="text-align: center;">
+                        <h4 style="margin-top: 0; color: #fff;">白帽駭客宣言</h4>
+                        <p>我們研究攻擊，是為了更好的防禦。</p>
+                        <p style="color: #00f2ff; font-weight: bold; margin-top: 10px;">
+                            Don't use tools for evil.
+                        </p>
+                    </div>
+                </article>
+            </div>
+        </div>
+
+    </div>
+
+    <footer>
+        <div class="container">
+            <p>© 2025 Hping3 封包工匠 | 僅供資安教育用途</p>
+            <p>請務必遵守法律與道德規範</p>
+        </div>
+    </footer>
+
+    <script>
+        const termBody = document.getElementById('term-body');
+        const promptLine = document.getElementById('prompt-line');
+        const typingArea = document.getElementById('typing-area');
+        const decoderContent = document.getElementById('decoder-content');
+        
+        let isTyping = false;
+        let typingTimer = null;
+
+        const scenarios = {
+            1: {
+                cmd: "hping3 -S -p 80 -c 4 192.168.1.150",
+                info: `
+                    <div class="explanation-card">
+                        <h4>Step 1: SYN Ping (測試存活)</h4>
+                        <p>我們發送 <strong>SYN (同步)</strong> 封包到 Port 80。</p>
+                        <p><strong>觀察重點：</strong> <code>flags=SA</code> (SYN+ACK)。</p>
+                        <div class="analogy">
+                            <strong>💡 白話文比喻：</strong>你敲了門 (SYN)，裡面的人打開門說「你好，請進 (SYN-ACK)」。這證明裡面有人，且門是開的。這就是最標準的「半開放掃描」原理。
+                        </div>
+                    </div>`,
+                output: [
+                    { text: "HPING 192.168.1.150 (eth0 192.168.1.150): S set, 40 headers + 0 data bytes", wait: 500 },
+                    { text: "len=46 ip=192.168.1.150 ttl=64 DF id=0 sport=80 flags=SA seq=0 win=29200 rtt=0.3 ms", color: "#00ffaa", wait: 1000 },
+                    { text: "len=46 ip=192.168.1.150 ttl=64 DF id=0 sport=80 flags=SA seq=1 win=29200 rtt=0.2 ms", color: "#00ffaa", wait: 1500 },
+                    { text: "len=46 ip=192.168.1.150 ttl=64 DF id=0 sport=80 flags=SA seq=2 win=29200 rtt=0.4 ms", color: "#00ffaa", wait: 2000 },
+                    { text: "len=46 ip=192.168.1.150 ttl=64 DF id=0 sport=80 flags=SA seq=3 win=29200 rtt=0.3 ms", color: "#00ffaa", wait: 2500 },
+                    { text: "\n--- 192.168.1.150 hping statistic ---", wait: 3000 },
+                    { text: "4 packets transmitted, 4 packets received, 0% packet loss", color: "#fff", wait: 3200 },
+                    { text: "root@kali:~#", type: "prompt", wait: 3500 }
+                ]
+            },
+            2: {
+                cmd: "hping3 -A -p 80 -c 4 192.168.1.150",
+                info: `
+                    <div class="explanation-card">
+                        <h4>Step 2: ACK 探測 (防火牆測試)</h4>
+                        <p>我們直接發送 <strong>ACK (確認)</strong> 封包。</p>
+                        <p><strong>觀察重點：</strong> <code>flags=R</code> (RST)。</p>
+                        <div class="analogy">
+                            <strong>💡 白話文比喻：</strong>你直接衝進去對裡面的人說「我收到你的信了 (ACK)」。但因為你們根本沒開始對話，對方會覺得莫名其妙，叫你「重來/滾蛋 (RST)」。<br>這常用來測試防火牆是否會過濾不合理的 ACK 封包。
+                        </div>
+                    </div>`,
+                output: [
+                    { text: "HPING 192.168.1.150 (eth0 192.168.1.150): A set, 40 headers + 0 data bytes", wait: 500 },
+                    { text: "len=46 ip=192.168.1.150 ttl=64 DF id=0 sport=80 flags=R seq=0 win=0 rtt=0.2 ms", color: "#ff3232", wait: 1000 },
+                    { text: "len=46 ip=192.168.1.150 ttl=64 DF id=0 sport=80 flags=R seq=1 win=0 rtt=0.3 ms", color: "#ff3232", wait: 1500 },
+                    { text: "len=46 ip=192.168.1.150 ttl=64 DF id=0 sport=80 flags=R seq=2 win=0 rtt=0.2 ms", color: "#ff3232", wait: 2000 },
+                    { text: "len=46 ip=192.168.1.150 ttl=64 DF id=0 sport=80 flags=R seq=3 win=0 rtt=0.3 ms", color: "#ff3232", wait: 2500 },
+                    { text: "\n--- 192.168.1.150 hping statistic ---", wait: 3000 },
+                    { text: "4 packets transmitted, 4 packets received, 0% packet loss", color: "#fff", wait: 3200 },
+                    { text: "root@kali:~#", type: "prompt", wait: 3500 }
+                ]
+            },
+            3: {
+                cmd: "hping3 -S -p 22 192.168.1.150",
+                info: `
+                    <div class="explanation-card">
+                        <h4>Step 3: 掃描關閉的 Port</h4>
+                        <p>我們嘗試連線到 Port 22 (SSH)，假設它是關閉的。</p>
+                        <p><strong>觀察重點：</strong> <code>flags=RA</code> (RST+ACK)。</p>
+                        <div class="analogy">
+                            <strong>💡 白話文比喻：</strong>你敲了 22 號房的門 (SYN)。裡面有人，但是他大喊「這裡沒人/沒服務 (Reset)」，然後把門甩上。這表示主機活著，只是這個服務沒開。
+                        </div>
+                    </div>`,
+                output: [
+                    { text: "HPING 192.168.1.150 (eth0 192.168.1.150): S set, 40 headers + 0 data bytes", wait: 500 },
+                    { text: "len=46 ip=192.168.1.150 ttl=64 DF id=0 sport=22 flags=RA seq=0 win=0 rtt=0.2 ms", color: "#ff3232", wait: 1000 },
+                    { text: "len=46 ip=192.168.1.150 ttl=64 DF id=0 sport=22 flags=RA seq=1 win=0 rtt=0.2 ms", color: "#ff3232", wait: 1500 },
+                    { text: "^C\n--- 192.168.1.150 hping statistic ---", wait: 2000 },
+                    { text: "2 packets transmitted, 2 packets received, 0% packet loss", color: "#fff", wait: 2200 },
+                    { text: "root@kali:~#", type: "prompt", wait: 2500 }
+                ]
+            },
+            4: {
+                cmd: "hping3 --traceroute -V -1 8.8.8.8",
+                info: `
+                    <div class="explanation-card">
+                        <h4>Step 4: 手動 Traceroute</h4>
+                        <p>使用 ICMP 模式 (<code>-1</code>) 進行路由追蹤。</p>
+                        <p>Hping3 會自動增加 TTL (Time To Live) 值，觀察封包在哪個路由器「死亡」。</p>
+                        <div class="analogy">
+                            <strong>💡 白話文比喻：</strong>這就像你要寄信到國外，但你故意把郵票貼很少 (TTL小)。信件每到一個郵局就會因為郵資不足被退回，藉由收集這些「退信」，你就知道信件經過了哪些郵局。
+                        </div>
+                    </div>`,
+                output: [
+                    { text: "using eth0, addr: 192.168.1.100, MTU: 1500", wait: 500 },
+                    { text: "HPING 8.8.8.8 (eth0 8.8.8.8): icmp mode set, 28 headers + 0 data bytes", wait: 800 },
+                    { text: "hop=1 TTL=0 during transit from ip=192.168.1.1 name=gateway", color: "#0099ff", wait: 1500 },
+                    { text: "hop=2 TTL=0 during transit from ip=10.0.0.1 name=isp-router", color: "#0099ff", wait: 2200 },
+                    { text: "hop=3 TTL=0 during transit from ip=72.14.23.1 name=google-edge", color: "#0099ff", wait: 2900 },
+                    { text: "len=46 ip=8.8.8.8 ttl=54 id=39201 seq=0 rtt=15.3 ms", color: "#00ffaa", wait: 3600 },
+                    { text: "root@kali:~#", type: "prompt", wait: 4000 }
+                ]
+            },
+            5: {
+                cmd: "hping3 --flood -S -p 80 192.168.1.150",
+                info: `
+                    <div class="explanation-card" style="border-color:#ff3232; background:rgba(255,50,50,0.05);">
+                        <h4 style="color:#ff3232;">Step 5: SYN 洪水攻擊 (DoS)</h4>
+                        <p style="color:#ccc;">參數 <code>--flood</code> 會讓 Hping3 不顧一切地發送封包，不等待回應。</p>
+                        <p><strong>注意：</strong> 這會瞬間塞滿目標的連線佇列，導致正常用戶無法連線。</p>
+                        <div class="analogy" style="color:#ff3232; border-color:#ff3232;">
+                            <strong>⚠️ 警告：</strong>這就像是一群人同時衝進店裡只拿號碼牌卻不點餐，導致真正要吃飯的客人都進不來。這是違法的攻擊行為！
+                        </div>
+                    </div>`,
+                output: [
+                    { text: "HPING 192.168.1.150 (eth0 192.168.1.150): S set, 40 headers + 0 data bytes", wait: 200 },
+                    { text: "hping in flood mode, no replies will be shown", color: "#ff3232", wait: 500 },
+                    { text: "...........................................................", color: "#00f2ff", wait: 600 },
+                    { text: "...........................................................", color: "#00f2ff", wait: 700 },
+                    { text: "...........................................................", color: "#00f2ff", wait: 800 },
+                    { text: "...........................................................", color: "#00f2ff", wait: 900 },
+                    { text: "...........................................................", color: "#00f2ff", wait: 1000 },
+                    { text: "...........................................................", color: "#00f2ff", wait: 1100 },
+                    { text: "^C\n--- 192.168.1.150 hping statistic ---", wait: 1500 },
+                    { text: "258930 packets transmitted, 0 packets received, 100% packet loss", color: "#ff3232", wait: 1800 },
+                    { text: "round-trip min/avg/max = 0.0/0.0/0.0 ms", wait: 2000 },
+                    { text: "root@kali:~#", type: "prompt", wait: 2200 }
+                ]
+            }
+        };
+
+        function runStep(id) {
+            if (isTyping) return;
+            isTyping = true;
+            
+            const data = scenarios[id];
+            document.querySelectorAll('.sim-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById('btn-' + id).classList.add('active');
+
+            typeCommand(data.cmd, () => {
+                addHistoryLog("root@kali:~#", data.cmd);
+                decoderContent.innerHTML = data.info;
+                
+                let maxWait = 0;
+                if(data.output) {
+                    data.output.forEach(line => {
+                        setTimeout(() => {
+                            if(line.type === 'prompt') updatePrompt();
+                            else printText(line.text, line.color);
+                        }, line.wait);
+                        if(line.wait > maxWait) maxWait = line.wait;
+                    });
+                }
+                setTimeout(() => {
+                    isTyping = false;
+                }, maxWait + 200);
+            });
+        }
+
+        function typeCommand(text, callback) {
+            typingArea.textContent = "";
+            let i = 0;
+            typingTimer = setInterval(() => {
+                typingArea.textContent += text.charAt(i);
+                i++;
+                if (i >= text.length) {
+                    clearInterval(typingTimer);
+                    setTimeout(() => {
+                        typingArea.textContent = "";
+                        callback();
+                    }, 300);
+                }
+            }, 30);
+        }
+
+        function addHistoryLog(p, c) {
+            const div = document.createElement('div');
+            div.innerHTML = `<span class="prompt">${p}</span> ${c}`;
+            termBody.insertBefore(div, promptLine);
+            scrollToBottom();
+        }
+
+        function printText(text, color) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            if(color) div.style.color = color;
+            termBody.insertBefore(div, promptLine);
+            scrollToBottom();
+        }
+
+        function updatePrompt() {
+            scrollToBottom();
+        }
+
+        function scrollToBottom() {
+            termBody.scrollTop = termBody.scrollHeight;
+        }
+
+        function resetSim() {
+            if(isTyping) return;
+            const logs = termBody.querySelectorAll('div:not(#prompt-line)');
+            for(let i=1; i<logs.length; i++) logs[i].remove();
+            
+            decoderContent.innerHTML = `
+                <div style="text-align: center; color: #666; margin-top: 100px;">
+                    <i class="fas fa-microchip fa-3x" style="margin-bottom: 20px;"></i><br>
+                    準備就緒<br>點擊左側 <strong>Step 1</strong> 發送封包
+                </div>`;
+            document.querySelectorAll('.sim-btn').forEach(b => b.classList.remove('active'));
+        }
+    </script>
+</body>
+</html>

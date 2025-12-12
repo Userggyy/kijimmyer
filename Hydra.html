@@ -1,0 +1,665 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hydra 暴力破解 | 資安模擬學習</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        /* --- 1. Hydra 主題美術風格 (Inferno Red) --- */
+        
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Consolas', 'Monaco', 'Courier New', monospace; }
+        body { line-height: 1.6; color: #ffe6e6; background-color: #0a0000; position: relative; overflow-x: hidden; font-family: 'Segoe UI', sans-serif; }
+
+        /* 背景特效：餘燼飄升 */
+        .inferno-background {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1;
+            background: 
+                radial-gradient(circle at 50% 100%, rgba(255, 50, 0, 0.2) 0%, transparent 60%),
+                linear-gradient(0deg, #1a0000 0%, #000 100%);
+        }
+        
+        .ember {
+            position: fixed; bottom: -10px; width: 4px; height: 4px; background: #ff5500;
+            border-radius: 50%; animation: rise 6s linear infinite; opacity: 0; z-index: -1;
+            box-shadow: 0 0 10px #ff3300;
+        }
+        .ember:nth-child(1) { left: 10%; animation-duration: 5s; animation-delay: 0s; }
+        .ember:nth-child(2) { left: 30%; animation-duration: 7s; animation-delay: 1s; }
+        .ember:nth-child(3) { left: 60%; animation-duration: 4s; animation-delay: 2s; }
+        .ember:nth-child(4) { left: 80%; animation-duration: 6s; animation-delay: 0.5s; }
+        .ember:nth-child(5) { left: 50%; animation-duration: 5.5s; animation-delay: 3s; }
+
+        @keyframes rise {
+            0% { transform: translateY(0) scale(1); opacity: 1; }
+            100% { transform: translateY(-100vh) scale(0); opacity: 0; }
+        }
+
+        /* 容器 */
+        .container { width: 90%; max-width: 1400px; margin: 0 auto; padding: 20px; position: relative; }
+
+        /* 頁首 */
+        header {
+            background: rgba(30, 0, 0, 0.95); padding: 4rem 0; text-align: center; margin-bottom: 2rem;
+            border-radius: 12px; border: 1px solid #ff3333; box-shadow: 0 0 30px rgba(255, 51, 51, 0.3);
+            position: relative; overflow: hidden;
+        }
+        header h1 {
+            font-size: 2.8rem; margin-bottom: 1rem; color: #ff3333;
+            text-shadow: 0 0 15px rgba(255, 0, 0, 0.6); letter-spacing: 2px;
+        }
+        header p { font-size: 1.2rem; color: #ff9999; max-width: 800px; margin: 0 auto; }
+
+        /* 導覽列 */
+        nav {
+            background: #1a0505; padding: 1rem; border-radius: 8px; border: 1px solid #ff3333;
+            position: sticky; top: 0; z-index: 100; margin-bottom: 30px; box-shadow: 0 5px 20px rgba(0,0,0,0.8);
+        }
+        nav ul { display: flex; justify-content: center; list-style: none; gap: 20px; flex-wrap: wrap; }
+        nav a {
+            text-decoration: none; color: #ff9999; font-weight: bold; padding: 8px 16px;
+            border-radius: 4px; transition: 0.3s; border: 1px solid transparent;
+        }
+        nav a:hover { background: rgba(255, 51, 51, 0.2); color: #fff; border-color: #ff3333; box-shadow: 0 0 10px rgba(255, 51, 51, 0.4); }
+
+        /* --- 佈局 --- */
+        .grid-layout { display: grid; grid-template-columns: 2fr 1fr; gap: 30px; margin-bottom: 40px; }
+        .full-width { width: 100%; margin-bottom: 2rem; }
+        @media (max-width: 1024px) { .grid-layout { grid-template-columns: 1fr; } }
+
+        /* 卡片樣式 */
+        article {
+            background: rgba(20, 5, 5, 0.9); padding: 30px; border-radius: 8px; border: 1px solid #660000; margin-bottom: 30px;
+        }
+        h2 { color: #ff3333; margin-bottom: 20px; padding-bottom: 10px; border-bottom: 1px solid #660000; font-size: 1.8rem; display: flex; align-items: center; gap: 10px; }
+        h3 { color: #ff8800; margin: 25px 0 15px 0; font-size: 1.4rem; }
+        p, li { margin-bottom: 10px; color: #e6e6e6; font-size: 1.05rem; }
+        ul { margin-left: 20px; }
+
+        /* 側邊欄 */
+        aside {
+            background: rgba(20, 5, 5, 0.9); padding: 25px; border-radius: 8px; border: 1px solid #ff3333;
+            height: fit-content; box-shadow: 0 0 20px rgba(255, 51, 51, 0.1); position: sticky; top: 100px;
+        }
+
+        /* 提示框 */
+        .info-box { background: rgba(255, 136, 0, 0.1); border-left: 5px solid #ff8800; padding: 20px; margin: 20px 0; border-radius: 4px; }
+        .danger-box { background: rgba(255, 0, 0, 0.15); border-left: 5px solid #ff0000; padding: 20px; margin: 20px 0; border-radius: 4px; }
+
+        /* --- 模擬器樣式 (Hydra Style) --- */
+        .simulator-wrapper {
+            background: #000; border: 2px solid #ff3333; border-radius: 12px; overflow: hidden;
+            box-shadow: 0 0 50px rgba(255, 51, 51, 0.2); margin: 20px 0;
+            display: flex; flex-direction: column; height: 750px;
+        }
+
+        .sim-header {
+            background: #2b0a0a; padding: 12px 20px; border-bottom: 1px solid #ff3333;
+            display: flex; justify-content: space-between; align-items: center;
+        }
+
+        .sim-grid {
+            display: grid; grid-template-columns: 240px 1fr 340px; flex: 1; overflow: hidden;
+        }
+
+        /* 控制區 */
+        .sim-controls { background: #1a0505; border-right: 1px solid #660000; padding: 20px; overflow-y: auto; }
+        .sim-btn {
+            width: 100%; padding: 15px; margin-bottom: 12px; background: rgba(255, 51, 51, 0.05); border: 1px solid #660000;
+            color: #ff9999; text-align: left; cursor: pointer; border-radius: 6px; transition: all 0.2s;
+        }
+        .sim-btn:hover { background: rgba(255, 51, 51, 0.15); color: #fff; border-color: #ff3333; }
+        .sim-btn.active { background: rgba(255, 51, 51, 0.25); border-color: #ff3333; color: #fff; border-left: 4px solid #ff3333; box-shadow: 0 0 15px rgba(255, 51, 51, 0.3); font-weight: bold; }
+        .sim-btn strong { display: block; font-size: 1rem; margin-bottom: 4px; }
+
+        /* 終端機 */
+        .sim-terminal {
+            background: #000; padding: 0; display: flex; flex-direction: column; 
+            font-family: 'Consolas', 'Courier New', monospace; position: relative;
+        }
+        .term-body { 
+            flex: 1; padding: 20px; overflow-y: auto; color: #e0e0e0; 
+            font-size: 1rem; line-height: 1.5; white-space: pre-wrap; 
+        }
+        .prompt { color: #ff3333; font-weight: bold; margin-right: 10px; }
+        .cursor { display: inline-block; width: 10px; height: 18px; background: #ff3333; animation: blink 1s infinite; vertical-align: text-bottom; }
+
+        /* 解析區 */
+        .sim-decoder { background: #2b0a0a; border-left: 1px solid #660000; display: flex; flex-direction: column; }
+        .decoder-header { padding: 15px; background: #1a0505; border-bottom: 1px solid #660000; color: #ff3333; font-weight: bold; font-size: 1.1rem; }
+        .decoder-content { padding: 25px; flex: 1; overflow-y: auto; }
+        
+        .explanation-card { 
+            background: rgba(255, 51, 51, 0.08); border-left: 4px solid #ff3333; 
+            padding: 20px; border-radius: 4px; animation: slideIn 0.3s ease;
+        }
+        .analogy { 
+            margin-top: 15px; padding: 10px; background: rgba(255, 255, 255, 0.05); 
+            border-radius: 4px; color: #ff9999; font-style: italic; border: 1px dashed #ff3333;
+        }
+
+        /* 重置按鈕 */
+        .reset-btn {
+            background: transparent; border: 1px solid #ff3333; color: #ff3333; 
+            padding: 4px 12px; font-size: 0.8rem; border-radius: 4px; cursor: pointer; transition: 0.3s;
+        }
+        .reset-btn:hover { background: #ff3333; color: #fff; }
+
+        /* 表格 */
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 1.05rem; }
+        th { text-align: left; padding: 15px; background: rgba(255, 51, 51, 0.15); color: #ff3333; border-bottom: 2px solid #ff3333; }
+        td { padding: 15px; border-bottom: 1px solid #660000; }
+        tr:hover { background: rgba(255,255,255,0.05); }
+
+        @keyframes blink { 50% { opacity: 0; } }
+        @keyframes slideIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* RWD */
+        @media (max-width: 1200px) { .sim-grid { grid-template-columns: 200px 1fr 280px; } }
+        @media (max-width: 900px) {
+            .sim-grid { grid-template-columns: 1fr; grid-template-rows: auto 400px auto; }
+            .sim-decoder { border-left: none; border-top: 1px solid #660000; height: 350px; }
+            .simulator-wrapper { height: auto; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="inferno-background"></div>
+    <div class="ember"></div>
+    <div class="ember"></div>
+    <div class="ember"></div>
+    <div class="ember"></div>
+    <div class="ember"></div>
+
+    <header>
+        <div class="container">
+            <h1><i class="fas fa-dragon"></i> Hydra 暴力破解</h1>
+            <p>多協定暴力破解工具 • 學習字典攻擊與帳號安全驗證</p>
+        </div>
+    </header>
+
+    <nav>
+        <div class="container">
+            <ul>
+                <li><a href="#intro">工具介紹</a></li>
+                <li><a href="#install">環境準備</a></li>
+                <li><a href="#simulation">破解過程演示</a></li>
+                <li><a href="#syntax">參數語法</a></li>
+                <li><a href="#ethics">法律規範</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <div class="container">
+        
+        <div class="grid-layout">
+            <div class="content-left">
+                <article id="intro">
+                    <h2><i class="fas fa-fire"></i> 什麼是 Hydra？</h2>
+                    
+                    <p><strong>THC-Hydra</strong> 是一個快速且支援多種協定的網路登入破解工具。它使用「暴力破解 (Brute Force)」或「字典攻擊 (Dictionary Attack)」的方式，嘗試猜解目標的帳號與密碼。</p>
+                    <p>它支援 SSH, FTP, HTTP, SMB, RDP, MySQL 等超過 50 種服務，是滲透測試中不可或缺的重型武器。</p>
+                    
+                    <div class="info-box">
+                        <p><strong><i class="fas fa-unlock-alt"></i> 攻擊模式：</strong></p>
+                        <ul>
+                            <li><strong>字典攻擊</strong>：使用預先準備好的「常見密碼表」(如 rockyou.txt) 進行嘗試，效率較高。</li>
+                            <li><strong>暴力破解</strong>：嘗試所有可能的字元組合 (aaaa, aaab...)，耗時極長但理論上必能破解。</li>
+                        </ul>
+                    </div>
+                </article>
+
+                <article id="install">
+                    <h2><i class="fas fa-terminal"></i> 安裝與準備</h2>
+                    <p>Hydra 內建於 Kali Linux。你需要準備的是「字典檔 (Wordlists)」。</p>
+                    <pre><code style="color:#ff3333;"># 安裝 (若未安裝)
+sudo apt install hydra
+
+# 準備字典檔 (Kali 內建)
+/usr/share/wordlists/rockyou.txt
+
+# 基礎語法
+hydra -l user -P passlist.txt [IP] [Service]</code></pre>
+                </article>
+            </div>
+
+            <aside>
+                <div style="margin-bottom: 30px;">
+                    <h3 style="margin-top:0; border-bottom:1px solid #660000; padding-bottom:10px;">
+                        <i class="fas fa-laptop-code"></i> 實驗配置
+                    </h3>
+                    <ul style="list-style: none; margin: 0; padding: 0;">
+                        <li style="padding: 10px 0; border-bottom: 1px solid #660000;">
+                            <i class="fas fa-check" style="color:#ff3333; margin-right:8px;"></i> 攻擊機: Kali Linux
+                        </li>
+                        <li style="padding: 10px 0; border-bottom: 1px solid #660000;">
+                            <i class="fas fa-bullseye" style="color:#ff3333; margin-right:8px;"></i> 目標: 192.168.1.150
+                        </li>
+                        <li style="padding: 10px 0; border-bottom: 1px solid #660000;">
+                            <i class="fas fa-file-alt" style="color:#ff8800; margin-right:8px;"></i> 字典: rockyou.txt
+                        </li>
+                        <li style="padding: 10px 0;">
+                            <i class="fas fa-shield-alt" style="color:#ff3333; margin-right:8px;"></i> 服務: SSH / FTP
+                        </li>
+                    </ul>
+                </div>
+                
+                <div>
+                    <h3 style="margin-top:0; border-bottom:1px solid #660000; padding-bottom:10px;">
+                        <i class="fas fa-book"></i> 章節導覽
+                    </h3>
+                    <ul style="list-style: none; margin: 0; padding: 0;">
+                        <li style="padding: 8px 0;"><a href="#intro" style="color:#ff9999; text-decoration:none;">1. 工具介紹</a></li>
+                        <li style="padding: 8px 0;"><a href="#install" style="color:#ff9999; text-decoration:none;">2. 環境準備</a></li>
+                        <li style="padding: 8px 0;"><a href="#simulation" style="color:#ff9999;  text-decoration:none;">3. 破解過程演示</a></li>
+                        <li style="padding: 8px 0;"><a href="#syntax" style="color:#ff9999; text-decoration:none;">4. 參數語法</a></li>
+                        <li style="padding: 8px 0;"><a href="#ethics" style="color:#ff9999; text-decoration:none;">5. 法律規範</a></li>
+                    </ul>
+                </div>
+            </aside>
+        </div>
+
+        <div class="full-width">
+            <article id="simulation" style="border: 2px solid #ff3333; box-shadow: 0 0 30px rgba(255, 51, 51, 0.1);">
+                <h2><i class="fas fa-bomb"></i> 互動虛擬實驗室</h2>
+                <p>現在，我們將使用 Hydra 對目標主機的 SSH 和 FTP 服務進行字典攻擊。請依序操作，體驗密碼被攻破的瞬間。</p>
+                
+                <div class="simulator-wrapper">
+                    <div class="sim-header">
+                        <div><i class="fas fa-terminal"></i> KALI ROOT TERMINAL</div>
+                        <button class="reset-btn" onclick="resetSim()">
+                            <i class="fas fa-redo"></i> 重置模擬器
+                        </button>
+                    </div>
+
+                    <div class="sim-grid">
+                        <div class="sim-controls">
+                            <button class="sim-btn" onclick="runStep(1)" id="btn-1">
+                                <strong>Step 1: 偵查目標 (Nmap)</strong><span>確認 Port 22/21 開啟</span>
+                            </button>
+                            <button class="sim-btn" onclick="runStep(2)" id="btn-2">
+                                <strong>Step 2: 攻擊 SSH (指定帳號)</strong><span>-l root -P pass.txt</span>
+                            </button>
+                            <button class="sim-btn" onclick="runStep(3)" id="btn-3">
+                                <strong>Step 3: 觀察失敗回應</strong><span>Attempting... Failed</span>
+                            </button>
+                            <button class="sim-btn" onclick="runStep(4)" id="btn-4">
+                                <strong>Step 4: 攻擊 FTP (帳號清單)</strong><span>-L users.txt -P pass.txt</span>
+                            </button>
+                            <button class="sim-btn" onclick="runStep(5)" id="btn-5">
+                                <strong>Step 5: 網頁表單攻擊</strong><span>http-post-form</span>
+                            </button>
+                            <button class="sim-btn" onclick="runStep(6)" id="btn-6" style="border-left: 3px solid #00ff00; background: rgba(0,255,0,0.05);">
+                                <strong>Step 6: 成功破解 (Green)</strong><span>[DATA] login found!</span>
+                            </button>
+                        </div>
+
+                        <div class="sim-terminal">
+                            <div class="term-body" id="term-body">
+                                <div>Kali GNU/Linux Rolling [Version 2024.1]</div>
+                                <br>
+                                <div id="prompt-line" style="display:flex; flex-wrap:wrap;">
+                                    <span class="prompt" id="prompt-text">root@kali:~#</span>
+                                    <span id="typing-area"></span><span class="cursor"></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="sim-decoder">
+                            <div class="decoder-header"><i class="fas fa-user-secret"></i> 攻擊分析</div>
+                            <div class="decoder-content" id="decoder-content">
+                                <div style="text-align: center; color: #ff9999; margin-top: 100px;">
+                                    <i class="fas fa-key fa-3x" style="margin-bottom: 20px;"></i><br>
+                                    準備就緒<br>點擊左側 <strong>Step 1</strong> 開始破解
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </article>
+        </div>
+
+        <div class="grid-layout">
+            
+            <div class="content-left">
+                <article id="syntax">
+                    <h2><i class="fas fa-code"></i> 關鍵參數解析</h2>
+                    <p>Hydra 的參數區分大小寫，這點非常重要！</p>
+                    
+                    <table>
+                        <thead>
+                            <tr>
+                                <th width="20%">參數</th>
+                                <th>功能說明</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><code>-l [user]</code></td>
+                                <td><span style="color:#ff3333;">小寫 l</span>：指定<strong>單一帳號</strong> (如 -l admin)。</td>
+                            </tr>
+                            <tr>
+                                <td><code>-L [file]</code></td>
+                                <td><span style="color:#ff8800;">大寫 L</span>：指定<strong>帳號清單</strong> (List of users)。</td>
+                            </tr>
+                            <tr>
+                                <td><code>-p [pass]</code></td>
+                                <td><span style="color:#ff3333;">小寫 p</span>：指定<strong>單一密碼</strong> (很少用，除非測試)。</td>
+                            </tr>
+                            <tr>
+                                <td><code>-P [file]</code></td>
+                                <td><span style="color:#ff8800;">大寫 P</span>：指定<strong>密碼字典</strong> (Password list)。</td>
+                            </tr>
+                            <tr>
+                                <td><code>-t [num]</code></td>
+                                <td>執行緒 (Threads)，決定同時嘗試的數量，預設 16。</td>
+                            </tr>
+                            <tr>
+                                <td><code>-v / -V</code></td>
+                                <td>顯示詳細過程 / 顯示每一個嘗試的帳密組合。</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </article>
+            </div>
+
+            <div class="content-right">
+                <article id="ethics">
+                    <h2><i class="fas fa-gavel"></i> 法律與道德</h2>
+                    
+                    <div class="danger-box">
+                        <h3><i class="fas fa-exclamation-triangle"></i> 嚴重警告</h3>
+                        <p>對未經授權的主機進行暴力破解是<strong>非法行為</strong>。即使沒猜中密碼，大量的登入失敗紀錄也會被系統管理員發現並視為攻擊。</p>
+                    </div>
+
+                    <div style="margin-bottom:20px;">
+                        <h4 style="color:#ff3333; margin-bottom:10px;">合法使用範圍</h4>
+                        <ul>
+                            <li>測試自己架設的伺服器</li>
+                            <li>檢測企業員工是否使用弱密碼</li>
+                            <li>CTF 練習</li>
+                        </ul>
+                    </div>
+
+                    <div class="info-box" style="text-align: center;">
+                        <h4 style="margin-top: 0; color: #fff;">防禦建議</h4>
+                        <p>使用強密碼 • 限制登入次數 (Fail2Ban)</p>
+                        <p style="color: #ff3333; font-weight: bold; margin-top: 10px;">
+                            Strong Passwords Save Lives.
+                        </p>
+                    </div>
+                </article>
+            </div>
+        </div>
+
+    </div>
+
+    <footer>
+        <div class="container">
+            <p>© 2025 Hydra 暴力破解 | 僅供資安教育用途</p>
+            <p>請務必遵守法律與道德規範</p>
+        </div>
+    </footer>
+
+    <script>
+        const termBody = document.getElementById('term-body');
+        const promptLine = document.getElementById('prompt-line');
+        const promptText = document.getElementById('prompt-text');
+        const typingArea = document.getElementById('typing-area');
+        const decoderContent = document.getElementById('decoder-content');
+        
+        let isTyping = false;
+        let typingTimer = null;
+        let currentPromptStr = "root@kali:~#";
+
+        // 模擬數據
+        const scenarios = {
+            1: {
+                cmd: "nmap -p 21,22 192.168.1.150",
+                info: `
+                    <div class="explanation-card">
+                        <h4>Step 1: 偵查目標 (Recon)</h4>
+                        <p style="color:#ccc;">在攻擊前，我們必須先確定「門是哪一扇」。</p>
+                        <p style="color:#ccc;">使用 Nmap 確認目標開放了 <strong>SSH (22)</strong> 和 <strong>FTP (21)</strong> 端口，這就是我們要暴力破解的入口。</p>
+                        <div class="analogy">
+                            <strong>💡 白話文比喻：</strong>小偷在動手前，先確認這戶人家有「前門」和「後門」，而且都沒有鎖死，才決定要撬哪一個。
+                        </div>
+                    </div>`,
+                output: [
+                    { text: "Starting Nmap 7.94...", wait: 300 },
+                    { text: "Nmap scan report for 192.168.1.150", wait: 600 },
+                    { text: "Host is up (0.0012s latency).", wait: 800 },
+                    { text: "PORT   STATE SERVICE", color: "#fff", wait: 1000 },
+                    { text: "21/tcp open  ftp", color: "#ff8800", wait: 1200 },
+                    { text: "22/tcp open  ssh", color: "#ff8800", wait: 1400 },
+                    { text: "Nmap done: 1 IP address scanned in 0.22 seconds", wait: 1800 },
+                    { text: "root@kali:~#", type: "prompt", wait: 2000 }
+                ]
+            },
+            2: {
+                cmd: "hydra -l root -P rockyou.txt ssh://192.168.1.150",
+                info: `
+                    <div class="explanation-card">
+                        <h4>Step 2: 攻擊 SSH (Dictionary Attack)</h4>
+                        <p style="color:#ccc;">我們鎖定帳號 <code>root</code> (由 <code>-l</code> 指定)，並使用 <code>rockyou.txt</code> (由 <code>-P</code> 指定) 作為密碼字典。</p>
+                        <p style="color:#ccc;">Hydra 開始啟動 16 個執行緒進行快速嘗試。</p>
+                        <div class="analogy">
+                            <strong>💡 白話文比喻：</strong>你拿著一大串鑰匙（字典），站在大門口（SSH），試圖用每一把鑰匙去開鎖，看哪一把能轉動。
+                        </div>
+                    </div>`,
+                output: [
+                    { text: "Hydra v9.1 (c) 2020 by van Hauser/THC - Please do not use in military or secret service organizations, or for illegal purposes.", wait: 500 },
+                    { text: "Hydra (https://github.com/vanhauser-thc/thc-hydra) starting at 2024-05-20 10:00:00", wait: 800 },
+                    { text: "[DATA] max 16 tasks per 1 server, overall 16 tasks, 14344399 login tries (l:1/p:14344399), ~896525 tries per task", wait: 1200 },
+                    { text: "[DATA] attacking ssh://192.168.1.150:22/", wait: 1500 },
+                    { text: "[STATUS] 56.00 tries/min, 56 tries in 00:01h, 14344343 to do in 4269:10h, 16 active", wait: 2000 },
+                    { text: "root@kali:~#", type: "prompt", wait: 2500 }
+                ]
+            },
+            3: {
+                cmd: "hydra -l root -P pass.txt -V 192.168.1.150 ssh",
+                info: `
+                    <div class="explanation-card">
+                        <h4>Step 3: 觀察失敗過程 (Verbose)</h4>
+                        <p style="color:#ccc;">加上 <code>-V</code> 參數可以看到每一次的嘗試。</p>
+                        <p style="color:#ccc;">你會看到大量的 "login: ... password: ..." 失敗訊息。這就是暴力破解的本質：<strong>99.9% 的時間都在失敗</strong>。</p>
+                        <div class="analogy">
+                            <strong>💡 白話文比喻：</strong>鑰匙插進去...轉不動(失敗)。換下一把...還是轉不動(失敗)。再換下一把...
+                        </div>
+                    </div>`,
+                output: [
+                    { text: "[ATTEMPT] target 192.168.1.150 - login \"root\" - pass \"123456\" - 1 of 100", color: "#888", wait: 300 },
+                    { text: "[ATTEMPT] target 192.168.1.150 - login \"root\" - pass \"password\" - 2 of 100", color: "#888", wait: 600 },
+                    { text: "[ATTEMPT] target 192.168.1.150 - login \"root\" - pass \"qwerty\" - 3 of 100", color: "#888", wait: 900 },
+                    { text: "[ATTEMPT] target 192.168.1.150 - login \"root\" - pass \"football\" - 4 of 100", color: "#888", wait: 1200 },
+                    { text: "[ATTEMPT] target 192.168.1.150 - login \"root\" - pass \"dragon\" - 5 of 100", color: "#888", wait: 1500 },
+                    { text: "^C [ERROR] attack aborted by user", color: "#ff3333", wait: 2000 },
+                    { text: "root@kali:~#", type: "prompt", wait: 2200 }
+                ]
+            },
+            4: {
+                cmd: "hydra -L users.txt -P pass.txt ftp://192.168.1.150",
+                info: `
+                    <div class="explanation-card">
+                        <h4>Step 4: 帳號密碼雙重破解</h4>
+                        <p style="color:#ccc;">這次我們連帳號都不確定。使用 <code>-L</code> 指定帳號清單，<code>-P</code> 指定密碼清單。</p>
+                        <p style="color:#ccc;">Hydra 會進行交叉比對（admin/1234, admin/pass, user/1234, user/pass...）。</p>
+                        <div class="analogy">
+                            <strong>💡 白話文比喻：</strong>你不只不知道哪把鑰匙是對的，你甚至不知道這個鎖是屬於爸爸的、媽媽的、還是小孩的。你需要把每個人的鑰匙都試一遍。
+                        </div>
+                    </div>`,
+                output: [
+                    { text: "[DATA] attacking ftp://192.168.1.150:21/", wait: 500 },
+                    { text: "[VERBOSE] Resolving addresses... [VERBOSE] done", wait: 800 },
+                    { text: "[INFO] Testing 5 users and 10 passwords (50 combinations)", wait: 1200 },
+                    { text: "[ATTEMPT] target 192.168.1.150 - login \"admin\" - pass \"123456\"", color: "#888", wait: 1500 },
+                    { text: "[ATTEMPT] target 192.168.1.150 - login \"user\" - pass \"123456\"", color: "#888", wait: 1800 },
+                    { text: "root@kali:~#", type: "prompt", wait: 2200 }
+                ]
+            },
+            5: {
+                cmd: "hydra 192.168.1.150 http-post-form \"/login.php:user=^USER^&pass=^PASS^:F=Login failed\"",
+                info: `
+                    <div class="explanation-card">
+                        <h4>Step 5: 網頁表單攻擊 (Web Form)</h4>
+                        <p style="color:#ccc;">這是 Hydra 最強大的功能之一：破解網頁登入。</p>
+                        <p style="color:#ccc;">語法複雜：<code>網址:參數:失敗訊息</code>。我們告訴 Hydra，如果網頁回應 "Login failed"，代表猜錯了。</p>
+                        <div class="analogy">
+                            <strong>💡 白話文比喻：</strong>這次不是開鎖，而是去櫃檯猜密碼。你告訴你的機器人助手：「如果你聽到櫃檯人員說『密碼錯誤』，就換下一個密碼繼續試。」
+                        </div>
+                    </div>`,
+                output: [
+                    { text: "[DATA] attacking http-post-form://192.168.1.150:80/login.php", wait: 500 },
+                    { text: "[INFO] logic: F=Login failed", wait: 800 },
+                    { text: "[ATTEMPT] login \"admin\" - pass \"123456\"", color: "#888", wait: 1200 },
+                    { text: "[ATTEMPT] login \"admin\" - pass \"password\"", color: "#888", wait: 1500 },
+                    { text: "root@kali:~#", type: "prompt", wait: 2000 }
+                ]
+            },
+            6: {
+                cmd: "hydra -l admin -P top100.txt 192.168.1.150 ssh",
+                info: `
+                    <div class="explanation-card" style="border-color:#00ff00; background:rgba(0,255,0,0.1);">
+                        <h4 style="color:#00ff00;">Step 6: 成功破解！(Success)</h4>
+                        <p style="color:#ccc;">經過數百次嘗試，Hydra 終於找到了正確的組合！</p>
+                        <p style="color:#ccc;">注意看那行綠色的文字：<strong>[22][ssh] host: 192.168.1.150...</strong></p>
+                        <div class="analogy">
+                            <strong>🎉 任務完成：</strong>喀嚓！鎖開了！你手上的這把鑰匙（密碼）是對的。駭客取得了系統的進入權限。
+                        </div>
+                    </div>`,
+                output: [
+                    { text: "[DATA] attacking ssh://192.168.1.150:22/", wait: 500 },
+                    { text: "[ATTEMPT] target 192.168.1.150 - login \"admin\" - pass \"mustang\"", color: "#888", wait: 800 },
+                    { text: "[ATTEMPT] target 192.168.1.150 - login \"admin\" - pass \"superman\"", color: "#888", wait: 1100 },
+                    { text: "[22][ssh] host: 192.168.1.150   login: admin   password: toor", color: "#00ff00", style: "font-weight:bold; font-size:1.1rem; background:rgba(0,255,0,0.1); display:block; margin:5px 0;", wait: 1800 },
+                    { text: "1 of 1 target successfully completed, 1 valid password found", color: "#00ff00", wait: 2200 },
+                    { text: "root@kali:~#", type: "prompt", wait: 2500 }
+                ]
+            }
+        };
+
+        // 執行步驟
+        function runStep(id) {
+            if (isTyping) return;
+            isTyping = true;
+            
+            const data = scenarios[id];
+            document.querySelectorAll('.sim-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById('btn-' + id).classList.add('active');
+
+            typeCommand(data.cmd, () => {
+                addHistoryLog(currentPromptStr, data.cmd);
+                decoderContent.innerHTML = data.info;
+                
+                let maxWait = 0;
+                if(data.output) {
+                    data.output.forEach(line => {
+                        setTimeout(() => {
+                            if(line.type === 'prompt') {
+                                updatePrompt(line.text);
+                            } else {
+                                printText(line.text, line.color, line.style);
+                            }
+                        }, line.wait);
+                        if(line.wait > maxWait) maxWait = line.wait;
+                    });
+                }
+                setTimeout(() => {
+                    isTyping = false;
+                }, maxWait + 200);
+            });
+        }
+
+        // 打字動畫
+        function typeCommand(text, callback) {
+            typingArea.textContent = "";
+            let i = 0;
+            typingTimer = setInterval(() => {
+                typingArea.textContent += text.charAt(i);
+                i++;
+                if (i >= text.length) {
+                    clearInterval(typingTimer);
+                    setTimeout(() => {
+                        typingArea.textContent = ""; // 清空輸入區
+                        callback();
+                    }, 300);
+                }
+            }, 30);
+        }
+
+        // 添加歷史紀錄
+        function addHistoryLog(p, c) {
+            const div = document.createElement('div');
+            div.innerHTML = `<span class="prompt">${p}</span> ${c}`;
+            termBody.insertBefore(div, promptLine);
+            scrollToBottom();
+        }
+
+        // 輸出文字
+        function printText(text, color, style) {
+            const div = document.createElement('div');
+            if(color) div.style.color = color;
+            if(style) div.setAttribute('style', `color:${color}; ${style}`);
+            
+            if(text.includes("[DATA]")) { // 讓HTML生效 (針對 banner 或 特殊樣式)
+                 div.innerHTML = text; 
+            } else {
+                 div.textContent = text;
+            }
+            
+            termBody.insertBefore(div, promptLine);
+            scrollToBottom();
+        }
+
+        // 更新提示符
+        function updatePrompt(text) {
+            currentPromptStr = text;
+            promptText.textContent = text;
+            scrollToBottom();
+        }
+
+        function scrollToBottom() {
+            termBody.scrollTop = termBody.scrollHeight;
+        }
+
+        // 重置功能
+        function resetSim() {
+            if(isTyping) return;
+
+            // 1. 強制清空所有 div
+            const lines = termBody.querySelectorAll('div');
+            lines.forEach(line => {
+                if (line.id !== 'prompt-line') {
+                    line.remove();
+                }
+            });
+
+            // 2. 重新插入歡迎訊息
+            const welcome1 = document.createElement('div');
+            welcome1.textContent = "Kali GNU/Linux Rolling [Version 2024.1]";
+            termBody.insertBefore(welcome1, promptLine);
+            
+            const br = document.createElement('div');
+            br.innerHTML = "<br>";
+            termBody.insertBefore(br, promptLine);
+
+            // 3. 清空輸入區
+            typingArea.textContent = "";
+
+            // 4. 重置提示符
+            updatePrompt("root@kali:~#");
+
+            // 5. 重置右側
+            decoderContent.innerHTML = `
+                <div style="text-align: center; color: #ff9999; margin-top: 100px;">
+                    <i class="fas fa-key fa-3x" style="margin-bottom: 20px;"></i><br>
+                    準備就緒<br>點擊左側 <strong>Step 1</strong> 開始破解
+                </div>`;
+            
+            // 6. 清除按鈕狀態
+            document.querySelectorAll('.sim-btn').forEach(b => b.classList.remove('active'));
+        }
+    </script>
+</body>
+</html>

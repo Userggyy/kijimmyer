@@ -1,0 +1,631 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reaver WPS破解模擬 | 資安模擬學習</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        /* --- 1. Reaver 主題美術風格 (Unlock Amber) --- */
+        
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Consolas', 'Monaco', 'Courier New', monospace; }
+        body { line-height: 1.6; color: #ffeebb; background-color: #0d0800; position: relative; overflow-x: hidden; font-family: 'Segoe UI', sans-serif; }
+
+        /* 背景特效：數字雨 */
+        .digital-background {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1;
+            background: radial-gradient(circle at 50% 50%, #1a1100 0%, #000 100%);
+        }
+        
+        .falling-num {
+            position: fixed; top: -50px; font-size: 1.2rem; color: rgba(255, 170, 0, 0.2);
+            animation: fall linear infinite; user-select: none;
+        }
+        /* 隨機生成數字樣式 */
+        .falling-num:nth-child(1) { left: 10%; animation-duration: 5s; animation-delay: 0s; }
+        .falling-num:nth-child(2) { left: 30%; animation-duration: 7s; animation-delay: 2s; }
+        .falling-num:nth-child(3) { left: 50%; animation-duration: 4s; animation-delay: 1s; font-weight: bold; color: rgba(255, 170, 0, 0.4); }
+        .falling-num:nth-child(4) { left: 70%; animation-duration: 6s; animation-delay: 3s; }
+        .falling-num:nth-child(5) { left: 90%; animation-duration: 5.5s; animation-delay: 0.5s; }
+
+        @keyframes fall {
+            0% { transform: translateY(0); opacity: 0; }
+            10% { opacity: 1; }
+            90% { opacity: 1; }
+            100% { transform: translateY(100vh); opacity: 0; }
+        }
+
+        /* 容器 */
+        .container { width: 90%; max-width: 1400px; margin: 0 auto; padding: 20px; position: relative; }
+
+        /* 頁首 */
+        header {
+            background: rgba(26, 17, 0, 0.95); padding: 4rem 0; text-align: center; margin-bottom: 2rem;
+            border-radius: 8px; border: 1px solid #ffaa00; box-shadow: 0 0 25px rgba(255, 170, 0, 0.2);
+            position: relative; overflow: hidden;
+        }
+        header::before {
+            content: ''; position: absolute; top: 0; left: -100%; width: 100%; height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 170, 0, 0.2), transparent);
+            animation: shine 4s infinite;
+        }
+        @keyframes shine { 0% { left: -100%; } 100% { left: 100%; } }
+        header h1 {
+            font-size: 2.8rem; margin-bottom: 1rem; color: #ffaa00;
+            text-shadow: 0 0 15px rgba(255, 170, 0, 0.5); letter-spacing: 2px;
+        }
+        header p { font-size: 1.2rem; color: #ffcc66; max-width: 800px; margin: 0 auto; }
+
+        /* 導覽列 */
+        nav {
+            background: #110b00; padding: 1rem; border-radius: 4px; border: 1px solid #ffaa00;
+            position: sticky; top: 0; z-index: 100; margin-bottom: 30px; box-shadow: 0 5px 15px rgba(0,0,0,0.8);
+        }
+        nav ul { display: flex; justify-content: center; list-style: none; gap: 20px; flex-wrap: wrap; }
+        nav a {
+            text-decoration: none; color: #ffcc66; font-weight: bold; padding: 8px 16px;
+            border-radius: 2px; transition: 0.3s; border: 1px solid transparent;
+        }
+        nav a:hover { background: rgba(255, 170, 0, 0.15); color: #ffaa00; border-color: #ffaa00; }
+
+        /* --- 佈局 --- */
+        .grid-layout { display: grid; grid-template-columns: 2fr 1fr; gap: 2rem; margin-bottom: 2rem; }
+        .full-width { width: 100%; margin-bottom: 2rem; }
+        @media (max-width: 1024px) { .grid-layout { grid-template-columns: 1fr; } }
+
+        /* 區塊樣式 */
+        article {
+            background: rgba(20, 13, 0, 0.9); padding: 30px; border-radius: 4px; border: 1px solid #664400; margin-bottom: 30px;
+        }
+        
+        h2 { color: #ffaa00; margin-bottom: 20px; padding-bottom: 10px; border-bottom: 1px solid #664400; font-size: 1.8rem; display: flex; align-items: center; gap: 10px; }
+        h3 { color: #ffcc00; margin: 25px 0 15px 0; font-size: 1.4rem; }
+        p, li { margin-bottom: 10px; color: #e6e6e6; font-size: 1.05rem; }
+        ul { margin-left: 20px; list-style-type: square; }
+        li::marker { color: #ffaa00; }
+
+        /* 側邊欄 */
+        aside {
+            background: rgba(20, 13, 0, 0.9); padding: 25px; border-radius: 4px; border: 1px solid #ffaa00;
+            height: fit-content; position: sticky; top: 100px;
+        }
+
+        /* 提示框 */
+        .info-box { background: rgba(255, 170, 0, 0.1); border-left: 4px solid #ffaa00; padding: 1rem; margin-bottom: 1.5rem; }
+        .danger-box { background: rgba(255, 50, 50, 0.1); border-left: 4px solid #ff3333; padding: 1rem; margin-bottom: 1.5rem; }
+
+        /* --- 模擬器樣式 (Reaver Style) --- */
+        .simulator-wrapper {
+            background: #000; border: 2px solid #ffaa00; border-radius: 4px; overflow: hidden;
+            box-shadow: 0 0 40px rgba(255, 170, 0, 0.15); margin: 20px 0;
+            display: flex; flex-direction: column; height: 750px;
+        }
+
+        .sim-header {
+            background: #1a1100; padding: 10px 15px; border-bottom: 1px solid #ffaa00;
+            display: flex; justify-content: space-between; align-items: center; color: #ffaa00; font-family: monospace;
+        }
+
+        .sim-grid {
+            display: grid; grid-template-columns: 240px 1fr 340px; flex: 1; overflow: hidden;
+        }
+
+        /* 控制區 */
+        .sim-controls { background: #0f0a00; border-right: 1px solid #664400; padding: 15px; overflow-y: auto; }
+        .sim-btn {
+            width: 100%; padding: 15px; margin-bottom: 12px; background: rgba(255, 170, 0, 0.05); border: 1px solid #664400;
+            color: #ffdd66; text-align: left; cursor: pointer; border-radius: 2px; transition: all 0.2s; font-family: monospace;
+        }
+        .sim-btn:hover { background: rgba(255, 170, 0, 0.15); color: #fff; border-color: #ffaa00; }
+        .sim-btn.active { background: rgba(255, 170, 0, 0.25); border-color: #ffaa00; color: #fff; border-left: 4px solid #ffaa00; }
+        .sim-btn strong { display: block; font-size: 1rem; margin-bottom: 4px; }
+
+        /* 終端機 */
+        .sim-terminal {
+            background: #000; padding: 0; display: flex; flex-direction: column; 
+            font-family: 'Consolas', 'Courier New', monospace; position: relative;
+        }
+        .term-body { 
+            flex: 1; padding: 20px; overflow-y: auto; color: #ccc; 
+            font-size: 0.95rem; line-height: 1.4; white-space: pre-wrap; 
+        }
+        .prompt { color: #ffaa00; font-weight: bold; margin-right: 8px; }
+        .cursor { display: inline-block; width: 10px; height: 18px; background: #ffaa00; animation: blink 1s infinite; vertical-align: text-bottom; }
+
+        /* 解析區 */
+        .sim-decoder { background: #110b00; border-left: 1px solid #664400; display: flex; flex-direction: column; }
+        .decoder-header { padding: 15px; background: #1a1100; border-bottom: 1px solid #664400; color: #ffaa00; font-weight: bold; }
+        .decoder-content { padding: 20px; flex: 1; overflow-y: auto; }
+        
+        .explanation-card { 
+            background: rgba(255, 170, 0, 0.08); border-left: 3px solid #ffaa00; 
+            padding: 15px; border-radius: 2px; animation: slideIn 0.3s ease; margin-bottom: 15px;
+        }
+        .analogy { 
+            margin-top: 10px; padding: 10px; background: rgba(255, 255, 255, 0.05); 
+            border-radius: 2px; color: #ffcc66; font-style: italic; border: 1px dashed #664400;
+        }
+
+        /* 重置按鈕 */
+        .reset-btn {
+            background: transparent; border: 1px solid #ffaa00; color: #ffaa00; 
+            padding: 4px 12px; font-size: 0.8rem; cursor: pointer; transition: 0.3s;
+            font-family: monospace; text-transform: uppercase;
+        }
+        .reset-btn:hover { background: #ffaa00; color: #000; }
+
+        /* 表格 */
+        table { width: 100%; border-collapse: collapse; margin: 1.5rem 0; font-family: monospace; }
+        th, td { padding: 10px; text-align: left; border-bottom: 1px solid #664400; }
+        th { background-color: rgba(255, 170, 0, 0.15); color: #ffaa00; }
+        
+        @keyframes blink { 50% { opacity: 0; } }
+        @keyframes slideIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* RWD */
+        @media (max-width: 900px) { .sim-grid { grid-template-columns: 1fr; grid-template-rows: auto 400px auto; } .sim-decoder { border-left: none; border-top: 1px solid #664400; height: 300px; } }
+    </style>
+</head>
+<body>
+
+    <div class="digital-background"></div>
+    <div class="falling-num">12345678</div>
+    <div class="falling-num">87654321</div>
+    <div class="falling-num">00000000</div>
+    <div class="falling-num">19283746</div>
+    <div class="falling-num">99999999</div>
+
+    <header>
+        <div class="container">
+            <h1><i class="fas fa-unlock-alt"></i> Reaver WPS破解模擬</h1>
+            <p>路由器後門的萬能鑰匙 • 利用 WPS 漏洞進行 PIN 碼窮舉攻擊</p>
+        </div>
+    </header>
+
+    <nav>
+        <div class="container">
+            <ul>
+                <li><a href="#intro">工具介紹</a></li>
+                <li><a href="#install">安裝指令</a></li>
+                <li><a href="#simulation">WPS 破解實戰</a></li>
+                <li><a href="#theory">WPS 原理</a></li>
+                <li><a href="#ethics">法律規範</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <div class="container">
+        
+        <div class="grid-layout">
+            <div class="content-left">
+                <article id="intro">
+                    <h2><i class="fas fa-shield-alt"></i> 什麼是 Reaver？</h2>
+                    
+                    <p><strong>Reaver</strong> 是一款專門針對 **WPS (Wi-Fi Protected Setup)** 漏洞的攻擊工具。WPS 原本是為了讓使用者方便連線（按一下按鈕就好），但它設計上的缺陷讓它成為了駭客眼中的超級後門。</p>
+                    <p>即使你的 WiFi 密碼設定了 63 位亂碼，只要 WPS 功能開啟，Reaver 就能透過嘗試 8 位數的 PIN 碼，在數小時內破解並取得你的 WiFi 密碼。</p>
+                    
+                    <div class="info-box">
+                        <p><strong><i class="fas fa-exclamation-circle"></i> WPS 的致命缺陷：</strong></p>
+                        <ul>
+                            <li><strong>分段驗證</strong>：8 位數 PIN 碼被分成前半段 (4位) 和後半段 (3位+檢查碼) 分開驗證。</li>
+                            <li><strong>組合數極少</strong>：原本需要猜 1 億次 (10^8)，因為分段驗證，只需要猜 11,000 次 (10^4 + 10^3)。</li>
+                        </ul>
+                    </div>
+                </article>
+
+                <article id="install">
+                    <h2><i class="fas fa-download"></i> 安裝與需求</h2>
+                    <p>Reaver 內建於 Kali Linux。你需要一張支援監聽模式 (Monitor Mode) 的網卡。</p>
+                    <pre><code style="color:#ffaa00;"># 安裝 (若未安裝)
+sudo apt install reaver
+
+# 配合使用的 wash (掃描 WPS)
+sudo apt install wash</code></pre>
+                </article>
+            </div>
+
+            <aside>
+                <div style="margin-bottom: 30px;">
+                    <h3 style="margin-top:0; border-bottom:1px solid #664400; padding-bottom:10px;">
+                        <i class="fas fa-laptop-code"></i> 實驗配置
+                    </h3>
+                    <ul style="list-style: none; margin: 0; padding: 0;">
+                        <li style="padding: 10px 0; border-bottom: 1px solid #664400;">
+                            <i class="fas fa-check" style="color:#ffaa00; margin-right:8px;"></i> 系統: Kali Linux (Root)
+                        </li>
+                        <li style="padding: 10px 0; border-bottom: 1px solid #664400;">
+                            <i class="fas fa-wifi" style="color:#ffaa00; margin-right:8px;"></i> 網卡: wlan0mon
+                        </li>
+                        <li style="padding: 10px 0; border-bottom: 1px solid #664400;">
+                            <i class="fas fa-bullseye" style="color:#ffaa00; margin-right:8px;"></i> 目標: Target_AP (WPS On)
+                        </li>
+                        <li style="padding: 10px 0;">
+                            <i class="fas fa-clock" style="color:#ffcc00; margin-right:8px;"></i> 攻擊: Pixie Dust / Brute
+                        </li>
+                    </ul>
+                </div>
+                
+                <div>
+                    <h3 style="margin-top:0; border-bottom:1px solid #664400; padding-bottom:10px;">
+                        <i class="fas fa-book"></i> 章節導覽
+                    </h3>
+                    <ul style="list-style: none; margin: 0; padding: 0;">
+                        <li style="padding: 8px 0;"><a href="#intro" style="color:#ffcc66; text-decoration:none;">1. 工具介紹</a></li>
+                        <li style="padding: 8px 0;"><a href="#install" style="color:#ffcc66; text-decoration:none;">2. 安裝指令</a></li>
+                        <li style="padding: 8px 0;"><a href="#simulation" style="color:#ffcc66; text-decoration:none;">3. WPS破解演示</a></li>
+                        <li style="padding: 8px 0;"><a href="#theory" style="color:#ffcc66; text-decoration:none;">4. WPS 原理</a></li>
+                        <li style="padding: 8px 0;"><a href="#ethics" style="color:#ffcc66; text-decoration:none;">5. 法律規範</a></li>
+                    </ul>
+                </div>
+            </aside>
+        </div>
+
+        <div class="full-width">
+            <article id="simulation" style="border: 2px solid #ffaa00; box-shadow: 0 0 30px rgba(255, 170, 0, 0.1);">
+                <h2><i class="fas fa-key"></i> 互動虛擬實驗室</h2>
+                <p>我們將模擬攻擊一台開啟了 WPS 功能的路由器。請注意：真實世界中這個過程可能需要數小時，但在這裡我們將時間濃縮。</p>
+                
+                <div class="simulator-wrapper">
+                    <div class="sim-header">
+                        <div><i class="fas fa-terminal"></i> KALI ROOT TERMINAL</div>
+                        <button class="reset-btn" onclick="resetSim()">
+                            <i class="fas fa-redo"></i> 重置模擬器
+                        </button>
+                    </div>
+
+                    <div class="sim-grid">
+                        <div class="sim-controls">
+                            <button class="sim-btn" onclick="runStep(1)" id="btn-1">
+                                <strong>Step 1: 變身監聽模式</strong><span>airmon-ng start wlan0</span>
+                            </button>
+                            <button class="sim-btn" onclick="runStep(2)" id="btn-2">
+                                <strong>Step 2: 尋找 WPS 目標</strong><span>wash -i wlan0mon</span>
+                            </button>
+                            <button class="sim-btn" onclick="runStep(3)" id="btn-3">
+                                <strong>Step 3: 發動 Reaver 攻擊</strong><span>reaver -i wlan0mon -b ...</span>
+                            </button>
+                            <button class="sim-btn" onclick="runStep(4)" id="btn-4" style="border-left: 3px solid #ffcc00; background: rgba(255,170,0,0.05);">
+                                <strong>Step 4: 窮舉 PIN 碼 (Loop)</strong><span>Trying pin...</span>
+                            </button>
+                            <button class="sim-btn" onclick="runStep(5)" id="btn-5" style="border-left: 3px solid #00ff00; background: rgba(0,255,0,0.05);">
+                                <strong style="color:#00ff00;">Step 5: 成功破解!</strong><span>WPA PSK Revealed</span>
+                            </button>
+                        </div>
+
+                        <div class="sim-terminal">
+                            <div class="term-body" id="term-body">
+                                <div>Kali GNU/Linux Rolling [Version 2024.1]</div>
+                                <br>
+                                <div id="prompt-line" style="display:flex; flex-wrap:wrap;">
+                                    <span class="prompt" id="prompt-text">root@kali:~#</span>
+                                    <span id="typing-area"></span><span class="cursor"></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="sim-decoder">
+                            <div class="decoder-header"><i class="fas fa-lock-open"></i> 破解進度解析</div>
+                            <div class="decoder-content" id="decoder-content">
+                                <div style="text-align: center; color: #ffcc66; margin-top: 100px;">
+                                    <i class="fas fa-unlock fa-3x" style="margin-bottom: 20px;"></i><br>
+                                    準備就緒<br>點擊左側 <strong>Step 1</strong> 開始破解
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </article>
+        </div>
+
+        <div class="grid-layout">
+            
+            <div class="content-left">
+                <article id="theory">
+                    <h2><i class="fas fa-math"></i> 為什麼 WPS 這麼容易破？</h2>
+                    <p>WPS 的 PIN 碼驗證機制設計上有個天大的漏洞：</p>
+                    
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>驗證階段</th>
+                                <th>PIN 碼長度</th>
+                                <th>可能性 (組合數)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>前半段 (M4)</td>
+                                <td>4 位數</td>
+                                <td>10,000 種</td>
+                            </tr>
+                            <tr>
+                                <td>後半段 (M6)</td>
+                                <td>3 位數 (最後1位是檢查碼)</td>
+                                <td>1,000 種</td>
+                            </tr>
+                            <tr>
+                                <td><strong>總計</strong></td>
+                                <td><strong>8 位數</strong></td>
+                                <td><strong>11,000 種 (極少!)</strong></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    <p>如果沒有這個漏洞，破解 8 位數需要嘗試 1 億次；但因為路由器會「分別告訴你」前半段對不對、後半段對不對，導致難度瞬間降低了 99.99%。</p>
+                </article>
+            </div>
+
+            <div class="content-right">
+                <article id="ethics">
+                    <h2><i class="fas fa-gavel"></i> 法律與道德</h2>
+                    
+                    <div class="danger-box">
+                        <h3><i class="fas fa-exclamation-triangle"></i> 違法警告</h3>
+                        <p>未經授權破解他人 WiFi，即使只是測試，也違反<strong>刑法第 358 條 (無故入侵電腦)</strong> 及 <strong>電信法</strong>。</p>
+                    </div>
+
+                    <div style="margin-bottom:20px;">
+                        <h4 style="color:#ffaa00; margin-bottom:10px;">防禦建議</h4>
+                        <ul>
+                            <li><strong>關閉 WPS 功能</strong> (最有效)</li>
+                            <li>使用最新 WPA3 加密</li>
+                            <li>啟用 MAC 過濾 (較弱)</li>
+                        </ul>
+                    </div>
+
+                    <div class="info-box" style="text-align: center;">
+                        <h4 style="margin-top: 0; color: #fff;">資安倫理</h4>
+                        <p>只在自己的設備上練習。</p>
+                        <p style="color: #ffaa00; font-weight: bold; margin-top: 10px;">
+                            Disable WPS to Stay Safe.
+                        </p>
+                    </div>
+                </article>
+            </div>
+        </div>
+
+    </div>
+
+    <footer>
+        <div class="container">
+            <p>© 2025 Reaver WPS破解模擬 | 僅供資安教育用途</p>
+            <p>請務必遵守法律與道德規範</p>
+        </div>
+    </footer>
+
+    <script>
+        const termBody = document.getElementById('term-body');
+        const promptLine = document.getElementById('prompt-line');
+        const promptText = document.getElementById('prompt-text');
+        const typingArea = document.getElementById('typing-area');
+        const decoderContent = document.getElementById('decoder-content');
+        
+        let isTyping = false;
+        let typingTimer = null;
+        let currentPromptStr = "root@kali:~#";
+
+        // 模擬數據
+        const scenarios = {
+            1: {
+                cmd: "airmon-ng start wlan0",
+                info: `
+                    <div class="explanation-card">
+                        <h4>Step 1: 開啟監聽模式</h4>
+                        <p style="color:#ccc;">Reaver 需要直接與路由器溝通，所以必須先將網卡切換到監聽模式。</p>
+                        <p style="color:#ccc;">網卡名稱從 <code>wlan0</code> 變成了 <code>wlan0mon</code>。</p>
+                        <div class="analogy">
+                            <strong>💡 白話文比喻：</strong>把無線電調成「接收所有頻道」模式，準備尋找獵物。
+                        </div>
+                    </div>`,
+                output: [
+                    { text: "Found 3 processes that could cause trouble.", wait: 500 },
+                    { text: "Kill them using 'airmon-ng check kill'...", wait: 600 },
+                    { text: "PHY     Interface       Driver          Chipset", color: "#ffaa00", wait: 1000 },
+                    { text: "phy0    wlan0           ath9k_htc       Atheros AR9271", wait: 1200 },
+                    { text: "\n(mac80211 monitor mode vif enabled for [phy0]wlan0 on [phy0]wlan0mon)", color: "#fff", wait: 1500 },
+                    { text: "root@kali:~#", type: "prompt", wait: 2000 }
+                ]
+            },
+            2: {
+                cmd: "wash -i wlan0mon",
+                info: `
+                    <div class="explanation-card">
+                        <h4>Step 2: 尋找 WPS 目標 (Scan)</h4>
+                        <p style="color:#ccc;">使用 <code>wash</code> 工具來掃描哪些基地台開啟了 WPS 功能。</p>
+                        <p style="color:#ccc;">看到 <strong>WPS Locked: No</strong> 才是我們可以攻擊的目標。</p>
+                        <div class="analogy">
+                            <strong>💡 白話文比喻：</strong>你在社區裡巡邏，尋找哪戶人家裝了那種「容易被撬開」的便宜鎖頭 (WPS)。
+                        </div>
+                    </div>`,
+                output: [
+                    { text: "Wash v1.6.6 WiFi Protected Setup Scan Tool", wait: 300 },
+                    { text: "---------------------------------------------------------------------------------------------------------", wait: 500 },
+                    { text: "BSSID               Channel  RSSI  WPS Version  WPS Locked  ESSID", color: "#ffaa00", wait: 600 },
+                    { text: "---------------------------------------------------------------------------------------------------------", wait: 700 },
+                    { text: "AA:BB:CC:DD:EE:FF   1        -58   1.0          No          Target_AP", color: "#fff", style: "font-weight:bold;", wait: 1200 },
+                    { text: "11:22:33:44:55:66   6        -72   1.0          Yes         Neighbor_WiFi", color: "#888", wait: 1400 },
+                    { text: "22:33:44:55:66:77   11       -80   1.0          No          Coffee_Shop", color: "#ccc", wait: 1600 },
+                    { text: "^C", wait: 2000 },
+                    { text: "root@kali:~#", type: "prompt", wait: 2200 }
+                ]
+            },
+            3: {
+                cmd: "reaver -i wlan0mon -b AA:BB:CC:DD:EE:FF -vv",
+                info: `
+                    <div class="explanation-card">
+                        <h4>Step 3: 發動攻擊 (Attack)</h4>
+                        <p style="color:#ccc;">鎖定目標 BSSID，開始發送 WPS 驗證請求。</p>
+                        <p style="color:#ccc;">參數 <code>-vv</code> (Very Verbose) 讓我們能看到詳細的攻擊過程。</p>
+                        <div class="analogy">
+                            <strong>💡 白話文比喻：</strong>你站在門口，拿出一個數字盤，準備開始從 00000000 開始嘗試輸入密碼。
+                        </div>
+                    </div>`,
+                output: [
+                    { text: "Reaver v1.6.6 WiFi Protected Setup Attack Tool", wait: 500 },
+                    { text: "[+] Waiting for beacon from AA:BB:CC:DD:EE:FF", wait: 800 },
+                    { text: "[+] Associated with AA:BB:CC:DD:EE:FF (ESSID: Target_AP)", color: "#ffaa00", wait: 1500 },
+                    { text: "[+] Trying pin 12345670", wait: 2000 },
+                    { text: "[+] Sending EAPOL START request", wait: 2200 },
+                    { text: "[+] Received identity request", wait: 2400 },
+                    { text: "[+] Sending identity response", wait: 2600 },
+                    { text: "root@kali:~#", type: "prompt", wait: 2800, style: "display:none" } // Hide prompt for continuous loop
+                ]
+            },
+            4: {
+                cmd: "", // Loop Simulation
+                info: `
+                    <div class="explanation-card">
+                        <h4>Step 4: 窮舉 PIN 碼 (Brute Force)</h4>
+                        <p style="color:#ccc;">Reaver 正在嘗試每一個可能的 PIN 碼。</p>
+                        <p style="color:#ccc;">你會看到 <code>M1, M2...</code> 的訊息，這是 WPS 協議的溝通步驟。如果收到 <strong>WPS NACK</strong> 代表密碼錯誤，繼續試下一個。</p>
+                        <div class="analogy">
+                            <strong>💡 白話文比喻：</strong>「試試 1234... 嗶！錯誤。」<br>「試試 1235... 嗶！錯誤。」<br>機器人不知疲倦地一直試下去。
+                        </div>
+                    </div>`,
+                output: [
+                    { text: "[+] Trying pin 12345670", wait: 200 },
+                    { text: "[+] Sending WSC NACK", color: "#888", wait: 500 },
+                    { text: "[+] Trying pin 00000000", wait: 1000 },
+                    { text: "[+] Sending WSC NACK", color: "#888", wait: 1300 },
+                    { text: "[+] Trying pin 25802580", wait: 1800 },
+                    { text: "[+] Sending WSC NACK", color: "#888", wait: 2100 },
+                    { text: "[+] Trying pin 12340000", wait: 2600 },
+                    { text: "[+] Sending WSC NACK", color: "#888", wait: 2900 }
+                ]
+            },
+            5: {
+                cmd: "", // Success
+                info: `
+                    <div class="explanation-card" style="border-color:#00ff00; background:rgba(0,255,0,0.1);">
+                        <h4 style="color:#00ff00;">Step 5: 成功破解! (Cracked)</h4>
+                        <p style="color:#ccc;">Bingo！找到正確的 PIN 碼了！</p>
+                        <p style="color:#ccc;">路由器不僅告訴我們 PIN 碼是對的，還非常大方地直接把 <strong>WPA PSK (WiFi 密碼)</strong> 傳送給我們。</p>
+                        <div class="analogy">
+                            <strong>🎉 任務達成：</strong>你猜對了後門密碼！屋主不但開了門，還把前門的鑰匙（PSK）也雙手奉上。這就是為什麼 WPS 這麼危險。
+                        </div>
+                    </div>`,
+                output: [
+                    { text: "[+] Trying pin 68532914", wait: 300 },
+                    { text: "[+] WPS transaction successful!", color: "#00ff00", style: "font-weight:bold; font-size:1.1rem;", wait: 1000 },
+                    { text: "[+] Pin cracked in 245 seconds", wait: 1500 },
+                    { text: "[+] WPS PIN: '68532914'", color: "#ffaa00", wait: 2000 },
+                    { text: "[+] WPA PSK: 'super_secret_password'", color: "#00ff00", style: "font-weight:bold; font-size:1.2rem; border:1px solid #00ff00; padding:5px; display:inline-block; margin-top:10px;", wait: 2500 },
+                    { text: "\n[+] AP SSID: 'Target_AP'", wait: 3000 },
+                    { text: "root@kali:~#", type: "prompt", wait: 3500, style: "display:flex" }
+                ]
+            }
+        };
+
+        // 執行步驟
+        function runStep(id) {
+            if (isTyping) return;
+            isTyping = true;
+            
+            const data = scenarios[id];
+            document.querySelectorAll('.sim-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById('btn-' + id).classList.add('active');
+
+            // Step 4 & 5 是延續性動作，不需要打指令
+            if (id === 4 || id === 5) {
+                processOutput(data);
+            } else {
+                typeCommand(data.cmd, () => {
+                    addHistoryLog(currentPromptStr, data.cmd);
+                    processOutput(data);
+                });
+            }
+        }
+
+        function processOutput(data) {
+            decoderContent.innerHTML = data.info;
+            let maxWait = 0;
+            if(data.output) {
+                data.output.forEach(line => {
+                    setTimeout(() => {
+                        if(line.type === 'prompt') {
+                            updatePrompt(line.text, line.style);
+                        } else {
+                            printText(line.text, line.color, line.style);
+                        }
+                    }, line.wait);
+                    if(line.wait > maxWait) maxWait = line.wait;
+                });
+            }
+            setTimeout(() => {
+                isTyping = false;
+            }, maxWait + 200);
+        }
+
+        // 打字動畫
+        function typeCommand(text, callback) {
+            typingArea.textContent = "";
+            let i = 0;
+            typingTimer = setInterval(() => {
+                typingArea.textContent += text.charAt(i);
+                i++;
+                if (i >= text.length) {
+                    clearInterval(typingTimer);
+                    setTimeout(() => {
+                        typingArea.textContent = ""; 
+                        callback();
+                    }, 300);
+                }
+            }, 30);
+        }
+
+        function addHistoryLog(p, c) {
+            const div = document.createElement('div');
+            div.innerHTML = `<span class="prompt">${p}</span> ${c}`;
+            termBody.insertBefore(div, promptLine);
+            scrollToBottom();
+        }
+
+        function printText(text, color, style) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            if(color) div.style.color = color;
+            if(style) div.setAttribute('style', `color:${color}; ${style}`);
+            termBody.insertBefore(div, promptLine);
+            scrollToBottom();
+        }
+
+        function updatePrompt(text, style) {
+            currentPromptStr = text;
+            if (style && style.includes("none")) {
+                promptLine.style.display = "none";
+            } else {
+                promptLine.style.display = "flex";
+                promptText.textContent = text;
+            }
+            scrollToBottom();
+        }
+
+        function scrollToBottom() {
+            termBody.scrollTop = termBody.scrollHeight;
+        }
+
+        function resetSim() {
+            if(isTyping) return;
+            const logs = termBody.querySelectorAll('div:not(#prompt-line)');
+            for(let i=1; i<logs.length; i++) logs[i].remove();
+            
+            const welcome1 = document.createElement('div');
+            welcome1.textContent = "Kali GNU/Linux Rolling [Version 2024.1]";
+            termBody.insertBefore(welcome1, promptLine);
+            const br = document.createElement('div');
+            br.innerHTML = "<br>";
+            termBody.insertBefore(br, promptLine);
+
+            promptLine.style.display = "flex";
+            updatePrompt("root@kali:~#");
+            typingArea.textContent = "";
+
+            decoderContent.innerHTML = `
+                <div style="text-align: center; color: #ffcc66; margin-top: 100px;">
+                    <i class="fas fa-unlock fa-3x" style="margin-bottom: 20px;"></i><br>
+                    準備就緒<br>點擊左側 <strong>Step 1</strong> 開始破解
+                </div>`;
+            document.querySelectorAll('.sim-btn').forEach(b => b.classList.remove('active'));
+        }
+    </script>
+</body>
+</html>

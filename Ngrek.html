@@ -1,0 +1,606 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ngrep 網路探照燈 | 資安模擬學習</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        /* --- 1. Ngrep 主題美術風格 (Cyber Amber / Retro Terminal) --- */
+        
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Consolas', 'Monaco', 'Courier New', monospace; }
+        body { line-height: 1.6; color: #fff5cc; background-color: #0a0800; position: relative; overflow-x: hidden; font-family: 'Segoe UI', sans-serif; }
+
+        /* 背景特效：掃描光束 */
+        .amber-background {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1;
+            background: 
+                linear-gradient(rgba(10, 8, 0, 0.95), rgba(10, 8, 0, 0.95)),
+                repeating-linear-gradient(90deg, transparent, transparent 1px, #332200 1px, #332200 2px);
+            background-size: 40px 100%;
+        }
+        
+        /* 探照燈掃描動畫 */
+        .scan-beam {
+            position: fixed; top: 0; left: -100%; width: 50%; height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 200, 0, 0.05), transparent);
+            animation: beamScan 6s linear infinite; z-index: -1;
+        }
+        .scan-beam:nth-child(2) { animation-delay: 3s; }
+
+        @keyframes beamScan { 0% { left: -50%; } 100% { left: 150%; } }
+
+        /* 容器 */
+        .container { width: 90%; max-width: 1400px; margin: 0 auto; padding: 20px; position: relative; }
+
+        /* 頁首 */
+        header {
+            background: rgba(20, 15, 0, 0.95); padding: 4rem 0; text-align: center; margin-bottom: 2rem;
+            border-radius: 4px; border: 1px solid #ffcc00; box-shadow: 0 0 25px rgba(255, 200, 0, 0.15);
+            position: relative; overflow: hidden;
+        }
+        header h1 {
+            font-size: 2.8rem; margin-bottom: 1rem; color: #ffcc00;
+            text-shadow: 0 0 15px rgba(255, 200, 0, 0.4); letter-spacing: 1px;
+        }
+        header p { font-size: 1.2rem; color: #ffdd66; max-width: 800px; margin: 0 auto; }
+
+        /* 導覽列 */
+        nav {
+            background: #1a1400; padding: 1rem; border-radius: 4px; border: 1px solid #ffcc00;
+            position: sticky; top: 0; z-index: 100; margin-bottom: 30px; box-shadow: 0 5px 20px rgba(0,0,0,0.6);
+        }
+        nav ul { display: flex; justify-content: center; list-style: none; gap: 20px; flex-wrap: wrap; }
+        nav a {
+            text-decoration: none; color: #ffdd66; font-weight: bold; padding: 8px 16px;
+            border-radius: 2px; transition: 0.3s; border: 1px solid transparent;
+        }
+        nav a:hover { background: rgba(255, 200, 0, 0.15); color: #ffcc00; border-color: #ffcc00; }
+
+        /* --- 佈局 --- */
+        .grid-layout { display: grid; grid-template-columns: 2fr 1fr; gap: 2rem; margin-bottom: 2rem; }
+        .full-width { width: 100%; margin-bottom: 2rem; }
+        @media (max-width: 1024px) { .grid-layout { grid-template-columns: 1fr; } }
+
+        /* 區塊樣式 */
+        article {
+            background: rgba(20, 15, 0, 0.9); padding: 30px; border-radius: 4px; border: 1px solid #665200; margin-bottom: 30px;
+        }
+        
+        h2 { color: #ffcc00; margin-bottom: 20px; padding-bottom: 10px; border-bottom: 1px solid #665200; font-size: 1.8rem; display: flex; align-items: center; gap: 10px; }
+        h3 { color: #ffaa00; margin: 25px 0 15px 0; font-size: 1.4rem; }
+        p, li { margin-bottom: 10px; color: #e6e6e6; font-size: 1.05rem; }
+        ul { margin-left: 20px; list-style-type: square; }
+        li::marker { color: #ffcc00; }
+
+        /* 側邊欄 */
+        aside {
+            background: rgba(20, 15, 0, 0.9); padding: 25px; border-radius: 4px; border: 1px solid #ffcc00;
+            height: fit-content; position: sticky; top: 100px;
+        }
+
+        /* 提示框 (Amber Theme) */
+        .info-box { background: rgba(255, 200, 0, 0.1); border-left: 4px solid #ffcc00; padding: 1rem; margin-bottom: 1.5rem; }
+        .danger-box { background: rgba(255, 50, 50, 0.1); border-left: 4px solid #ff3333; padding: 1rem; margin-bottom: 1.5rem; }
+
+        /* --- 模擬器樣式 (Ngrep Style) --- */
+        .simulator-wrapper {
+            background: #050400; border: 2px solid #ffcc00; border-radius: 4px; overflow: hidden;
+            box-shadow: 0 0 30px rgba(255, 200, 0, 0.1); margin: 20px 0;
+            display: flex; flex-direction: column; height: 750px;
+        }
+
+        .sim-header {
+            background: #1a1400; padding: 10px 15px; border-bottom: 1px solid #ffcc00;
+            display: flex; justify-content: space-between; align-items: center; color: #ffcc00; font-family: monospace;
+        }
+
+        .sim-grid {
+            display: grid; grid-template-columns: 240px 1fr 340px; flex: 1; overflow: hidden;
+        }
+
+        /* 控制區 */
+        .sim-controls { background: #0f0c00; border-right: 1px solid #665200; padding: 15px; overflow-y: auto; }
+        .sim-btn {
+            width: 100%; padding: 15px; margin-bottom: 12px; background: rgba(255, 200, 0, 0.05); border: 1px solid #665200;
+            color: #ffdd66; text-align: left; cursor: pointer; border-radius: 2px; transition: all 0.2s; font-family: monospace;
+        }
+        .sim-btn:hover { background: rgba(255, 200, 0, 0.15); color: #fff; border-color: #ffcc00; }
+        .sim-btn.active { background: rgba(255, 200, 0, 0.25); border-color: #ffcc00; color: #fff; border-left: 4px solid #ffcc00; }
+        .sim-btn strong { display: block; font-size: 1rem; margin-bottom: 4px; }
+
+        /* 終端機 */
+        .sim-terminal {
+            background: #000; padding: 0; display: flex; flex-direction: column; 
+            font-family: 'Consolas', 'Courier New', monospace; position: relative;
+        }
+        .term-body { 
+            flex: 1; padding: 20px; overflow-y: auto; color: #ffcc00; /* 經典琥珀字 */
+            font-size: 0.95rem; line-height: 1.4; white-space: pre-wrap; 
+        }
+        .prompt { color: #fff; font-weight: bold; margin-right: 8px; }
+        .cursor { display: inline-block; width: 10px; height: 18px; background: #ffcc00; animation: blink 1s infinite; vertical-align: text-bottom; }
+        
+        /* 搜尋高亮 */
+        .highlight { background-color: #ffcc00; color: #000; font-weight: bold; }
+
+        /* 解析區 */
+        .sim-decoder { background: #1a1400; border-left: 1px solid #665200; display: flex; flex-direction: column; }
+        .decoder-header { padding: 15px; background: #0f0c00; border-bottom: 1px solid #665200; color: #ffcc00; font-weight: bold; }
+        .decoder-content { padding: 20px; flex: 1; overflow-y: auto; }
+        
+        .explanation-card { 
+            background: rgba(255, 200, 0, 0.08); border-left: 3px solid #ffcc00; 
+            padding: 15px; border-radius: 2px; animation: slideIn 0.3s ease; margin-bottom: 15px;
+        }
+        .analogy { 
+            margin-top: 10px; padding: 10px; background: rgba(255, 255, 255, 0.05); 
+            border-radius: 2px; color: #ffdd66; font-style: italic; border: 1px dashed #ffcc00;
+        }
+
+        /* 重置按鈕 */
+        .reset-btn {
+            background: transparent; border: 1px solid #ffcc00; color: #ffcc00; 
+            padding: 4px 12px; font-size: 0.8rem; cursor: pointer; transition: 0.3s;
+            font-family: monospace; text-transform: uppercase;
+        }
+        .reset-btn:hover { background: #ffcc00; color: #000; }
+
+        /* 表格 */
+        table { width: 100%; border-collapse: collapse; margin: 1.5rem 0; font-family: monospace; }
+        th, td { padding: 10px; text-align: left; border-bottom: 1px solid #665200; }
+        th { background-color: rgba(255, 200, 0, 0.15); color: #ffcc00; }
+        
+        @keyframes blink { 50% { opacity: 0; } }
+        @keyframes slideIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* RWD */
+        @media (max-width: 900px) { .sim-grid { grid-template-columns: 1fr; grid-template-rows: auto 400px auto; } .sim-decoder { border-left: none; border-top: 1px solid #665200; height: 300px; } }
+    </style>
+</head>
+<body>
+
+    <div class="amber-background"></div>
+    <div class="scan-beam"></div>
+    <div class="scan-beam"></div>
+
+    <header>
+        <div class="container">
+            <h1><i class="fas fa-search-dollar"></i> Ngrep 網路探照燈</h1>
+            <p>封包內容的 Google 搜尋 • 專找關鍵字的嗅探器 • 正則表達式抓包</p>
+        </div>
+    </header>
+
+    <nav>
+        <div class="container">
+            <ul>
+                <li><a href="#intro">工具介紹</a></li>
+                <li><a href="#install">安裝指令</a></li>
+                <li><a href="#simulation">封包嗅探實戰</a></li>
+                <li><a href="#syntax">參數語法</a></li>
+                <li><a href="#ethics">法律規範</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <div class="container">
+        
+        <div class="grid-layout">
+            <div class="content-left">
+                <article id="intro">
+                    <h2><i class="fas fa-lightbulb"></i> 什麼是 Ngrep？</h2>
+                    <p><strong>Ngrep (Network Grep)</strong> 是網路版的 grep 工具。如果你熟悉在 Linux 檔案中搜尋文字的 <code>grep</code> 指令，那你一定會愛上 Ngrep。</p>
+                    <p>不同於 Tcpdump (看標頭) 或 Tshark (看結構)，Ngrep 的專長是<strong>「暴力搜尋封包內容 (Payload)」</strong>。它允許你使用正則表達式 (Regex) 來過濾封包的數據部分，是抓取帳密、特定網址或惡意特徵碼的神器。</p>
+                    
+                    <div class="info-box">
+                        <p><strong><i class="fas fa-star"></i> 為什麼選它？</strong></p>
+                        <ul>
+                            <li><strong>直覺</strong>：想找 "password"？直接打 `ngrep 'password'` 就好。</li>
+                            <li><strong>可讀性</strong>：支援 <code>-W byline</code>，自動把 HTTP 封包排版成易讀格式。</li>
+                            <li><strong>輕量</strong>：專注於內容匹配，沒有複雜的解碼負擔。</li>
+                        </ul>
+                    </div>
+                </article>
+
+                <article id="install">
+                    <h2><i class="fas fa-download"></i> 安裝與啟動</h2>
+                    <p>Ngrep 在 Kali Linux 中通常已預裝。它同樣需要 Root 權限來監聽網卡。</p>
+                    <pre><code style="color:#ffcc00;"># 安裝 (Debian/Ubuntu)
+sudo apt install ngrep
+
+# 檢查版本
+ngrep -V
+
+# 最簡單的用法 (監聽 eth0，搜尋 'GET' 關鍵字)
+sudo ngrep -d eth0 'GET'</code></pre>
+                </article>
+            </div>
+
+            <aside>
+                <div style="margin-bottom: 30px;">
+                    <h3 style="margin-top:0; border-bottom:1px solid #665200; padding-bottom:10px;">
+                        <i class="fas fa-laptop-code"></i> 實驗需求
+                    </h3>
+                    <ul style="list-style: none; margin: 0; padding: 0;">
+                        <li style="padding: 10px 0; border-bottom: 1px solid #665200;">
+                            <i class="fas fa-check" style="color:#ffcc00; margin-right:8px;"></i> Kali Linux (Root)
+                        </li>
+                        <li style="padding: 10px 0; border-bottom: 1px solid #665200;">
+                            <i class="fas fa-globe" style="color:#ffcc00; margin-right:8px;"></i> HTTP 流量 (明文)
+                        </li>
+                        <li style="padding: 10px 0;">
+                            <i class="fas fa-search" style="color:#ffaa00; margin-right:8px;"></i> 關鍵字概念 (Regex)
+                        </li>
+                    </ul>
+                </div>
+                
+                <div>
+                    <h3 style="margin-top:0; border-bottom:1px solid #665200; padding-bottom:10px;">
+                        <i class="fas fa-book"></i> 章節導覽
+                    </h3>
+                    <ul style="list-style: none; margin: 0; padding: 0;">
+                        <li style="padding: 8px 0;"><a href="#intro" style="color:#ffdd66; text-decoration:none;">1. 工具介紹</a></li>
+                        <li style="padding: 8px 0;"><a href="#install" style="color:#ffdd66; text-decoration:none;">2. 安裝指令</a></li>
+                        <li style="padding: 8px 0;"><a href="#simulation" style="color:#ffdd66;  text-decoration:none;">3. 封包嗅探實戰</a></li>
+                        <li style="padding: 8px 0;"><a href="#syntax" style="color:#ffdd66; text-decoration:none;">4. 參數語法</a></li>
+                        <li style="padding: 8px 0;"><a href="#ethics" style="color:#ffdd66; text-decoration:none;">5. 法律規範</a></li>
+                    </ul>
+                </div>
+            </aside>
+        </div>
+
+        <div class="full-width">
+            <article id="simulation" style="border: 2px solid #ffcc00; box-shadow: 0 0 30px rgba(255, 200, 0, 0.1);">
+                <h2><i class="fas fa-filter"></i> 互動虛擬實驗室</h2>
+                <p>現在，我們將使用 Ngrep 的「關鍵字過濾」功能，從大量的網路流量中，精準捕捉我們想要的資訊。</p>
+                
+                <div class="simulator-wrapper">
+                    <div class="sim-header">
+                        <div><i class="fas fa-terminal"></i> KALI TERMINAL (NGREP)</div>
+                        <button class="reset-btn" onclick="resetSim()">
+                            <i class="fas fa-redo"></i> 重置模擬器
+                        </button>
+                    </div>
+
+                    <div class="sim-grid">
+                        <div class="sim-controls">
+                            <button class="sim-btn" onclick="runStep(1)" id="btn-1">
+                                <strong>Step 1: 基礎搜尋 (Basic)</strong><span>ngrep -q 'GET' port 80</span>
+                            </button>
+                            <button class="sim-btn" onclick="runStep(2)" id="btn-2">
+                                <strong>Step 2: 自動換行 (Readable)</strong><span>-W byline 'GET' port 80</span>
+                            </button>
+                            <button class="sim-btn" onclick="runStep(3)" id="btn-3">
+                                <strong>Step 3: 忽略大小寫 (Case)</strong><span>-i 'user-agent'</span>
+                            </button>
+                            <button class="sim-btn" onclick="runStep(4)" id="btn-4">
+                                <strong>Step 4: 監聽特定介面</strong><span>-d eth0 'POST'</span>
+                            </button>
+                            <button class="sim-btn" onclick="runStep(5)" id="btn-5">
+                                <strong>Step 5: 顯示 Hex (Hexdump)</strong><span>-x 'SSH'</span>
+                            </button>
+                            <button class="sim-btn" onclick="runStep(6)" id="btn-6" style="border-left: 3px solid #ff3333; background: rgba(255,0,0,0.1);">
+                                <strong>Step 6: 抓取帳密 (Credential)</strong><span>ngrep -q 'PASS'</span>
+                            </button>
+                        </div>
+
+                        <div class="sim-terminal">
+                            <div class="term-body" id="term-body">
+                                <div>Kali GNU/Linux Rolling [Version 2024.1]</div>
+                                <br>
+                                <div id="prompt-line" style="display:flex; flex-wrap:wrap;">
+                                    <span class="prompt" id="prompt-text">root@kali:~#</span>
+                                    <span id="typing-area"></span><span class="cursor"></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="sim-decoder">
+                            <div class="decoder-header"><i class="fas fa-search"></i> 搜尋結果解析</div>
+                            <div class="decoder-content" id="decoder-content">
+                                <div style="text-align: center; color: #ccaa00; margin-top: 100px;">
+                                    <i class="fas fa-search fa-3x" style="margin-bottom: 20px;"></i><br>
+                                    探照燈準備就緒<br>點擊左側 <strong>Step 1</strong> 開始搜尋
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </article>
+        </div>
+
+        <div class="grid-layout">
+            
+            <div class="content-left">
+                <article id="syntax">
+                    <h2><i class="fas fa-code"></i> 常用參數速查</h2>
+                    <p>Ngrep 的語法結構為：<code>ngrep [參數] '關鍵字' [BPF過濾條件]</code></p>
+                    
+                    <table>
+                        <thead>
+                            <tr>
+                                <th width="20%">參數</th>
+                                <th>功能說明</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><code>-q</code></td>
+                                <td><strong>安靜模式 (Quiet)</strong>。只顯示匹配到的封包內容，不顯示雜七雜八的標頭符號（如 ######）。</td>
+                            </tr>
+                            <tr>
+                                <td><code>-W byline</code></td>
+                                <td><strong>換行顯示</strong>。這是 Ngrep 最重要的參數！它會把封包內容依照換行符號排版，閱讀 HTTP 必備。</td>
+                            </tr>
+                            <tr>
+                                <td><code>-d [dev]</code></td>
+                                <td>指定網卡介面 (Device)，如 eth0, any。</td>
+                            </tr>
+                            <tr>
+                                <td><code>-i</code></td>
+                                <td><strong>忽略大小寫</strong> (Ignore case)。搜尋 'pass' 也會找到 'PASS'。</td>
+                            </tr>
+                            <tr>
+                                <td><code>-x</code></td>
+                                <td>以 16 進位 (Hex) 格式顯示封包內容。</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </article>
+            </div>
+
+            <div class="content-right">
+                <article id="ethics">
+                    <h2><i class="fas fa-gavel"></i> 法律與道德</h2>
+                    
+                    <div class="danger-box">
+                        <h3><i class="fas fa-exclamation-triangle"></i> 隱私紅線</h3>
+                        <p>使用 Ngrep 搜尋敏感關鍵字（如 password, cookie）涉及深度封包檢測，未經授權使用違反<strong>刑法第 315-1 條</strong>。</p>
+                    </div>
+
+                    <div style="margin-bottom:20px;">
+                        <h4 style="color:#ffcc00; margin-bottom:10px;">合法使用原則</h4>
+                        <ul>
+                            <li>網站開發除錯 (Debug)</li>
+                            <li>API 流量分析</li>
+                            <li>CTF 競賽解題</li>
+                        </ul>
+                    </div>
+
+                    <div class="info-box" style="text-align: center;">
+                        <h4 style="margin-top: 0; color: #fff;">資安倫理</h4>
+                        <p>工具本身無罪，重點在於使用者的意圖。</p>
+                    </div>
+                </article>
+            </div>
+        </div>
+
+    </div>
+
+    <footer>
+        <div class="container">
+            <p>© 2025 Ngrep 網路探照燈 | 僅供資安教育用途</p>
+            <p>請務必遵守法律與道德規範</p>
+        </div>
+    </footer>
+
+    <script>
+        const termBody = document.getElementById('term-body');
+        const promptLine = document.getElementById('prompt-line');
+        const typingArea = document.getElementById('typing-area');
+        const decoderContent = document.getElementById('decoder-content');
+        
+        let isTyping = false;
+        let typingTimer = null;
+
+        // 模擬數據
+        const scenarios = {
+            1: {
+                cmd: "ngrep -q 'GET' port 80",
+                info: `
+                    <div class="explanation-card">
+                        <h4>Step 1: 基礎搜尋 (Basic Search)</h4>
+                        <p style="color:#ccc;">我們搜尋所有包含 <code>GET</code> 關鍵字的封包，且限定在 Port 80。</p>
+                        <p style="color:#ccc;">你會發現雖然抓到了，但排版有點亂（擠在同一行），這就是為什麼我們需要 Step 2。</p>
+                        <div class="analogy">
+                            <strong>💡 白話文比喻：</strong>你對著碎紙機喊「幫我找出有寫 GET 的紙條！」。機器吐出來了，但紙條皺巴巴的，不太好讀。
+                        </div>
+                    </div>`,
+                output: [
+                    { text: "interface: eth0 (192.168.1.0/24)", wait: 300 },
+                    { text: "filter: (ip or ip6) and ( port 80 )", wait: 500 },
+                    { text: "match: GET", wait: 700 },
+                    { text: "T 192.168.1.100:54321 -> 142.250.1.1:80 [AP]", color: "#ffcc00", wait: 1200 },
+                    { text: "GET /index.html HTTP/1.1..Host: google.com..User-Agent: curl/7.68.0..Accept: */*....", color: "#fff", wait: 1500 },
+                    { text: "T 192.168.1.100:54322 -> 142.250.1.1:80 [AP]", color: "#ffcc00", wait: 2000 },
+                    { text: "GET /images/logo.png HTTP/1.1..Host: google.com..User-Agent: curl/7.68.0....", color: "#fff", wait: 2300 },
+                    { text: "root@kali:~#", type: "prompt", wait: 2800 }
+                ]
+            },
+            2: {
+                cmd: "ngrep -q -W byline 'GET' port 80",
+                info: `
+                    <div class="explanation-card">
+                        <h4>Step 2: 自動換行 (Byline Mode)</h4>
+                        <p style="color:#ccc;">加上 <code>-W byline</code> 參數後，Ngrep 會尊重封包內的換行符號。</p>
+                        <p style="color:#ccc;">現在你可以清楚看到 HTTP Header 的結構了！這是分析網頁流量最常用的模式。</p>
+                        <div class="analogy">
+                            <strong>💡 白話文比喻：</strong>你把剛剛皺巴巴的紙條燙平，並且按照原本的段落整理好。現在這封信讀起來舒服多了。
+                        </div>
+                    </div>`,
+                output: [
+                    { text: "interface: eth0 (192.168.1.0/24)", wait: 300 },
+                    { text: "T 192.168.1.100:54321 -> 142.250.1.1:80 [AP]", color: "#ffcc00", wait: 800 },
+                    { text: "GET /index.html HTTP/1.1", style: "background:#332200; color:#fff;", wait: 1000 },
+                    { text: "Host: google.com", wait: 1100 },
+                    { text: "User-Agent: Mozilla/5.0 (X11; Linux x86_64)...", wait: 1200 },
+                    { text: "Accept: text/html,application/xhtml+xml...", wait: 1300 },
+                    { text: "", wait: 1400 },
+                    { text: "root@kali:~#", type: "prompt", wait: 1800 }
+                ]
+            },
+            3: {
+                cmd: "ngrep -q -i 'user-agent'",
+                info: `
+                    <div class="explanation-card">
+                        <h4>Step 3: 忽略大小寫 (Ignore Case)</h4>
+                        <p style="color:#ccc;">使用 <code>-i</code> 參數，讓搜尋不分大小寫。</p>
+                        <p style="color:#ccc;">這很有用，因為有時候伺服器寫 <code>User-Agent</code>，有時候寫 <code>user-agent</code>。</p>
+                        <div class="analogy">
+                            <strong>💡 白話文比喻：</strong>你告訴搜尋引擎：「我要找 Apple，不管是大寫 Apple 還是小寫 apple，通通都給我找出來。」
+                        </div>
+                    </div>`,
+                output: [
+                    { text: "interface: eth0 (192.168.1.0/24)", wait: 300 },
+                    { text: "match: user-agent", wait: 600 },
+                    { text: "T 192.168.1.100:44556 -> 10.0.0.5:80 [AP]", color: "#ffcc00", wait: 1000 },
+                    { text: "...User-Agent: sqlmap/1.5.2...", style: "color:#ff5555; font-weight:bold;", wait: 1300 },
+                    { text: "T 192.168.1.100:44557 -> 10.0.0.5:80 [AP]", color: "#ffcc00", wait: 1800 },
+                    { text: "...user-agent: python-requests/2.25.1...", wait: 2100 },
+                    { text: "root@kali:~#", type: "prompt", wait: 2500 }
+                ]
+            },
+            4: {
+                cmd: "ngrep -d eth0 'POST'",
+                info: `
+                    <div class="explanation-card">
+                        <h4>Step 4: 監聽特定介面</h4>
+                        <p style="color:#ccc;">使用 <code>-d eth0</code> 指定只監聽這張網卡。</p>
+                        <p style="color:#ccc;">我們搜尋 <code>POST</code> 請求，這通常是用來送出表單（如登入、註冊）的動作。</p>
+                        <div class="analogy">
+                            <strong>💡 白話文比喻：</strong>你指定只監聽「大門口 (eth0)」的信箱，專門攔截那些「寄出去的掛號信 (POST)」，因為裡面通常夾帶重要資料。
+                        </div>
+                    </div>`,
+                output: [
+                    { text: "interface: eth0 (192.168.1.0/24)", wait: 300 },
+                    { text: "T 192.168.1.100:33445 -> 10.0.0.8:80 [AP]", color: "#ffcc00", wait: 1000 },
+                    { text: "POST /login.php HTTP/1.1..Host: internal.lab..Content-Length: 45....", wait: 1300 },
+                    { text: "root@kali:~#", type: "prompt", wait: 1800 }
+                ]
+            },
+            5: {
+                cmd: "ngrep -x 'SSH'",
+                info: `
+                    <div class="explanation-card">
+                        <h4>Step 5: Hex 顯示 (Hexdump)</h4>
+                        <p style="color:#ccc;">使用 <code>-x</code> 參數，同時顯示 16 進位代碼和 ASCII。</p>
+                        <p style="color:#ccc;">這在分析二進位協定（非文字協定）或查看不可見字元時非常有用。</p>
+                        <div class="analogy">
+                            <strong>💡 白話文比喻：</strong>這就像駭客任務的畫面，你不只看到文字，還看到了底層的代碼矩陣。這才是電腦真正讀取的語言。
+                        </div>
+                    </div>`,
+                output: [
+                    { text: "interface: eth0 (192.168.1.0/24)", wait: 300 },
+                    { text: "match: SSH", wait: 600 },
+                    { text: "T 192.168.1.100:22 -> 192.168.1.5:5566 [AP]", color: "#ffcc00", wait: 1000 },
+                    { text: "  53 53 48 2d 32 2e 30 2d    SSH-2.0-", wait: 1300 },
+                    { text: "  4f 70 65 6e 53 53 48 5f    OpenSSH_", wait: 1400 },
+                    { text: "  38 2e 32 70 31 20 55 62    8.2p1 Ub", wait: 1500 },
+                    { text: "root@kali:~#", type: "prompt", wait: 2000 }
+                ]
+            },
+            6: {
+                cmd: "ngrep -q -W byline 'PASS' port 21",
+                info: `
+                    <div class="explanation-card" style="border-color: #ff3333; background: rgba(255,0,0,0.1);">
+                        <h4 style="color:#ff3333;">Step 6: 抓取明文密碼 (Credential Sniffing)</h4>
+                        <p style="color:#ccc;">這是最震撼的演示。我們在 FTP (Port 21) 流量中搜尋 <code>PASS</code>。</p>
+                        <p style="color:#ccc;">因為 FTP 是明文傳輸，所以密碼直接暴露在螢幕上！</p>
+                        <div class="analogy">
+                            <strong>⚠️ 震撼教育：</strong>你剛剛用探照燈一照，直接在信封外面看到了「密碼：123456」。這就是為什麼現在大家都禁用 FTP 改用 SFTP 的原因。
+                        </div>
+                    </div>`,
+                output: [
+                    { text: "interface: eth0 (192.168.1.0/24)", wait: 300 },
+                    { text: "T 192.168.1.100:44332 -> 10.0.0.9:21 [AP]", color: "#ffcc00", wait: 1000 },
+                    { text: "USER admin", wait: 1200 },
+                    { text: "T 192.168.1.100:44332 -> 10.0.0.9:21 [AP]", color: "#ffcc00", wait: 1800 },
+                    { text: "PASS password123", style: "background:#ff3333; color:#fff; font-weight:bold;", wait: 2200 },
+                    { text: "root@kali:~#", type: "prompt", wait: 2800 }
+                ]
+            }
+        };
+
+        function runStep(id) {
+            if (isTyping) return;
+            isTyping = true;
+            
+            const data = scenarios[id];
+            document.querySelectorAll('.sim-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById('btn-' + id).classList.add('active');
+
+            typeCommand(data.cmd, () => {
+                addHistoryLog("root@kali:~#", data.cmd);
+                decoderContent.innerHTML = data.info;
+                
+                let maxWait = 0;
+                if(data.output) {
+                    data.output.forEach(line => {
+                        setTimeout(() => {
+                            if(line.type === 'prompt') updatePrompt();
+                            else printText(line.text, line.color, line.style);
+                        }, line.wait);
+                        if(line.wait > maxWait) maxWait = line.wait;
+                    });
+                }
+                setTimeout(() => {
+                    isTyping = false;
+                }, maxWait + 200);
+            });
+        }
+
+        function typeCommand(text, callback) {
+            typingArea.textContent = "";
+            let i = 0;
+            typingTimer = setInterval(() => {
+                typingArea.textContent += text.charAt(i);
+                i++;
+                if (i >= text.length) {
+                    clearInterval(typingTimer);
+                    setTimeout(() => {
+                        typingArea.textContent = "";
+                        callback();
+                    }, 300);
+                }
+            }, 30);
+        }
+
+        function addHistoryLog(p, c) {
+            const div = document.createElement('div');
+            div.innerHTML = `<span class="prompt">${p}</span> ${c}`;
+            termBody.insertBefore(div, promptLine);
+            scrollToBottom();
+        }
+
+        function printText(text, color, style) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            if(color) div.style.color = color;
+            if(style) div.setAttribute('style', `color:${color}; ${style}`);
+            termBody.insertBefore(div, promptLine);
+            scrollToBottom();
+        }
+
+        function updatePrompt() {
+            scrollToBottom();
+        }
+
+        function scrollToBottom() {
+            termBody.scrollTop = termBody.scrollHeight;
+        }
+
+        function resetSim() {
+            if(isTyping) return;
+            const logs = termBody.querySelectorAll('div:not(#prompt-line)');
+            for(let i=1; i<logs.length; i++) logs[i].remove();
+            
+            decoderContent.innerHTML = `
+                <div style="text-align: center; color: #ccaa00; margin-top: 100px;">
+                    <i class="fas fa-search fa-3x" style="margin-bottom: 20px;"></i><br>
+                    探照燈準備就緒<br>點擊左側 <strong>Step 1</strong> 開始搜尋
+                </div>`;
+            document.querySelectorAll('.sim-btn').forEach(b => b.classList.remove('active'));
+        }
+    </script>
+</body>
+</html>

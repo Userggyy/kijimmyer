@@ -1,0 +1,681 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SET 社交工程工具包 | 資安模擬學習</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        /* --- 1. SET 主題美術風格 (Social Grey + Hacker Green) --- */
+        
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Consolas', 'Monaco', 'Courier New', monospace; }
+        body { line-height: 1.6; color: #ccc; background-color: #050505; position: relative; overflow-x: hidden; font-family: 'Segoe UI', sans-serif; }
+
+        /* 動態背景：人際網絡/神經連結 */
+        .social-background {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1;
+            background: radial-gradient(circle at 50% 50%, #1a1a1a 0%, #000 100%);
+        }
+        
+        .node {
+            position: fixed; border-radius: 50%; background: rgba(0, 255, 0, 0.2);
+            box-shadow: 0 0 10px rgba(0, 255, 0, 0.4); animation: float 10s infinite ease-in-out;
+        }
+        .line {
+            position: fixed; height: 1px; background: linear-gradient(90deg, transparent, rgba(0, 255, 0, 0.1), transparent);
+            transform-origin: left; animation: rotate 20s infinite linear;
+        }
+
+        /* 隨機生成幾個節點 */
+        .node:nth-child(1) { width: 4px; height: 4px; top: 20%; left: 20%; animation-delay: 0s; }
+        .node:nth-child(2) { width: 6px; height: 6px; top: 70%; left: 80%; animation-delay: 2s; }
+        .node:nth-child(3) { width: 3px; height: 3px; top: 40%; left: 60%; animation-delay: 4s; }
+        .node:nth-child(4) { width: 5px; height: 5px; top: 80%; left: 10%; animation-delay: 1s; }
+        
+        .line:nth-child(5) { top: 20%; left: 20%; width: 300px; animation-duration: 15s; }
+        .line:nth-child(6) { top: 70%; left: 80%; width: 200px; animation-duration: 25s; animation-direction: reverse; }
+
+        @keyframes float { 0%, 100% { transform: translate(0, 0); opacity: 0.3; } 50% { transform: translate(30px, 30px); opacity: 0.8; } }
+        @keyframes rotate { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+
+        /* 容器 */
+        .container { width: 90%; max-width: 1400px; margin: 0 auto; padding: 20px; position: relative; }
+
+        /* 頁首 */
+        header {
+            background: rgba(20, 20, 20, 0.95); padding: 4rem 0; text-align: center; margin-bottom: 2rem;
+            border-radius: 12px; border: 1px solid #333; border-bottom: 3px solid #00ff00;
+            box-shadow: 0 10px 30px rgba(0, 255, 0, 0.1); position: relative; overflow: hidden;
+        }
+        header h1 {
+            font-size: 2.8rem; margin-bottom: 1rem; color: #fff;
+            text-shadow: 0 0 15px rgba(0, 255, 0, 0.5); letter-spacing: 2px;
+        }
+        header p { font-size: 1.2rem; color: #888; max-width: 800px; margin: 0 auto; }
+
+        /* 導覽列 */
+        nav {
+            background: #111; padding: 1rem; border-radius: 8px; border: 1px solid #333;
+            position: sticky; top: 0; z-index: 100; margin-bottom: 30px; box-shadow: 0 5px 15px rgba(0,0,0,0.8);
+        }
+        nav ul { display: flex; justify-content: center; list-style: none; gap: 20px; flex-wrap: wrap; }
+        nav a {
+            text-decoration: none; color: #aaa; font-weight: bold; padding: 8px 16px;
+            border-radius: 4px; transition: 0.3s; border: 1px solid transparent;
+        }
+        nav a:hover { background: rgba(0, 255, 0, 0.1); color: #00ff00; border-color: #00ff00; }
+
+        /* --- 佈局 --- */
+        .grid-layout { display: grid; grid-template-columns: 2fr 1fr; gap: 30px; margin-bottom: 40px; }
+        .full-width { width: 100%; margin-bottom: 2rem; }
+        @media (max-width: 1024px) { .grid-layout { grid-template-columns: 1fr; } }
+
+        /* 卡片樣式 */
+        article {
+            background: rgba(20, 20, 20, 0.9); padding: 30px; border-radius: 8px; border: 1px solid #333; margin-bottom: 30px;
+        }
+        h2 { color: #fff; margin-bottom: 20px; padding-bottom: 10px; border-bottom: 1px solid #333; font-size: 1.8rem; display: flex; align-items: center; gap: 10px; }
+        h2 i { color: #00ff00; }
+        h3 { color: #00ff00; margin: 25px 0 15px 0; font-size: 1.4rem; }
+        p, li { margin-bottom: 10px; color: #ccc; font-size: 1.05rem; }
+        ul { margin-left: 20px; }
+
+        /* 側邊欄 */
+        aside {
+            background: rgba(20, 20, 20, 0.9); padding: 25px; border-radius: 8px; border: 1px solid #333;
+            height: fit-content; box-shadow: 0 0 20px rgba(0, 255, 0, 0.05); position: sticky; top: 100px;
+            border-top: 3px solid #00ff00;
+        }
+
+        /* 提示框 */
+        .info-box { background: rgba(255, 255, 255, 0.05); border-left: 5px solid #fff; padding: 20px; margin: 20px 0; border-radius: 4px; }
+        .danger-box { background: rgba(255, 0, 0, 0.1); border-left: 5px solid #ff3333; padding: 20px; margin: 20px 0; border-radius: 4px; }
+
+        /* --- 模擬器樣式 (SET Menu Style) --- */
+        .simulator-wrapper {
+            background: #000; border: 1px solid #333; border-radius: 12px; overflow: hidden;
+            box-shadow: 0 0 50px rgba(0, 255, 0, 0.1); margin: 20px 0;
+            display: flex; flex-direction: column; height: 850px; /* SET 選單比較長，拉高一點 */
+        }
+
+        .sim-header {
+            background: #111; padding: 12px 20px; border-bottom: 1px solid #333;
+            display: flex; justify-content: space-between; align-items: center; color: #00ff00; font-family: monospace;
+        }
+
+        .sim-grid {
+            display: grid; grid-template-columns: 240px 1fr 340px; flex: 1; overflow: hidden;
+        }
+
+        /* 控制區 */
+        .sim-controls { background: #0a0a0a; border-right: 1px solid #333; padding: 20px; overflow-y: auto; }
+        .sim-btn {
+            width: 100%; padding: 15px; margin-bottom: 12px; background: rgba(255, 255, 255, 0.03); border: 1px solid #333;
+            color: #aaa; text-align: left; cursor: pointer; border-radius: 6px; transition: all 0.2s; font-family: monospace;
+        }
+        .sim-btn:hover { background: rgba(0, 255, 0, 0.1); color: #fff; border-color: #00ff00; }
+        .sim-btn.active { background: rgba(0, 255, 0, 0.2); border-color: #00ff00; color: #fff; border-left: 4px solid #00ff00; font-weight: bold; }
+        .sim-btn strong { display: block; font-size: 1rem; margin-bottom: 4px; }
+
+        /* 終端機 */
+        .sim-terminal {
+            background: #000; padding: 0; display: flex; flex-direction: column; 
+            font-family: 'Consolas', 'Courier New', monospace; position: relative;
+        }
+        .term-body { 
+            flex: 1; padding: 20px; overflow-y: auto; color: #00ff00; /* 經典綠字 */
+            font-size: 1rem; line-height: 1.4; white-space: pre-wrap; 
+        }
+        .prompt { color: #fff; font-weight: bold; margin-right: 0px; }
+        .set-prompt { color: #fff; text-decoration: underline; margin-right: 5px; }
+        .cursor { display: inline-block; width: 10px; height: 18px; background: #00ff00; animation: blink 1s infinite; vertical-align: text-bottom; }
+
+        /* 解析區 */
+        .sim-decoder { background: #111; border-left: 1px solid #333; display: flex; flex-direction: column; }
+        .decoder-header { padding: 15px; background: #0a0a0a; border-bottom: 1px solid #333; color: #fff; font-weight: bold; font-size: 1.1rem; }
+        .decoder-content { padding: 25px; flex: 1; overflow-y: auto; }
+        
+        .explanation-card { 
+            background: rgba(255, 255, 255, 0.05); border-left: 4px solid #00ff00; 
+            padding: 20px; border-radius: 4px; animation: slideIn 0.3s ease;
+        }
+        .analogy { 
+            margin-top: 15px; padding: 10px; background: rgba(0, 0, 0, 0.3); 
+            border-radius: 4px; color: #ccc; font-style: italic; border: 1px dashed #555;
+        }
+
+        /* 重置按鈕 */
+        .reset-btn {
+            background: transparent; border: 1px solid #555; color: #888; 
+            padding: 4px 12px; font-size: 0.8rem; border-radius: 4px; cursor: pointer; transition: 0.3s;
+            font-family: monospace; text-transform: uppercase;
+        }
+        .reset-btn:hover { border-color: #00ff00; color: #00ff00; }
+
+        /* 表格 */
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 1.05rem; }
+        th { text-align: left; padding: 15px; background: rgba(255, 255, 255, 0.05); color: #fff; border-bottom: 2px solid #555; }
+        td { padding: 15px; border-bottom: 1px solid #333; }
+        tr:hover { background: rgba(255,255,255,0.02); }
+
+        @keyframes blink { 50% { opacity: 0; } }
+        @keyframes slideIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* RWD */
+        @media (max-width: 1200px) { .sim-grid { grid-template-columns: 200px 1fr 280px; } }
+        @media (max-width: 900px) {
+            .sim-grid { grid-template-columns: 1fr; grid-template-rows: auto 400px auto; }
+            .sim-decoder { border-left: none; border-top: 1px solid #333; height: 350px; }
+            .simulator-wrapper { height: auto; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="social-background"></div>
+    <div class="node"></div>
+    <div class="node"></div>
+    <div class="node"></div>
+    <div class="node"></div>
+    <div class="line"></div>
+    <div class="line"></div>
+
+    <header>
+        <div class="container">
+            <h1><i class="fas fa-user-secret"></i> SET 社交工程工具包</h1>
+            <p>攻擊的不是電腦，而是人性 • 釣魚網站製作與憑證收割實戰</p>
+        </div>
+    </header>
+
+    <nav>
+        <div class="container">
+            <ul>
+                <li><a href="#intro">工具介紹</a></li>
+                <li><a href="#install">環境準備</a></li>
+                <li><a href="#simulation">釣魚流程演示</a></li>
+                <li><a href="#vectors">攻擊向量</a></li>
+                <li><a href="#ethics">法律規範</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <div class="container">
+        
+        <div class="grid-layout">
+            <div class="content-left">
+                <article id="intro">
+                    <h2><i class="fas fa-users"></i> 什麼是 SET？</h2>
+                    
+                    <p><strong>Social-Engineer Toolkit (SET)</strong> 是一個專門針對「人性弱點」進行攻擊的開源滲透測試框架。</p>
+                    <p>不同於 Metasploit 攻擊系統漏洞，SET 主要用於攻擊「人」。它可以快速生成釣魚網站、偽造電子郵件、或是帶有惡意 Payload 的 QR Code，用來測試企業員工的資安意識。</p>
+                    
+                    <div class="info-box">
+                        <p><strong><i class="fas fa-brain"></i> 為什麼這很危險？</strong></p>
+                        <p>再強大的防火牆也擋不住一個自願交出密碼的員工。社交工程 (Social Engineering) 往往是駭客入侵企業內網的第一步。</p>
+                    </div>
+                </article>
+
+                <article id="install">
+                    <h2><i class="fas fa-terminal"></i> 安裝與啟動</h2>
+                    <p>SET 內建於 Kali Linux。它的操作介面是互動式選單，不需要背誦複雜參數。</p>
+                    <pre><code style="color:#00ff00;"># 安裝 (若未安裝)
+sudo apt install set
+
+# 啟動工具 (需要 root)
+sudo setoolkit</code></pre>
+                </article>
+            </div>
+
+            <aside>
+                <div style="margin-bottom: 30px;">
+                    <h3 style="margin-top:0; border-bottom:1px solid #333; padding-bottom:10px;">
+                        <i class="fas fa-laptop-code"></i> 實驗配置
+                    </h3>
+                    <ul style="list-style: none; margin: 0; padding: 0;">
+                        <li style="padding: 10px 0; border-bottom: 1px solid #333;">
+                            <i class="fas fa-check" style="color:#00ff00; margin-right:8px;"></i> 攻擊機: Kali Linux
+                        </li>
+                        <li style="padding: 10px 0; border-bottom: 1px solid #333;">
+                            <i class="fas fa-globe" style="color:#00ff00; margin-right:8px;"></i> 偽造目標: Gmail / FB
+                        </li>
+                        <li style="padding: 10px 0; border-bottom: 1px solid #333;">
+                            <i class="fas fa-keyboard" style="color:#aaa; margin-right:8px;"></i> 攻擊方式: 憑證收割
+                        </li>
+                        <li style="padding: 10px 0;">
+                            <i class="fas fa-network-wired" style="color:#00ff00; margin-right:8px;"></i> 監聽 Port: 80
+                        </li>
+                    </ul>
+                </div>
+                
+                <div>
+                    <h3 style="margin-top:0; border-bottom:1px solid #333; padding-bottom:10px;">
+                        <i class="fas fa-book"></i> 章節導覽
+                    </h3>
+                    <ul style="list-style: none; margin: 0; padding: 0;">
+                        <li style="padding: 8px 0;"><a href="#intro" style="color:#aaa; text-decoration:none;">1. 工具介紹</a></li>
+                        <li style="padding: 8px 0;"><a href="#install" style="color:#aaa; text-decoration:none;">2. 環境準備</a></li>
+                        <li style="padding: 8px 0;"><a href="#simulation" style="color:#aaa;  text-decoration:none;">3. 釣魚流程演示</a></li>
+                        <li style="padding: 8px 0;"><a href="#vectors" style="color:#aaa; text-decoration:none;">4. 攻擊向量</a></li>
+                        <li style="padding: 8px 0;"><a href="#ethics" style="color:#aaa; text-decoration:none;">5. 法律規範</a></li>
+                    </ul>
+                </div>
+            </aside>
+        </div>
+
+        <div class="full-width">
+            <article id="simulation" style="border: 2px solid #333; box-shadow: 0 0 30px rgba(0, 255, 0, 0.05);">
+                <h2><i class="fas fa-fish"></i> 互動虛擬實驗室</h2>
+                <p>現在，我們來模擬駭客如何使用 SET 的「選單介面」，在幾秒鐘內複製一個 Google 登入頁面，並竊取使用者輸入的帳密。</p>
+                
+                <div class="simulator-wrapper">
+                    <div class="sim-header">
+                        <div><i class="fas fa-terminal"></i> KALI ROOT TERMINAL (SETOOLKIT)</div>
+                        <button class="reset-btn" onclick="resetSim()">
+                            <i class="fas fa-redo"></i> 重置模擬器
+                        </button>
+                    </div>
+
+                    <div class="sim-grid">
+                        <div class="sim-controls">
+                            <button class="sim-btn" onclick="runStep(1)" id="btn-1">
+                                <strong>Step 1: 啟動 SET</strong><span>sudo setoolkit</span>
+                            </button>
+                            <button class="sim-btn" onclick="runStep(2)" id="btn-2">
+                                <strong>Step 2: 選擇社交工程攻擊</strong><span>Select Option: 1</span>
+                            </button>
+                            <button class="sim-btn" onclick="runStep(3)" id="btn-3">
+                                <strong>Step 3: 選擇網站攻擊向量</strong><span>Select Option: 2</span>
+                            </button>
+                            <button class="sim-btn" onclick="runStep(4)" id="btn-4">
+                                <strong>Step 4: 選擇憑證收割機</strong><span>Select Option: 3</span>
+                            </button>
+                            <button class="sim-btn" onclick="runStep(5)" id="btn-5">
+                                <strong>Step 5: 選擇網站複製器</strong><span>Select Option: 2 (Site Cloner)</span>
+                            </button>
+                            <button class="sim-btn" onclick="runStep(6)" id="btn-6">
+                                <strong>Step 6: 設定參數</strong><span>IP & Target URL</span>
+                            </button>
+                            <button class="sim-btn" onclick="runStep(7)" id="btn-7" style="border-left: 3px solid #ff3333; background: rgba(255,0,0,0.1);">
+                                <strong>Step 7: 攔截帳密!</strong><span>Credential Harvester</span>
+                            </button>
+                        </div>
+
+                        <div class="sim-terminal">
+                            <div class="term-body" id="term-body">
+                                <div>Kali GNU/Linux Rolling [Version 2024.1]</div>
+                                <br>
+                                <div id="prompt-line" style="display:flex; flex-wrap:wrap;">
+                                    <span class="prompt" id="prompt-text">root@kali:~#</span>
+                                    <span id="typing-area"></span><span class="cursor"></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="sim-decoder">
+                            <div class="decoder-header"><i class="fas fa-clipboard-list"></i> 攻擊步驟解析</div>
+                            <div class="decoder-content" id="decoder-content">
+                                <div style="text-align: center; color: #666; margin-top: 100px;">
+                                    <i class="fas fa-user-secret fa-3x" style="margin-bottom: 20px;"></i><br>
+                                    駭客準備中<br>點擊左側 <strong>Step 1</strong> 開始操作
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </article>
+        </div>
+
+        <div class="grid-layout">
+            
+            <div class="content-left">
+                <article id="vectors">
+                    <h2><i class="fas fa-project-diagram"></i> 常見攻擊向量</h2>
+                    <p>SET 提供了多種攻擊手法，以下是選單中最常用的幾個：</p>
+                    
+                    <table>
+                        <thead>
+                            <tr>
+                                <th width="25%">攻擊名稱</th>
+                                <th>原理與說明</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><strong>Spear-Phishing</strong></td>
+                                <td><span style="color:#00ff00;">魚叉式釣魚</span>。發送帶有惡意附件（如 PDF、Word）的 Email 給特定目標。</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Website Vectors</strong></td>
+                                <td><span style="color:#00ff00;">網站攻擊</span>。包含 Java Applet 攻擊、網站複製、憑證竊取。</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Credential Harvester</strong></td>
+                                <td><span style="color:#00ff00;">憑證收割機</span>。複製一個像 Gmail 或公司登入頁面的網站，誘騙使用者輸入帳密。</td>
+                            </tr>
+                            <tr>
+                                <td><strong>QRCode Generator</strong></td>
+                                <td>產生一個指向惡意網站的 QR Code，貼在實體世界讓人掃描。</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </article>
+            </div>
+
+            <div class="content-right">
+                <article id="ethics">
+                    <h2><i class="fas fa-gavel"></i> 法律與道德</h2>
+                    
+                    <div class="danger-box">
+                        <h3><i class="fas fa-exclamation-triangle"></i> 詐欺與偽造</h3>
+                        <p>製作釣魚網站竊取他人帳號，違反<strong>刑法第 339-4 條 (加重詐欺罪)</strong> 及 <strong>358 條 (妨害電腦使用)</strong>。</p>
+                    </div>
+
+                    <div style="margin-bottom:20px;">
+                        <h4 style="color:#fff; margin-bottom:10px;">合法使用原則</h4>
+                        <ul>
+                            <li>企業授權的員工資安演練 (Phishing Campaign)</li>
+                            <li>資安意識教育展示</li>
+                        </ul>
+                    </div>
+
+                    <div class="info-box" style="text-align: center;">
+                        <h4 style="margin-top: 0; color: #fff;">資安倫理</h4>
+                        <p>不要欺騙無辜的人。</p>
+                        <p style="color: #00ff00; font-weight: bold; margin-top: 10px;">
+                            Verify before you Trust.
+                        </p>
+                    </div>
+                </article>
+            </div>
+        </div>
+
+    </div>
+
+    <footer>
+        <div class="container">
+            <p>© 2025 SET 社交工程工具包 | 僅供資安教育用途</p>
+            <p>請務必遵守法律與道德規範</p>
+        </div>
+    </footer>
+
+    <script>
+        const termBody = document.getElementById('term-body');
+        const promptLine = document.getElementById('prompt-line');
+        const promptText = document.getElementById('prompt-text');
+        const typingArea = document.getElementById('typing-area');
+        const decoderContent = document.getElementById('decoder-content');
+        
+        let isTyping = false;
+        let typingTimer = null;
+        let currentPromptStr = "root@kali:~#";
+
+        // 模擬數據
+        const scenarios = {
+            1: {
+                cmd: "setoolkit",
+                info: `
+                    <div class="explanation-card">
+                        <h4>Step 1: 啟動 SET</h4>
+                        <p style="color:#ccc;">啟動 Social-Engineer Toolkit。你將會看到經典的 ASCII Banner。</p>
+                        <p style="color:#ccc;">這與其他工具不同，它沒有複雜的指令，而是問你：「你想做什麼？」</p>
+                        <div class="analogy">
+                            <strong>💡 白話文比喻：</strong>你走進了一家「詐騙集團專賣店」，店員拿出一本目錄，問你想買哪一種騙術。
+                        </div>
+                    </div>`,
+                output: [
+                    { text: "Do you agree to the terms of service? [y/n]: y", wait: 500 },
+                    { html: `<pre style="color:#00ff00; font-size:0.7rem; line-height:1;">
+           .
+          .'                    
+         /             
+        /      /          
+       /      /|            
+      /      / |      
+     /      /  |          
+    /      /   |       
+   /      /    |           
+  /      /     |          
+ /      /      |          
+/______/_______| 
+   [ Social-Engineer Toolkit (SET) ]
+</pre>`, wait: 1000 },
+                    { text: " Select from the menu:", color: "#fff", wait: 1200 },
+                    { text: "   1) Social-Engineering Attacks", color: "#fff", wait: 1300 },
+                    { text: "   2) Penetration Testing (Fast-Track)", color: "#fff", wait: 1400 },
+                    { text: "   3) Third Party Modules", color: "#fff", wait: 1500 },
+                    { text: "   4) Update the Social-Engineer Toolkit", color: "#fff", wait: 1600 },
+                    { text: "   99) Exit the Social-Engineer Toolkit", color: "#fff", wait: 1700 },
+                    { text: "set> ", type: "prompt", wait: 1800 }
+                ]
+            },
+            2: {
+                cmd: "1",
+                info: `
+                    <div class="explanation-card">
+                        <h4>Step 2: 選擇社交工程攻擊</h4>
+                        <p style="color:#ccc;">我們選擇選單中的 <strong>1) Social-Engineering Attacks</strong>。</p>
+                        <p style="color:#ccc;">這會進入針對「人」的攻擊模組選單。</p>
+                    </div>`,
+                output: [
+                    { text: "\n Select from the menu:", color: "#fff", wait: 300 },
+                    { text: "   1) Spear-Phishing Attack Vectors", color: "#fff", wait: 400 },
+                    { text: "   2) Website Attack Vectors", color: "#fff", wait: 500 },
+                    { text: "   3) Infectious Media Generator", color: "#fff", wait: 600 },
+                    { text: "   4) Create a Payload and Listener", color: "#fff", wait: 700 },
+                    { text: "   99) Return to Main Menu", color: "#fff", wait: 800 },
+                    { text: "set:social-engineering> ", type: "prompt", wait: 1000 }
+                ]
+            },
+            3: {
+                cmd: "2",
+                info: `
+                    <div class="explanation-card">
+                        <h4>Step 3: 選擇網站攻擊向量</h4>
+                        <p style="color:#ccc;">選擇 <strong>2) Website Attack Vectors</strong>。</p>
+                        <p style="color:#ccc;">這個分類包含了所有透過「網頁」進行的攻擊，例如假網站、瀏覽器漏洞等。</p>
+                    </div>`,
+                output: [
+                    { text: "\n   1) Java Applet Attack Method", color: "#fff", wait: 300 },
+                    { text: "   2) Metasploit Browser Exploit Method", color: "#fff", wait: 400 },
+                    { text: "   3) Credential Harvester Attack Method", color: "#fff", wait: 500 },
+                    { text: "   4) Tabnabbing Attack Method", color: "#fff", wait: 600 },
+                    { text: "   99) Return to Main Menu", color: "#fff", wait: 700 },
+                    { text: "set:vectors> ", type: "prompt", wait: 900 }
+                ]
+            },
+            4: {
+                cmd: "3",
+                info: `
+                    <div class="explanation-card">
+                        <h4>Step 4: 選擇憑證收割機</h4>
+                        <p style="color:#ccc;">選擇 <strong>3) Credential Harvester Attack Method</strong>。</p>
+                        <p style="color:#ccc;">這就是最經典的「釣魚」。原理是偽造一個登入頁面，當使用者輸入帳密按送出時，帳密會被傳送到我們這裡。</p>
+                    </div>`,
+                output: [
+                    { text: "\n   1) Web Templates", color: "#fff", wait: 300 },
+                    { text: "   2) Site Cloner", color: "#fff", wait: 400 },
+                    { text: "   3) Custom Import", color: "#fff", wait: 500 },
+                    { text: "   99) Return to Main Menu", color: "#fff", wait: 600 },
+                    { text: "set:payloads> ", type: "prompt", wait: 800 }
+                ]
+            },
+            5: {
+                cmd: "2",
+                info: `
+                    <div class="explanation-card">
+                        <h4>Step 5: 選擇網站複製器 (Site Cloner)</h4>
+                        <p style="color:#ccc;">選擇 <strong>2) Site Cloner</strong>。</p>
+                        <p style="color:#ccc;">這個功能可以自動下載你指定的任何網站（如 FB 登入頁），並將其修改為釣魚頁面。</p>
+                        <div class="analogy">
+                            <strong>💡 白話文比喻：</strong>你拿著影印機，把銀行櫃檯的表格影印了一份一模一樣的，但是把「回函地址」改成了你家。
+                        </div>
+                    </div>`,
+                output: [
+                    { text: "\nIP address for the POST back in Harvester/Tabnabbing [192.168.1.100]:", wait: 500 },
+                    { text: "set:payloads> ", type: "prompt", wait: 700 }
+                ]
+            },
+            6: {
+                cmd: "192.168.1.100",
+                info: `
+                    <div class="explanation-card">
+                        <h4>Step 6: 設定監聽 IP 與目標網址</h4>
+                        <p style="color:#ccc;">我們設定自己的 IP (192.168.1.100) 來接收帳密。</p>
+                        <p style="color:#ccc;">然後設定要複製的網址：<code>https://accounts.google.com</code>。</p>
+                    </div>`,
+                output: [
+                    { text: "Enter the url to clone: https://accounts.google.com", wait: 300 },
+                    { text: "[*] Cloning the website: https://accounts.google.com", color: "#00ff00", wait: 800 },
+                    { text: "[*] This may take a few seconds...", wait: 1200 },
+                    { text: "[*] The best way to use this is if username and password fields are present.", wait: 1500 },
+                    { text: "[*] Credential Harvester is running on port 80...", color: "#00ff00", wait: 1800 },
+                    { text: "[*] Information will be displayed to you as it arrives below:", wait: 2000 },
+                    { text: "", type: "prompt", wait: 2200 } // Empty prompt implies waiting
+                ]
+            },
+            7: {
+                cmd: "", // 被動
+                info: `
+                    <div class="explanation-card" style="border-color:#ff3333; background:rgba(255,0,0,0.1);">
+                        <h4 style="color:#ff3333;">Step 7: 成功攔截帳密!</h4>
+                        <p style="color:#ccc;">受害者上鉤了！他打開了你發給他的假連結，輸入了帳密。</p>
+                        <p style="color:#ccc;">看！終端機上跳出了紅色的 <strong>POSSIBLE USERNAME FIELD FOUND</strong>。</p>
+                        <div class="analogy">
+                            <strong>⚠️ 震撼教育：</strong>這就是為什麼不能隨便點連結。從外觀看，那个網站跟真的一模一樣，但你的密碼已經在駭客的終端機上了。
+                        </div>
+                    </div>`,
+                output: [
+                    { text: "192.168.1.150 - - [20/May/2024 10:00:00] \"GET / HTTP/1.1\" 200 -", wait: 500 },
+                    { text: "[*] WE GOT A HIT! Printing the output:", color: "#00ff00", wait: 1500 },
+                    { text: "POSSIBLE USERNAME FIELD FOUND: email=victim@gmail.com", color: "#ff3333", style: "font-weight:bold;", wait: 2000 },
+                    { text: "POSSIBLE PASSWORD FIELD FOUND: password=MySecretPass123", color: "#ff3333", style: "font-weight:bold;", wait: 2200 },
+                    { text: "PARAM: continue=https://accounts.google.com/manage", wait: 2500 },
+                    { text: "[*] When you're finished, hit control-c to generate a report.", wait: 3000 }
+                ]
+            }
+        };
+
+        function runStep(id) {
+            if (isTyping) return;
+            isTyping = true;
+            
+            const data = scenarios[id];
+            document.querySelectorAll('.sim-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById('btn-' + id).classList.add('active');
+
+            if (id === 7) {
+                processOutput(data);
+            } else {
+                typeCommand(data.cmd, () => {
+                    addHistoryLog(currentPromptStr, data.cmd);
+                    processOutput(data);
+                });
+            }
+        }
+
+        function processOutput(data) {
+            decoderContent.innerHTML = data.info;
+            let maxWait = 0;
+            if(data.output) {
+                data.output.forEach(line => {
+                    setTimeout(() => {
+                        if(line.type === 'prompt') {
+                            updatePrompt(line.text);
+                        } else if (line.html) {
+                            printHtml(line.html);
+                        } else {
+                            printText(line.text, line.color, line.style);
+                        }
+                    }, line.wait);
+                    if(line.wait > maxWait) maxWait = line.wait;
+                });
+            }
+            setTimeout(() => {
+                isTyping = false;
+            }, maxWait + 200);
+        }
+
+        function typeCommand(text, callback) {
+            typingArea.textContent = "";
+            let i = 0;
+            typingTimer = setInterval(() => {
+                typingArea.textContent += text.charAt(i);
+                i++;
+                if (i >= text.length) {
+                    clearInterval(typingTimer);
+                    setTimeout(() => {
+                        typingArea.textContent = "";
+                        callback();
+                    }, 300);
+                }
+            }, 30);
+        }
+
+        function addHistoryLog(p, c) {
+            const div = document.createElement('div');
+            let pStyle = "color:#fff; font-weight:bold;"; 
+            if(p.includes("set")) pStyle = "color:#fff; text-decoration:underline;";
+            
+            div.innerHTML = `<span style="${pStyle} margin-right:5px;">${p}</span> ${c}`;
+            termBody.insertBefore(div, promptLine);
+            scrollToBottom();
+        }
+
+        function printText(text, color, style) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            if(color) div.style.color = color;
+            if(style) div.setAttribute('style', `color:${color}; ${style}`);
+            termBody.insertBefore(div, promptLine);
+            scrollToBottom();
+        }
+
+        function printHtml(html) {
+            const div = document.createElement('div');
+            div.innerHTML = html;
+            termBody.insertBefore(div, promptLine);
+            scrollToBottom();
+        }
+
+        function updatePrompt(text) {
+            currentPromptStr = text;
+            if (text === "") {
+                promptLine.style.display = "none";
+            } else {
+                promptLine.style.display = "flex";
+                promptText.textContent = text;
+                promptText.className = text.includes("set") ? "prompt set-prompt" : "prompt";
+            }
+            scrollToBottom();
+        }
+
+        function scrollToBottom() {
+            termBody.scrollTop = termBody.scrollHeight;
+        }
+
+        function resetSim() {
+            if(isTyping) return;
+            const logs = termBody.querySelectorAll('div:not(#prompt-line)');
+            for(let i=1; i<logs.length; i++) logs[i].remove(); // 保留歡迎行
+            
+            const welcome1 = document.createElement('div');
+            welcome1.textContent = "Kali GNU/Linux Rolling [Version 2024.1]";
+            termBody.insertBefore(welcome1, promptLine);
+            const br = document.createElement('div');
+            br.innerHTML = "<br>";
+            termBody.insertBefore(br, promptLine);
+
+            promptLine.style.display = "flex";
+            updatePrompt("root@kali:~#");
+            typingArea.textContent = "";
+
+            decoderContent.innerHTML = `
+                <div style="text-align: center; color: #666; margin-top: 100px;">
+                    <i class="fas fa-user-secret fa-3x" style="margin-bottom: 20px;"></i><br>
+                    駭客準備中<br>點擊左側 <strong>Step 1</strong> 開始操作
+                </div>`;
+            document.querySelectorAll('.sim-btn').forEach(b => b.classList.remove('active'));
+        }
+    </script>
+</body>
+</html>
