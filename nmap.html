@@ -3,559 +3,642 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Nmap 網路掃描工具詳解 | Kali Linux 工具指南</title>
-    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/remixicon@2.5.0/fonts/remixicon.css" rel="stylesheet">
+    <title>Nmap 新手實驗室：安全學習網路偵查</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
-        body { 
-            background-color: #000; 
-            color: #e6f1ff;
-            font-family: 'Inter', 'Noto Sans TC', sans-serif;
-            margin: 0;
-            overflow-x: hidden;
+        /* --- 1. 原版美術風格 (Cyberpunk/Neon) --- */
+        
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body { line-height: 1.6; color: #e0e0e0; background-color: #0d1117; position: relative; overflow-x: hidden; }
+
+        /* 動態背景 */
+        .cyber-background {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1;
+            background: 
+                radial-gradient(circle at 20% 80%, rgba(0, 150, 255, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 80% 20%, rgba(255, 45, 85, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 40% 40%, rgba(76, 0, 255, 0.1) 0%, transparent 50%);
+            animation: backgroundShift 20s ease-in-out infinite;
         }
-        #digital-rain {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: -1;
-            opacity: 0.5;
+        .grid-lines {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background-image: 
+                linear-gradient(rgba(0, 150, 255, 0.1) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0, 150, 255, 0.1) 1px, transparent 1px);
+            background-size: 50px 50px; z-index: -1;
+            animation: gridMove 20s linear infinite;
         }
-        .content {
-            position: relative;
-            z-index: 10;
+        .scan-line {
+            position: fixed; top: 0; left: 0; width: 100%; height: 2px;
+            background: linear-gradient(90deg, transparent, rgba(0, 150, 255, 0.8), transparent);
+            animation: scan 3s linear infinite; z-index: -1;
         }
-        .section-card {
-            background: rgba(15, 25, 50, 0.7);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(0, 255, 255, 0.2);
-            transition: all 0.3s ease;
+
+        @keyframes backgroundShift { 0%, 100% { background-position: 0% 0%, 100% 100%; } 50% { background-position: 100% 100%, 0% 0%; } }
+        @keyframes gridMove { 0% { transform: translate(0, 0); } 100% { transform: translate(50px, 50px); } }
+        @keyframes scan { 0% { top: 0%; } 100% { top: 100%; } }
+
+        /* 容器 */
+        .container { width: 90%; max-width: 1200px; margin: 0 auto; padding: 20px; position: relative; }
+
+        /* 頁首 */
+        header {
+            background: rgba(13, 17, 23, 0.9); padding: 4rem 0; text-align: center; margin-bottom: 2rem;
+            border-radius: 10px; border: 1px solid #30363d; position: relative; overflow: hidden;
         }
-        .section-card:hover {
-            box-shadow: 0 10px 30px rgba(0,255,255,0.3);
+        header::before {
+            content: ''; position: absolute; top: 0; left: -100%; width: 100%; height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(0, 150, 255, 0.2), transparent);
+            animation: headerShine 3s infinite;
         }
-        .command-box {
-            background: rgba(0, 20, 40, 0.8);
-            border-left: 3px solid #00ffff;
+        @keyframes headerShine { 0% { left: -100%; } 100% { left: 100%; } }
+        header h1 {
+            font-size: 2.5rem; margin-bottom: 1rem;
+            background: linear-gradient(135deg, #0096ff, #00ffaa);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
         }
-        .feature-item {
-            border-left: 2px solid #00ffff;
-            transition: all 0.3s ease;
+        header p { font-size: 1.2rem; max-width: 800px; margin: 0 auto; color: #8b949e; }
+
+        /* 導覽列 */
+        nav {
+            background: rgba(13, 17, 23, 0.95); padding: 1rem 0; margin-bottom: 2rem;
+            border-radius: 8px; border: 1px solid #30363d; position: sticky; top: 0; z-index: 100;
         }
-        .feature-item:hover {
-            background: rgba(0, 255, 255, 0.1);
+        nav ul { display: flex; justify-content: center; list-style: none; flex-wrap: wrap; }
+        nav li { margin: 0 1rem; }
+        nav a {
+            text-decoration: none; color: #8b949e; font-weight: 500; padding: 0.5rem 1rem;
+            border-radius: 4px; transition: all 0.3s ease; border: 1px solid transparent;
         }
-        .nav-button {
-            transition: all 0.3s ease;
-            opacity: 0.8;
+        nav a:hover { background-color: #1c2128; color: #0096ff; border-color: #0096ff; }
+
+        /* --- 佈局：上層左右欄，中層全寬，下層左右欄 --- */
+        .grid-layout { display: grid; grid-template-columns: 2fr 1fr; gap: 2rem; margin-bottom: 2rem; }
+        .full-width { width: 100%; margin-bottom: 2rem; }
+        
+        @media (max-width: 900px) { .grid-layout { grid-template-columns: 1fr; } }
+
+        /* 區塊樣式 */
+        article { background: rgba(13, 17, 23, 0.9); padding: 2rem; border-radius: 8px; border: 1px solid #30363d; margin-bottom: 2rem; }
+        
+        h2 { color: #0096ff; margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 2px solid #30363d; }
+        h3 { color: #00ffaa; margin: 1.5rem 0 1rem 0; }
+        p, li { margin-bottom: 0.8rem; color: #e0e0e0; }
+        ul, ol { margin-left: 1.5rem; margin-bottom: 1.5rem; }
+
+        /* 側邊欄 */
+        aside { 
+            background: rgba(13, 17, 23, 0.9); padding: 1.5rem; border-radius: 8px; border: 1px solid #30363d; 
+            height: fit-content; position: sticky; top: 100px;
         }
-        .nav-button:hover {
-            opacity: 1;
-            text-shadow: 0 0 10px rgba(0, 255, 255, 0.7);
+
+        /* 提示框 */
+        .info-box { background: rgba(0, 150, 255, 0.1); border-left: 4px solid #0096ff; padding: 1rem; margin-bottom: 1.5rem; }
+        .success-box { background: rgba(0, 255, 170, 0.1); border-left: 4px solid #00ffaa; padding: 1rem; margin-bottom: 1.5rem; }
+        .danger-box { background: rgba(255, 45, 85, 0.1); border-left: 4px solid #ff2d55; padding: 1rem; margin-bottom: 1.5rem; }
+
+        /* --- 模擬器樣式 (全寬版) --- */
+        .simulator-wrapper {
+            background: rgba(28, 33, 40, 0.9); border: 2px solid #30363d; border-radius: 8px; overflow: hidden;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.6); display: flex; flex-direction: column; height: 750px;
         }
-        .difficulty-badge {
-            display: inline-block;
-            padding: 0.25rem 0.75rem;
-            border-radius: 9999px;
-            font-size: 0.875rem;
-            font-weight: 500;
+        .sim-header { 
+            background: #161b22; padding: 10px 15px; border-bottom: 1px solid #30363d; 
+            display: flex; justify-content: space-between; align-items: center; color: #8b949e; font-size: 0.85rem;
         }
-        .difficulty-badge.medium {
-            background-color: rgba(250, 204, 21, 0.2);
-            color: #facc15;
+        
+        .sim-grid { display: grid; grid-template-columns: 200px 1fr 300px; flex: 1; overflow: hidden; }
+        
+        /* 控制區 */
+        .sim-controls { background: #0d1117; border-right: 1px solid #30363d; padding: 15px; overflow-y: auto; }
+        .sim-btn {
+            width: 100%; padding: 12px; margin-bottom: 10px; background: rgba(255,255,255,0.03); border: 1px solid #30363d;
+            color: #8b949e; text-align: left; cursor: pointer; border-radius: 4px; transition: all 0.2s;
         }
+        .sim-btn:hover { background: rgba(255,255,255,0.08); color: #fff; }
+        /* 多色按鈕樣式 */
+        .sim-btn.active { color: #fff; background: rgba(255,255,255,0.1); }
+        .sim-btn.active.btn-ping { border-left: 3px solid #00ffaa; border-color: #00ffaa; }
+        .sim-btn.active.btn-fast { border-left: 3px solid #ffab00; border-color: #ffab00; }
+        .sim-btn.active.btn-ver { border-left: 3px solid #29c4ff; border-color: #29c4ff; }
+        .sim-btn.active.btn-os { border-left: 3px solid #9d4edd; border-color: #9d4edd; }
+        .sim-btn.active.btn-syn { border-left: 3px solid #ff2d55; border-color: #ff2d55; }
+        .sim-btn.active.btn-vuln { border-left: 3px solid #ff6b35; border-color: #ff6b35; }
+
+        /* 終端機 */
+        .sim-terminal { background: #000; display: flex; flex-direction: column; font-family: 'Courier New', monospace; position: relative; }
+        .term-body { flex: 1; padding: 15px; overflow-y: auto; color: #ccc; font-size: 0.95rem; white-space: pre-wrap; }
+        .prompt { color: #00ffaa; font-weight: bold; margin-right: 8px; }
+        .cursor { display: inline-block; width: 8px; height: 16px; background: #fff; animation: blink 1s infinite; vertical-align: text-bottom; }
+
+        /* 解析區 */
+        .sim-decoder { background: #161b22; border-left: 1px solid #30363d; display: flex; flex-direction: column; }
+        .decoder-header { padding: 12px; background: #0d1117; border-bottom: 1px solid #30363d; color: #29c4ff; font-weight: bold; font-size: 0.95rem; }
+        .decoder-content { padding: 20px; flex: 1; overflow-y: auto; }
+        .explanation-card { background: rgba(41, 196, 255, 0.05); border-left: 3px solid #29c4ff; padding: 15px; border-radius: 4px; animation: slideIn 0.3s ease; }
+        .explanation-card h4 { color: #fff; font-size: 1.1rem; margin-bottom: 8px; }
+        .analogy { margin-top: 10px; padding: 8px; background: rgba(255, 171, 0, 0.1); border-radius: 4px; color: #ffab00; font-style: italic; }
+
+        /* 重置按鈕 */
+        .reset-btn {
+            background: transparent; border: 1px solid #ff2d55; color: #ff2d55; 
+            padding: 2px 10px; font-size: 0.75rem; border-radius: 3px; cursor: pointer; transition: 0.3s;
+        }
+        .reset-btn:hover { background: #ff2d55; color: white; }
+
+        /* 端口狀態卡片 */
+        .port-status-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-top: 20px; }
+        .status-card { padding: 15px; border-radius: 6px; border: 1px solid #30363d; background: rgba(255,255,255,0.02); }
+        .status-open { border-left: 4px solid #00ffaa; }
+        .status-closed { border-left: 4px solid #ff2d55; }
+        .status-filtered { border-left: 4px solid #ffab00; }
+
+        /* 表格 */
+        table { width: 100%; border-collapse: collapse; margin: 1.5rem 0; }
+        th, td { padding: 0.75rem; text-align: left; border-bottom: 1px solid #30363d; }
+        th { background-color: rgba(0, 150, 255, 0.1); color: #0096ff; }
+
+        @keyframes blink { 50% { opacity: 0; } }
+        @keyframes slideIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        
+        @media (max-width: 900px) { .sim-grid { grid-template-columns: 1fr; grid-template-rows: auto 300px auto; } .sim-decoder { border-left: none; border-top: 1px solid #30363d; height: 300px; } }
     </style>
 </head>
 <body>
-    <canvas id="digital-rain"></canvas>
-    <div class="container mx-auto px-4 py-8 content">
-        <!-- 導航按鈕 -->
-        <div class="flex justify-between mb-8">
-            <a href="index.html" class="nav-button flex items-center text-cyan-300">
-                <i class="ri-arrow-left-line mr-2"></i> 返回工具列表
-            </a>
-            <span class="difficulty-badge medium">中等難度</span>
-        </div>
 
-        <!-- 標題區 -->
-        <header class="text-center mb-12">
-            <div class="flex justify-center items-center mb-4">
-                <i class="ri-search-line text-5xl text-cyan-300 mr-4"></i>
-                <h1 class="text-4xl font-bold text-cyan-300">Nmap 網路掃描工具</h1>
+    <div class="cyber-background"></div>
+    <div class="grid-lines"></div>
+    <div class="scan-line"></div>
+
+    <header>
+        <div class="container">
+            <h1>Nmap實驗室：安全學習網路偵查</h1>
+            <p>專為學生與資安新手設計的互動學習平台 • 在虛擬環境中安全練習</p>
+        </div>
+    </header>
+
+    <nav>
+        <div class="container">
+            <ul>
+                <li><a href="#intro">基礎介紹</a></li>
+                <li><a href="#env">實驗環境</a></li>
+                <li><a href="#simulation">互動實驗室</a></li>
+                <li><a href="#ports">結果解析</a></li>
+                <li><a href="#ethics">法律道德</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <div class="container">
+        
+        <div class="grid-layout">
+            <div class="content-left">
+                <article id="intro">
+                    <h2><i class="fas fa-info-circle"></i> 什麼是 Nmap？</h2>
+                    <p>Nmap (Network Mapper) 就像網路世界的<strong>「地圖繪製工具」</strong>，可以幫你發現：</p>
+                    <ul>
+                        <li>網路中有哪些電腦（主機）</li>
+                        <li>這些電腦開放了哪些「門」（端口）</li>
+                        <li>門後面是什麼「服務」（HTTP、SSH、FTP 等）</li>
+                        <li>電腦用的是什麼「系統」（Windows、Linux 等）</li>
+                    </ul>
+                </article>
+
+                <article id="env">
+                    <h2><i class="fas fa-server"></i> 我們的實驗室環境</h2>
+                    <div class="success-box">
+                        <p>為了安全學習，我們使用虛擬實驗室：</p>
+                        <ul>
+                            <li><strong>攻擊機：</strong> Kali Linux (IP: 192.168.1.100)</li>
+                            <li><strong>目標機：</strong> OWASP 靶機 (IP: 192.168.1.150)</li>
+                            <li><strong>網路：</strong> 虛擬 NAT 網路</li>
+                        </ul>
+                        <p style="margin-top: 10px; font-weight: bold; color: #00ffaa;">
+                            <i class="fas fa-shield-alt"></i> 100% 合法安全：完全隔離的測試環境
+                        </p>
+                    </div>
+                </article>
             </div>
-            <p class="text-xl max-w-3xl mx-auto">
-                全球最著名的網路掃描和安全評估工具，用於探索網路、安全審計和滲透測試
-            </p>
-        </header>
 
-        <!-- 快速導航 -->
-        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-12">
-            <a href="#intro" class="section-card p-4 text-center rounded-lg">
-                <i class="ri-information-line text-2xl text-cyan-300 mb-2"></i>
-                <h3 class="font-semibold">工具介紹</h3>
-            </a>
-            <a href="#features" class="section-card p-4 text-center rounded-lg">
-                <i class="ri-star-line text-2xl text-cyan-300 mb-2"></i>
-                <h3 class="font-semibold">主要功能</h3>
-            </a>
-            <a href="#usage" class="section-card p-4 text-center rounded-lg">
-                <i class="ri-terminal-line text-2xl text-cyan-300 mb-2"></i>
-                <h3 class="font-semibold">使用範例</h3>
-            </a>
-            <a href="#resources" class="section-card p-4 text-center rounded-lg">
-                <i class="ri-book-line text-2xl text-cyan-300 mb-2"></i>
-                <h3 class="font-semibold">學習資源</h3>
-            </a>
-        </div>
-
-        <!-- 工具介紹 -->
-        <section id="intro" class="section-card p-8 rounded-lg mb-12">
-            <h2 class="text-3xl font-bold text-cyan-300 mb-6 flex items-center">
-                <i class="ri-information-line mr-3"></i>
-                工具介紹
-            </h2>
-            <div class="grid md:grid-cols-2 gap-8">
+            <aside>
+                <div style="margin-bottom: 30px;">
+                    <h3 style="margin-top:0; border-bottom:1px solid #30363d; padding-bottom:10px; font-size:1.1rem;">
+                        <i class="fas fa-laptop-code"></i> 實驗需求
+                    </h3>
+                    <ul style="list-style: none; margin: 0; padding: 0;">
+                        <li style="padding: 10px 0; border-bottom: 1px solid #30363d;">
+                            <i class="fas fa-check" style="color:#00ffaa; margin-right:8px;"></i> Kali Linux (攻擊)
+                        </li>
+                        <li style="padding: 10px 0; border-bottom: 1px solid #30363d;">
+                            <i class="fas fa-check" style="color:#00ffaa; margin-right:8px;"></i> OWASP 靶機 (目標)
+                        </li>
+                        <li style="padding: 10px 0; border-bottom: 1px solid #30363d;">
+                            <i class="fas fa-check" style="color:#00ffaa; margin-right:8px;"></i> VirtualBox
+                        </li>
+                        <li style="padding: 10px 0;">
+                            <i class="fas fa-exclamation-circle" style="color:#ffab00; margin-right:8px;"></i> Host-only 網路
+                        </li>
+                    </ul>
+                </div>
+                
                 <div>
-                    <p class="mb-4">
-                        Nmap (Network Mapper) 是一個開源的網路探測和安全審計工具，由 Gordon Lyon (暱稱 Fyodor) 開發。
-                    </p>
-                    <p class="mb-4">
-                        它被設計用來快速掃描大型網路，也可以對單個主機進行掃描。Nmap 使用原始 IP 封包來確定網路上有哪些主機可用、這些主機提供什麼服務（應用程式名稱和版本）、運行什麼操作系統（包括版本信息）、使用什麼類型的封包過濾器/防火牆，以及許多其他特性。
-                    </p>
-                    <p>
-                        Nmap 被廣泛應用於網路盤點、管理服務升級計劃和監控主機或服務運行狀況等任務。
-                    </p>
-                </div>
-                <div class="bg-gray-900 p-6 rounded-lg">
-                    <h3 class="text-xl font-semibold text-cyan-300 mb-4 flex items-center">
-                        <i class="ri-lightbulb-flash-line mr-2"></i>
-                        技術亮點
+                    <h3 style="margin-top:0; border-bottom:1px solid #30363d; padding-bottom:10px; font-size:1.1rem;">
+                        <i class="fas fa-book"></i> 章節導覽
                     </h3>
-                    <ul class="space-y-3">
-                        <li class="flex items-start">
-                            <i class="ri-checkbox-circle-line text-cyan-300 mt-1 mr-2"></i>
-                            <span>支援多種掃描技術 (TCP SYN, ACK, UDP, ICMP 等)</span>
-                        </li>
-                        <li class="flex items-start">
-                            <i class="ri-checkbox-circle-line text-cyan-300 mt-1 mr-2"></i>
-                            <span>強大的腳本引擎 (NSE) 用於高級檢測</span>
-                        </li>
-                        <li class="flex items-start">
-                            <i class="ri-checkbox-circle-line text-cyan-300 mt-1 mr-2"></i>
-                            <span>跨平台支援 (Windows, Linux, Mac OS X)</span>
-                        </li>
-                        <li class="flex items-start">
-                            <i class="ri-checkbox-circle-line text-cyan-300 mt-1 mr-2"></i>
-                            <span>可生成多種格式的掃描報告</span>
-                        </li>
+                    <ul style="list-style: none; margin: 0; padding: 0;">
+                        <li style="padding: 8px 0;"><a href="#intro" style="color:#0096ff; text-decoration:none;">1. 基礎介紹</a></li>
+                        <li style="padding: 8px 0;"><a href="#env" style="color:#0096ff; text-decoration:none;">2. 實驗環境</a></li>
+                        <li style="padding: 8px 0;"><a href="#simulation" style="color:#0096ff; text-decoration:none;">3. 互動實驗室</a></li>
+                        <li style="padding: 8px 0;"><a href="#ports" style="color:#0096ff; text-decoration:none;">4. 結果解析</a></li>
+                        <li style="padding: 8px 0;"><a href="#ethics" style="color:#0096ff; text-decoration:none;">5. 法律道德</a></li>
                     </ul>
                 </div>
-            </div>
-        </section>
+            </aside>
+        </div>
 
-        <!-- 主要功能 -->
-        <section id="features" class="section-card p-8 rounded-lg mb-12">
-            <h2 class="text-3xl font-bold text-cyan-300 mb-6 flex items-center">
-                <i class="ri-star-line mr-3"></i>
-                主要功能
-            </h2>
-            <div class="grid md:grid-cols-2 gap-6">
-                <!-- 功能 1 -->
-                <div class="feature-item p-4 rounded">
-                    <h3 class="text-xl font-semibold text-cyan-300 mb-2 flex items-center">
-                        <i class="ri-map-pin-line mr-2"></i>
-                        主機發現
-                    </h3>
-                    <p>
-                        識別網路上的活動主機，即使這些主機有防火牆保護。Nmap 可以通過多種技術（如 ARP 掃描、ICMP ping、TCP/UDP ping 等）來發現主機。
-                    </p>
-                </div>
+        <div class="full-width">
+            <article id="simulation" style="border: 2px solid #00ffaa; box-shadow: 0 0 20px rgba(0, 255, 170, 0.1);">
+                <h2><i class="fas fa-laptop-code"></i> 互動實戰實驗室</h2>
+                <p>Nmap 參數眼花撩亂？別擔心，點擊左側步驟，我們一步步掃描那台 <strong>192.168.1.150</strong> 的靶機。</p>
                 
-                <!-- 功能 2 -->
-                <div class="feature-item p-4 rounded">
-                    <h3 class="text-xl font-semibold text-cyan-300 mb-2 flex items-center">
-                        <i class="ri-plug-line mr-2"></i>
-                        端口掃描
-                    </h3>
-                    <p>
-                        檢測目標主機上的開放端口，支援多種掃描技術（如 SYN 掃描、Connect 掃描、UDP 掃描等），可以繞過簡單的防火牆規則。
-                    </p>
-                </div>
-                
-                <!-- 功能 3 -->
-                <div class="feature-item p-4 rounded">
-                    <h3 class="text-xl font-semibold text-cyan-300 mb-2 flex items-center">
-                        <i class="ri-barcode-line mr-2"></i>
-                        服務版本檢測
-                    </h3>
-                    <p>
-                        確定開放端口上運行的服務及其版本號，這對於識別潛在漏洞至關重要。
-                    </p>
-                </div>
-                
-                <!-- 功能 4 -->
-                <div class="feature-item p-4 rounded">
-                    <h3 class="text-xl font-semibold text-cyan-300 mb-2 flex items-center">
-                        <i class="ri-computer-line mr-2"></i>
-                        操作系統檢測
-                    </h3>
-                    <p>
-                        通過分析 TCP/IP 堆棧指紋來推斷目標主機的操作系統類型，準確識別數百種操作系統。
-                    </p>
-                </div>
-                
-                <!-- 功能 5 -->
-                <div class="feature-item p-4 rounded">
-                    <h3 class="text-xl font-semibold text-cyan-300 mb-2 flex items-center">
-                        <i class="ri-code-line mr-2"></i>
-                        Nmap 腳本引擎 (NSE)
-                    </h3>
-                    <p>
-                        使用 Lua 編寫的腳本進行高級檢測，如漏洞檢測、後門檢測、服務枚舉等。Nmap 包含數百個實用腳本。
-                    </p>
-                </div>
-                
-                <!-- 功能 6 -->
-                <div class="feature-item p-4 rounded">
-                    <h3 class="text-xl font-semibold text-cyan-300 mb-2 flex items-center">
-                        <i class="ri-file-text-line mr-2"></i>
-                        結果輸出
-                    </h3>
-                    <p>
-                        支援多種輸出格式（普通文本、XML、grepable 格式等），便於結果分析和報告生成。
-                    </p>
-                </div>
-            </div>
-        </section>
+                <div class="simulator-wrapper">
+                    <div class="sim-header">
+                        <div><i class="fas fa-terminal"></i> KALI LINUX TERMINAL [v2024.1]</div>
+                        <button class="reset-btn" onclick="resetSim()">
+                            <i class="fas fa-redo"></i> 重置模擬器
+                        </button>
+                    </div>
 
-        <section id="usage" class="section-card p-8 rounded-lg mb-12">
-            <h2 class="text-3xl font-bold text-cyan-300 mb-6 flex items-center">
-                <i class="ri-terminal-line mr-3"></i>
-                使用範例詳解
-            </h2>
-        
-            <!-- 範例1：基本掃描 -->
-            <div class="command-box p-6 rounded-lg mb-8">
-                <h3 class="text-xl font-semibold text-cyan-300 mb-4">1. 基本主機掃描</h3>
-                <div class="bg-gray-900 p-4 rounded mb-4">
-                    <h4 class="font-mono text-green-400 mb-2">$ nmap 192.168.1.1</h4>
-                    <pre class="text-gray-300 overflow-x-auto">
-        Starting Nmap 7.92 ( https://nmap.org )
-        Nmap scan report for router.local (192.168.1.1)
-        Host is up (0.0025s latency).
-        Not shown: 997 closed ports
-        PORT    STATE SERVICE
-        22/tcp  open  ssh
-        80/tcp  open  http
-        443/tcp open  https</pre>
-                </div>
-                <div class="bg-gray-800 p-4 rounded">
-                    <h4 class="font-semibold text-orange-300 mb-2">參數解釋：</h4>
-                    <ul class="text-gray-300 space-y-2">
-                        <li><span class="text-cyan-300">無參數</span>：預設掃描1000個最常用的TCP端口</li>
-                        <li><span class="text-cyan-300">PORT</span>：發現的開放端口號</li>
-                        <li><span class="text-cyan-300">STATE</span>：端口狀態 (open=開放, filtered=被過濾, closed=關閉)</li>
-                        <li><span class="text-cyan-300">SERVICE</span>：端口對應的標準服務名稱</li>
-                    </ul>
-                </div>
-            </div>
-        
-            <!-- 範例2：端口指定掃描 -->
-            <div class="command-box p-6 rounded-lg mb-8">
-                <h3 class="text-xl font-semibold text-cyan-300 mb-4">2. 指定端口掃描</h3>
-                <div class="bg-gray-900 p-4 rounded mb-4">
-                    <h4 class="font-mono text-green-400 mb-2">$ nmap -p 22,80,443 192.168.1.1</h4>
-                    <pre class="text-gray-300 overflow-x-auto">
-        Starting Nmap 7.92 ( https://nmap.org )
-        Nmap scan report for router.local (192.168.1.1)
-        Host is up (0.0025s latency).
-        PORT    STATE SERVICE
-        22/tcp  open  ssh
-        80/tcp  open  http
-        443/tcp open  https</pre>
-                </div>
-                <div class="bg-gray-800 p-4 rounded">
-                    <h4 class="font-semibold text-orange-300 mb-2">參數解釋：</h4>
-                    <ul class="text-gray-300 space-y-2">
-                        <li><span class="text-cyan-300">-p</span>：指定要掃描的端口，可用逗號分隔多個端口</li>
-                        <li><span class="text-cyan-300">-p 1-100</span>：掃描端口範圍</li>
-                        <li><span class="text-cyan-300">-p-</span>：掃描所有65535個端口</li>
-                        <li><span class="text-cyan-300">-p U:53,111,137,T:21-25,80,139,8080</span>：同時指定TCP和UDP端口</li>
-                    </ul>
-                </div>
-            </div>
-        
-            <!-- 範例3：服務版本檢測 -->
-            <div class="command-box p-6 rounded-lg mb-8">
-                <h3 class="text-xl font-semibold text-cyan-300 mb-4">3. 服務版本檢測</h3>
-                <div class="bg-gray-900 p-4 rounded mb-4">
-                    <h4 class="font-mono text-green-400 mb-2">$ nmap -sV 192.168.1.1</h4>
-                    <pre class="text-gray-300 overflow-x-auto">
-        Starting Nmap 7.92 ( https://nmap.org )
-        Nmap scan report for router.local (192.168.1.1)
-        Host is up (0.0025s latency).
-        PORT    STATE SERVICE VERSION
-        22/tcp  open  ssh     OpenSSH 7.9p1 Debian 10
-        80/tcp  open  http    nginx 1.18.0
-        443/tcp open  ssl/    nginx 1.18.0</pre>
-                </div>
-                <div class="bg-gray-800 p-4 rounded">
-                    <h4 class="font-semibold text-orange-300 mb-2">參數解釋：</h4>
-                    <ul class="text-gray-300 space-y-2">
-                        <li><span class="text-cyan-300">-sV</span>：啟用服務版本檢測</li>
-                        <li><span class="text-cyan-300">VERSION</span>：檢測到的服務名稱和版本號</li>
-                        <li><span class="text-cyan-300">--version-intensity</span>：設置檢測強度 (0-9)</li>
-                        <li><span class="text-cyan-300">--version-light</span>：輕量級檢測 (強度2)</li>
-                        <li><span class="text-cyan-300">--version-all</span>：嘗試所有檢測 (強度9)</li>
-                    </ul>
-                </div>
-            </div>
-        
-            <!-- 範例4：操作系統檢測 -->
-            <div class="command-box p-6 rounded-lg mb-8">
-                <h3 class="text-xl font-semibold text-cyan-300 mb-4">4. 操作系統檢測</h3>
-                <div class="bg-gray-900 p-4 rounded mb-4">
-                    <h4 class="font-mono text-green-400 mb-2">$ nmap -O 192.168.1.100</h4>
-                    <pre class="text-gray-300 overflow-x-auto">
-        Starting Nmap 7.92 ( https://nmap.org )
-        Nmap scan report for desktop.local (192.168.1.100)
-        Host is up (0.0005s latency).
-        Not shown: 998 closed ports
-        PORT    STATE SERVICE
-        135/tcp open  msrpc
-        445/tcp open  microsoft-ds
-        MAC Address: 00:1A:2B:3C:4D:5E (Intel)
-        Device type: general purpose
-        Running: Microsoft Windows 10|8.1|7
-        OS details: Microsoft Windows 10 1803 - 1909</pre>
-                </div>
-                <div class="bg-gray-800 p-4 rounded">
-                    <h4 class="font-semibold text-orange-300 mb-2">參數解釋：</h4>
-                    <ul class="text-gray-300 space-y-2">
-                        <li><span class="text-cyan-300">-O</span>：啟用作業系統檢測</li>
-                        <li><span class="text-cyan-300">Running</span>：推測的操作系統類型</li>
-                        <li><span class="text-cyan-300">OS details</span>：更詳細的版本信息</li>
-                        <li><span class="text-cyan-300">--osscan-limit</span>：只對有希望的目標進行OS檢測</li>
-                        <li><span class="text-cyan-300">--osscan-guess</span>：更積極的猜測</li>
-                    </ul>
-                </div>
-            </div>
-        
-            <!-- 範例5：NSE腳本掃描 -->
-            <div class="command-box p-6 rounded-lg">
-                <h3 class="text-xl font-semibold text-cyan-300 mb-4">5. NSE腳本使用</h3>
-                <div class="bg-gray-900 p-4 rounded mb-4">
-                    <h4 class="font-mono text-green-400 mb-2">$ nmap --script=http-title 192.168.1.1</h4>
-                    <pre class="text-gray-300 overflow-x-auto">
-        Starting Nmap 7.92 ( https://nmap.org )
-        Nmap scan report for router.local (192.168.1.1)
-        Host is up (0.0025s latency).
-        PORT   STATE SERVICE
-        80/tcp open  http
-        | http-title: Router Admin Panel
-        |_Requested resource was /login.html</pre>
-                </div>
-                <div class="bg-gray-800 p-4 rounded">
-                    <h4 class="font-semibold text-orange-300 mb-2">參數解釋：</h4>
-                    <ul class="text-gray-300 space-y-2">
-                        <li><span class="text-cyan-300">--script</span>：指定要運行的NSE腳本</li>
-                        <li><span class="text-cyan-300">http-title</span>：獲取網頁標題的腳本</li>
-                        <li><span class="text-cyan-300">--script-args</span>：傳遞參數給腳本</li>
-                        <li><span class="text-cyan-300">--script-help</span>：顯示腳本幫助信息</li>
-                        <li><span class="text-cyan-300">--script=vuln</span>：運行漏洞檢測類腳本</li>
-                    </ul>
-                </div>
-            </div>
-        </section>
+                    <div class="sim-grid">
+                        <div class="sim-controls">
+                            <button class="sim-btn btn-ping" onclick="runStep(1)" id="btn-1">
+                                <strong>Step 1: 確認存活</strong><span>nmap -sn (Ping)</span>
+                            </button>
+                            <button class="sim-btn btn-fast" onclick="runStep(2)" id="btn-2">
+                                <strong>Step 2: 快速掃描</strong><span>nmap -F (Fast)</span>
+                            </button>
+                            <button class="sim-btn btn-ver" onclick="runStep(3)" id="btn-3">
+                                <strong>Step 3: 這是什麼服務?</strong><span>nmap -sV (Version)</span>
+                            </button>
+                            <button class="sim-btn btn-os" onclick="runStep(4)" id="btn-4">
+                                <strong>Step 4: 猜測作業系統</strong><span>nmap -O (OS)</span>
+                            </button>
+                            <button class="sim-btn btn-syn" onclick="runStep(5)" id="btn-5">
+                                <strong>Step 5: 隱蔽掃描</strong><span>nmap -sS (Stealth)</span>
+                            </button>
+                            <button class="sim-btn btn-vuln" onclick="runStep(6)" id="btn-6">
+                                <strong>Step 6: 尋找漏洞!</strong><span>nmap --script vuln</span>
+                            </button>
+                        </div>
 
-        <!-- 學習資源 -->
-        <section id="resources" class="section-card p-8 rounded-lg">
-            <h2 class="text-3xl font-bold text-cyan-300 mb-6 flex items-center">
-                <i class="ri-book-line mr-3"></i>
-                學習資源
-            </h2>
+                        <div class="sim-terminal">
+                            <div class="term-body" id="term-body">
+                                <div>Kali GNU/Linux Rolling [Version 2024.1]</div>
+                                <br>
+                                <div id="prompt-line" style="display:flex; flex-wrap:wrap;">
+                                    <span class="prompt" id="prompt-text">root@kali:~#</span>
+                                    <span id="typing-area"></span><span class="cursor"></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="sim-decoder">
+                            <div class="decoder-header"><i class="fas fa-book-open"></i> 白話文戰術解析</div>
+                            <div class="decoder-content" id="decoder-content">
+                                <div style="text-align: center; color: #666; margin-top: 100px;">
+                                    <i class="fas fa-search-location fa-3x" style="margin-bottom: 20px;"></i><br>
+                                    點擊左側 <strong>Step 1</strong><br>開始對靶機進行偵查
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </article>
+        </div>
+
+        <div class="grid-layout">
             
-            <div class="grid md:grid-cols-2 gap-6">
-                <!-- 資源 1 -->
-                <div class="feature-item p-4 rounded">
-                    <h3 class="text-xl font-semibold text-cyan-300 mb-2 flex items-center">
-                        <i class="ri-global-line mr-2"></i>
-                        官方資源
-                    </h3>
-                    <ul class="space-y-2">
-                        <li>
-                            <a href="https://nmap.org" target="_blank" class="text-cyan-300 hover:underline">
-                                Nmap 官方網站
-                            </a>
-                        </li>
-                        <li>
-                            <a href="https://nmap.org/book/" target="_blank" class="text-cyan-300 hover:underline">
-                                Nmap 參考指南 (線上書籍)
-                            </a>
-                        </li>
-                        <li>
-                            <a href="https://nmap.org/docs.html" target="_blank" class="text-cyan-300 hover:underline">
-                                官方文檔
-                            </a>
-                        </li>
-                        <li>
-                            <a href="https://nmap.org/nsedoc/" target="_blank" class="text-cyan-300 hover:underline">
-                                NSE 腳本資料庫
-                            </a>
-                        </li>
-                    </ul>
-                </div>
-                
-                <!-- 資源 2 -->
-                <div class="feature-item p-4 rounded">
-                    <h3 class="text-xl font-semibold text-cyan-300 mb-2 flex items-center">
-                        <i class="ri-video-line mr-2"></i>
-                        視頻教程
-                    </h3>
-                    <ul class="space-y-2">
-                        <li>
-                            <a href="https://www.youtube.com/watch?v=4t4kBkMsDbQ" target="_blank" class="text-cyan-300 hover:underline">
-                                Nmap 初學者完整指南
-                            </a>
-                        </li>
-                        <li>
-                            <a href="https://www.youtube.com/watch?v=7U1dm04M_0s" target="_blank" class="text-cyan-300 hover:underline">
-                                Nmap 高級掃描技術
-                            </a>
-                        </li>
-                        <li>
-                            <a href="https://www.youtube.com/watch?v=3WQqGX7WfX8" target="_blank" class="text-cyan-300 hover:underline">
-                                NSE 腳本開發教程
-                            </a>
-                        </li>
-                    </ul>
-                </div>
-                
-                <!-- 資源 3 -->
-                <div class="feature-item p-4 rounded">
-                    <h3 class="text-xl font-semibold text-cyan-300 mb-2 flex items-center">
-                        <i class="ri-article-line mr-2"></i>
-                        書籍推薦
-                    </h3>
-                    <ul class="space-y-2">
-                        <li>
-                            <a href="https://www.amazon.com/Nmap-Network-Scanning-Official-Discovery/dp/0979958717" target="_blank" class="text-cyan-300 hover:underline">
-                                《Nmap Network Scanning》官方指南
-                            </a>
-                        </li>
-                        <li>
-                            <a href="https://www.amazon.com/Mastering-Nmap-Scripting-Engine-NSE/dp/1786467451" target="_blank" class="text-cyan-300 hover:underline">
-                                《Mastering the Nmap Scripting Engine》
-                            </a>
-                        </li>
-                    </ul>
-                </div>
-                
-                <!-- 資源 4 -->
-                <div class="feature-item p-4 rounded">
-                    <h3 class="text-xl font-semibold text-cyan-300 mb-2 flex items-center">
-                        <i class="ri-community-line mr-2"></i>
-                        社區與論壇
-                    </h3>
-                    <ul class="space-y-2">
-                        <li>
-                            <a href="https://nmap.org/mailman/listinfo" target="_blank" class="text-cyan-300 hover:underline">
-                                Nmap 郵件列表
-                            </a>
-                        </li>
-                        <li>
-                            <a href="https://www.reddit.com/r/nmap/" target="_blank" class="text-cyan-300 hover:underline">
-                                Reddit Nmap 社區
-                            </a>
-                        </li>
-                        <li>
-                            <a href="https://security.stackexchange.com/questions/tagged/nmap" target="_blank" class="text-cyan-300 hover:underline">
-                                Security StackExchange
-                            </a>
-                        </li>
-                    </ul>
-                </div>
+            <div class="content-left">
+                <article id="ports">
+                    <h2><i class="fas fa-chart-bar"></i> 了解掃描結果</h2>
+                    
+                    <h3>端口狀態說明</h3>
+                    <div class="port-status-grid">
+                        <div class="status-card status-open">
+                            <h4>Open (開啟)</h4>
+                            <p>門是開的！應用程式正在監聽。</p>
+                        </div>
+                        <div class="status-card status-closed">
+                            <h4>Closed (關閉)</h4>
+                            <p>門是關的，主機活著但服務沒開。</p>
+                        </div>
+                        <div class="status-card status-filtered">
+                            <h4>Filtered (被過濾)</h4>
+                            <p>被防火牆擋住了，狀態不明。</p>
+                        </div>
+                    </div>
+
+                    <h3 style="margin-top: 40px;">常見發現與解釋</h3>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th width="15%">Port</th>
+                                <th width="20%">服務</th>
+                                <th>白話解釋</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><span style="color:#00ffaa;">21</span></td>
+                                <td>FTP</td>
+                                <td>傳檔案的，如果設定不好可能可以匿名登入。</td>
+                            </tr>
+                            <tr>
+                                <td><span style="color:#00ffaa;">22</span></td>
+                                <td>SSH</td>
+                                <td>遠端控制電腦的後門（合法的），常被用來暴力破解密碼。</td>
+                            </tr>
+                            <tr>
+                                <td><span style="color:#00ffaa;">80/443</span></td>
+                                <td>HTTP</td>
+                                <td>網頁服務，也是最容易有漏洞的地方。</td>
+                            </tr>
+                            <tr>
+                                <td><span style="color:#00ffaa;">3306</span></td>
+                                <td>MySQL</td>
+                                <td>資料庫，裡面通常存著最值錢的資料。</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </article>
             </div>
-        </section>
+
+            <div class="content-right">
+                <article id="ethics">
+                    <h2><i class="fas fa-gavel"></i> 法律與道德</h2>
+                    
+                    <div class="danger-box">
+                        <h3><i class="fas fa-exclamation-triangle"></i> 法律警告</h3>
+                        <ul style="padding-left:15px;">
+                            <li><strong>刑法第 358 條</strong>：入侵電腦罪。</li>
+                            <li><strong>刑法第 359 條</strong>：破壞電磁紀錄罪。</li>
+                            <li><strong>刑法第 360 條</strong>：干擾電腦系統罪。</li>
+                            <li><strong>個資法</strong>：非法存取個資。</li>
+                        </ul>
+                    </div>
+
+                    <div style="margin-bottom:20px;">
+                        <h4 style="color:#00ffaa; margin-bottom:10px;">合法使用範圍</h4>
+                        <ul>
+                            <li>自有系統測試</li>
+                            <li>完全控制的虛擬環境</li>
+                            <li>取得書面授權</li>
+                        </ul>
+                    </div>
+
+                    <div class="info-box" style="text-align: center;">
+                        <h4 style="margin-top: 0; color: #fff;">白帽駭客守則</h4>
+                        <p style="font-size:0.9rem;">永遠在授權範圍內進行測試 • 發現漏洞時負責任地揭露</p>
+                        <p style="color: #00ffaa; font-weight: bold; margin-top: 10px;">
+                            技術應該用來建設，而不是破壞！
+                        </p>
+                    </div>
+                </article>
+            </div>
+        </div>
+
     </div>
 
-    <footer class="text-center py-8 text-gray-400">
-        <div class="container mx-auto px-4">
-            <div class="mb-4">
-                <p class="text-cyan-300 font-bold">
-                    <i class="ri-shield-star-line mr-2"></i>
-                    Kali Linux 網路安全工具指南
-                </p>
-            </div>
-            <div class="mb-4">
-                © 2025 網路安全技術專題 | 指導教授：王德譽 | 學生：陳家茂、劉昱均
-            </div>
-            <div class="text-sm">
-                本專題致力於推廣網路安全教育與道德黑客精神
-            </div>
+    <footer>
+        <div class="container">
+            <p>© 2025 Nmap 新手實驗室 | 僅供資安教育用途</p>
+            <p>請務必遵守法律與道德規範</p>
         </div>
     </footer>
 
     <script>
-        // 數位雨效果函數
-        function createDigitalRain() {
-            const canvas = document.getElementById('digital-rain');
-            const ctx = canvas.getContext('2d');
+        const termBody = document.getElementById('term-body');
+        const promptLine = document.getElementById('prompt-line');
+        const typingArea = document.getElementById('typing-area');
+        const decoderContent = document.getElementById('decoder-content');
+        
+        let isTyping = false;
+        let typingTimer = null;
+
+        const scenarios = {
+            1: {
+                cmd: "nmap -sn 192.168.1.0/24",
+                info: `
+                    <div class="explanation-card">
+                        <h4>Step 1: 確認存活 (Ping Scan)</h4>
+                        <p>參數 <code>-sn</code> 告訴 Nmap <strong>「只做 Ping，不要掃描 Port」</strong>。</p>
+                        <p>我們掃描了整個網段，發現目標 <strong>192.168.1.150</strong> 有回應。</p>
+                        <div class="analogy">
+                            <strong>💡 白話文比喻：</strong>這就像郵差在大樓樓下大喊「有沒有人在家？」，只要有人回應，就知道這戶人家有人，但還沒進去敲門。
+                        </div>
+                    </div>`,
+                output: [
+                    { text: "Starting Nmap 7.94 ( https://nmap.org ) at 2024-05-20 10:00 CST", wait: 500 },
+                    { text: "Nmap scan report for 192.168.1.1\nHost is up (0.0020s latency).", color: "#ccc", wait: 1000 },
+                    { text: "Nmap scan report for 192.168.1.150\nHost is up (0.0015s latency).", color: "#00ffaa", wait: 1500 },
+                    { text: "Nmap done: 256 IP addresses (2 hosts up) scanned in 2.50 seconds", color: "#0096ff", wait: 2000 },
+                    { text: "root@kali:~#", type: "prompt", wait: 2200 }
+                ]
+            },
+            2: {
+                cmd: "nmap -F 192.168.1.150",
+                info: `
+                    <div class="explanation-card">
+                        <h4>Step 2: 快速掃描 (Fast Scan)</h4>
+                        <p>參數 <code>-F</code> 代表 <strong>Fast Mode</strong>。它只會掃描最常見的 100 個 Port。</p>
+                        <p>我們發現這台靶機開了非常多危險的服務！</p>
+                        <div class="analogy">
+                            <strong>💡 白話文比喻：</strong>這就像小偷去檢查房子，只檢查「大門」和「後門」這幾個最常忘記鎖的地方，結果發現大門洞開。
+                        </div>
+                    </div>`,
+                output: [
+                    { text: "Starting Nmap 7.94...", wait: 300 },
+                    { text: "Host is up (0.0012s latency).", wait: 600 },
+                    { text: "Not shown: 90 closed tcp ports (reset)", wait: 800 },
+                    { text: "PORT     STATE SERVICE\n21/tcp   open  ftp\n22/tcp   open  ssh\n23/tcp   open  telnet\n80/tcp   open  http\n445/tcp  open  microsoft-ds\n3306/tcp open  mysql", color: "#00ffaa", wait: 1500 },
+                    { text: "\nNmap done: 1 IP address scanned in 0.52 seconds", color: "#0096ff", wait: 2000 },
+                    { text: "root@kali:~#", type: "prompt", wait: 2200 }
+                ]
+            },
+            3: {
+                cmd: "nmap -sV 192.168.1.150",
+                info: `
+                    <div class="explanation-card">
+                        <h4>Step 3: 這是什麼服務? (Version)</h4>
+                        <p>參數 <code>-sV</code> 非常重要。它會告訴你<strong>「門後面是誰」</strong>（軟體版本）。</p>
+                        <p>注意看 FTP 的版本：<strong>vsftpd 2.3.4</strong>。這是一個非常有名的漏洞版本（笑臉後門）。</p>
+                        <div class="analogy">
+                            <strong>💡 白話文比喻：</strong>之前只知道「有開門」，現在你走近看，發現門上貼著「Apache 2.2.8」。駭客一查表發現這個版本太舊了，肯定有漏洞。
+                        </div>
+                    </div>`,
+                output: [
+                    { text: "Starting Nmap 7.94...", wait: 500 },
+                    { text: "PORT     STATE SERVICE VERSION", color: "#ccc", wait: 800 },
+                    { text: "21/tcp   open  ftp     vsftpd 2.3.4", color: "#ffab00", wait: 1500 },
+                    { text: "22/tcp   open  ssh     OpenSSH 4.7p1 Debian", wait: 2000 },
+                    { text: "23/tcp   open  telnet  Linux telnetd", wait: 2500 },
+                    { text: "80/tcp   open  http    Apache httpd 2.2.8", color: "#00ffaa", wait: 3000 },
+                    { text: "\nService detection performed.", color: "#0096ff", wait: 3500 },
+                    { text: "root@kali:~#", type: "prompt", wait: 3800 }
+                ]
+            },
+            4: {
+                cmd: "nmap -O 192.168.1.150",
+                info: `
+                    <div class="explanation-card">
+                        <h4>Step 4: 猜測作業系統 (OS Detection)</h4>
+                        <p>參數 <code>-O</code> (大寫O) 用來猜測對方的作業系統。</p>
+                        <p>Nmap 透過發送特殊的 TCP/IP 封包，分析回應的細微差異（指紋）來判斷。</p>
+                        <div class="analogy">
+                            <strong>💡 白話文比喻：</strong>這就像你打電話過去，雖然對方沒說自己是誰，但你聽口音（回應方式）就能猜出他是哪裡人。
+                        </div>
+                    </div>`,
+                output: [
+                    { text: "Starting Nmap...", wait: 500 },
+                    { text: "Detecting OS...", wait: 1000 },
+                    { text: "Device type: general purpose", wait: 1500 },
+                    { text: "Running: Linux 2.6.X", wait: 2000 },
+                    { text: "OS CPE: cpe:/o:linux:linux_kernel:2.6", wait: 2200 },
+                    { text: "OS details: Linux 2.6.9 - 2.6.33", color: "#00ffaa", wait: 2800 },
+                    { text: "Network Distance: 1 hop", wait: 3000 },
+                    { text: "root@kali:~#", type: "prompt", wait: 3500 }
+                ]
+            },
+            5: {
+                cmd: "nmap -sS 192.168.1.150",
+                info: `
+                    <div class="explanation-card">
+                        <h4>Step 5: 隱蔽掃描 (Stealth SYN)</h4>
+                        <p>參數 <code>-sS</code> 是半開放掃描。它只傳送 SYN，收到回應後立刻切斷 (RST)。</p>
+                        <p>這樣可以減少在目標主機上留下的紀錄。</p>
+                        <div class="analogy">
+                            <strong>💡 白話文比喻：</strong>這就像你去按鄰居的電鈴，鄰居剛說「誰啊？」，你就馬上跑掉。鄰居知道有人按鈴，但因為沒有開門（建立連線），監視器可能沒拍到你的臉。
+                        </div>
+                    </div>`,
+                output: [
+                    { text: "Starting Nmap...", wait: 500 },
+                    { text: "Initiating SYN Stealth Scan at 10:15", wait: 800 },
+                    { text: "Scanning 192.168.1.150 [1000 ports]", wait: 1200 },
+                    { text: "Discovered open port 21/tcp on 192.168.1.150", color: "#00ffaa", wait: 1500 },
+                    { text: "Discovered open port 80/tcp on 192.168.1.150", color: "#00ffaa", wait: 1800 },
+                    { text: "Discovered open port 23/tcp on 192.168.1.150", color: "#00ffaa", wait: 2100 },
+                    { text: "Completed SYN Stealth Scan at 10:15, 0.22s elapsed", color: "#0096ff", wait: 2500 },
+                    { text: "root@kali:~#", type: "prompt", wait: 2800 }
+                ]
+            },
+            6: {
+                cmd: "nmap --script vuln 192.168.1.150",
+                info: `
+                    <div class="explanation-card">
+                        <h4>Step 6: 尋找漏洞 (Vulnerability Scan)</h4>
+                        <p>我們呼叫 Nmap 的腳本引擎 (NSE) 來自動檢查漏洞。</p>
+                        <p>結果顯示：<strong>vsFTPd 2.3.4 backdoor</strong>。這是一個超級嚴重的後門漏洞！</p>
+                        <div class="analogy">
+                            <strong>💡 白話文比喻：</strong>這是火力全開模式。就像特種部隊直接破門而入，並帶了專門的儀器檢測屋內有沒有瓦斯漏氣（漏洞）。這非常吵雜，絕對會被管理員發現！
+                        </div>
+                    </div>`,
+                output: [
+                    { text: "Starting Nmap...", wait: 500 },
+                    { text: "Scanning 192.168.1.150...", wait: 1000 },
+                    { text: "PORT     STATE SERVICE VERSION", color: "#ccc", wait: 1500 },
+                    { text: "21/tcp   open  ftp     vsftpd 2.3.4", wait: 2000 },
+                    { text: "| ftp-vsftpd-backdoor: ", color: "#ff2d55", wait: 2500 },
+                    { text: "|   VULNERABLE: vsFTPd 2.3.4 backdoor", color: "#ff2d55", wait: 2800 },
+                    { text: "|     State: VULNERABLE (Exploitable)", color: "#ff2d55", wait: 3000 },
+                    { text: "|_    Command: USER :)", color: "#ff2d55", wait: 3200 },
+                    { text: "80/tcp   open  http    Apache httpd 2.2.8", wait: 3800 },
+                    { text: "|_http-server-header: Apache/2.2.8 (Ubuntu) DAV/2", wait: 4200 },
+                    { text: "\nNmap done: 1 IP address scanned in 15.32 seconds", color: "#0096ff", wait: 5000 },
+                    { text: "root@kali:~#", type: "prompt", wait: 5500 }
+                ]
+            }
+        };
+
+        function runStep(id) {
+            if (isTyping) return;
+            isTyping = true;
             
-            canvas.width = window.innerWidth;
-            canvas.height = window.innerHeight;
+            const data = scenarios[id];
+            document.querySelectorAll('.sim-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById('btn-' + id).classList.add('active');
 
-            const chars = 'アァカサタナハマヤャラワガザダバパイィキシチニヒミリヰギジヂビピウゥクスツヌフムユュルグズブヅプエェケセテネヘメレヱゲゼデベペオォコソトノホモヨョロワゴゾドボポ0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ';
-            const fontSize = 10;
-            const columns = canvas.width / fontSize;
-            const drops = [];
-
-            for (let x = 0; x < columns; x++) {
-                drops[x] = 1;
-            }
-
-            function draw() {
-                ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
-                ctx.fillRect(0, 0, canvas.width, canvas.height);
+            typeCommand(data.cmd, () => {
+                addHistoryLog("root@kali:~#", data.cmd);
+                decoderContent.innerHTML = data.info;
                 
-                ctx.fillStyle = '#0F0';
-                ctx.font = fontSize + 'px arial';
-                
-                for (let i = 0; i < drops.length; i++) {
-                    const text = chars.charAt(Math.floor(Math.random() * chars.length));
-                    ctx.fillText(text, i * fontSize, drops[i] * fontSize);
-                    
-                    if (drops[i] * fontSize > canvas.height && Math.random() > 0.975)
-                        drops[i] = 0;
-                    
-                    drops[i]++;
+                let maxWait = 0;
+                if(data.output) {
+                    data.output.forEach(line => {
+                        setTimeout(() => {
+                            if(line.type === 'prompt') updatePrompt();
+                            else printText(line.text, line.color);
+                        }, line.wait);
+                        if(line.wait > maxWait) maxWait = line.wait;
+                    });
                 }
-            }
-
-            setInterval(draw, 33);
-
-            window.addEventListener('resize', () => {
-                canvas.width = window.innerWidth;
-                canvas.height = window.innerHeight;
+                setTimeout(() => {
+                    isTyping = false;
+                }, maxWait + 200);
             });
         }
 
-        // 初始化函數
-        document.addEventListener('DOMContentLoaded', () => {
-            createDigitalRain();
+        function typeCommand(text, callback) {
+            typingArea.textContent = "";
+            let i = 0;
+            typingTimer = setInterval(() => {
+                typingArea.textContent += text.charAt(i);
+                i++;
+                if (i >= text.length) {
+                    clearInterval(typingTimer);
+                    setTimeout(() => {
+                        typingArea.textContent = "";
+                        callback();
+                    }, 300);
+                }
+            }, 30);
+        }
+
+        function addHistoryLog(p, c) {
+            const div = document.createElement('div');
+            div.innerHTML = `<span class="prompt">${p}</span> ${c}`;
+            termBody.insertBefore(div, promptLine);
+            scrollToBottom();
+        }
+
+        function printText(text, color) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            if(color) div.style.color = color;
+            termBody.insertBefore(div, promptLine);
+            scrollToBottom();
+        }
+
+        function updatePrompt() {
+            scrollToBottom();
+        }
+
+        function scrollToBottom() {
+            termBody.scrollTop = termBody.scrollHeight;
+        }
+
+        function resetSim() {
+            if(isTyping) return;
+            // 保留前兩行歡迎訊息和最後的prompt line
+            const logs = termBody.querySelectorAll('div:not(#prompt-line)');
+            for(let i=1; i<logs.length; i++) logs[i].remove();
             
-            // 平滑滾動
-            document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-                anchor.addEventListener('click', function (e) {
-                    e.preventDefault();
-                    document.querySelector(this.getAttribute('href')).scrollIntoView({
-                        behavior: 'smooth'
-                    });
-                });
-            });
-        });
+            decoderContent.innerHTML = `
+                <div style="text-align: center; color: #666; margin-top: 100px;">
+                    <i class="fas fa-search-location fa-3x" style="margin-bottom: 20px;"></i><br>
+                    準備就緒<br>點擊左側 <strong>Step 1</strong> 開始偵查
+                </div>`;
+            document.querySelectorAll('.sim-btn').forEach(b => b.classList.remove('active'));
+        }
     </script>
 </body>
 </html>
