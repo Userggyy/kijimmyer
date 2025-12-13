@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Searchsploit 漏洞搜尋實戰 | 資安模擬學習</title>
+    <title>Searchsploit 漏洞搜尋 | 資安模擬學習</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         /* --- 1. Searchsploit 主題美術風格 (Archive Crimson) --- */
@@ -28,13 +28,16 @@
         }
         .scan-line:nth-child(2) { animation-delay: 2s; height: 2px; opacity: 0.2; }
 
-        @keyframes scanDown {
-            0% { top: -10%; }
-            100% { top: 110%; }
-        }
+        @keyframes scanDown { 0% { top: -10%; } 100% { top: 110%; } }
 
-        /* 容器 */
-        .container { width: 90%; max-width: 1400px; margin: 0 auto; padding: 20px; position: relative; }
+        /* 主容器 (Main Content) */
+        .container { 
+            width: 90%; 
+            max-width: 1400px; 
+            margin: 0 auto; 
+            padding: 20px; 
+            position: relative; 
+        }
 
         /* 頁首 */
         header {
@@ -74,7 +77,7 @@
         p, li { margin-bottom: 10px; color: #cccccc; font-size: 1.05rem; }
         ul { margin-left: 20px; }
 
-        /* 側邊欄 (此次重點補回項目) */
+        /* 側邊欄 */
         aside {
             background: rgba(20, 10, 10, 0.95); padding: 25px; border-radius: 4px; border: 1px solid #ff3333;
             height: fit-content; box-shadow: 0 0 20px rgba(255, 51, 51, 0.05); position: sticky; top: 100px;
@@ -93,7 +96,7 @@
         .simulator-wrapper {
             background: #000; border: 2px solid #ff3333; border-radius: 4px; overflow: hidden;
             box-shadow: 0 0 40px rgba(255, 51, 51, 0.1); margin: 20px 0;
-            display: flex; flex-direction: column; height: 700px;
+            display: flex; flex-direction: column; height: 750px;
         }
 
         .sim-header {
@@ -101,8 +104,11 @@
             display: flex; justify-content: space-between; align-items: center; color: #ff3333; font-family: monospace; font-weight: bold;
         }
 
+        /* Grid 佈局防止擠壓 */
         .sim-grid {
-            display: grid; grid-template-columns: 240px 1fr 300px; flex: 1; overflow: hidden;
+            display: grid; 
+            grid-template-columns: 240px 1fr 300px; 
+            flex: 1; overflow: hidden;
         }
 
         /* 控制區 */
@@ -119,16 +125,23 @@
         .sim-terminal {
             background: #000; padding: 0; display: flex; flex-direction: column; 
             font-family: 'Consolas', 'Courier New', monospace; position: relative;
+            min-width: 0; 
         }
         .term-body { 
             flex: 1; padding: 20px; overflow-y: auto; color: #ccc; 
-            font-size: 0.9rem; line-height: 1.4; white-space: pre-wrap; 
+            font-size: 0.9rem; line-height: 1.4; 
+            white-space: pre; 
+            overflow-x: auto;
         }
         .prompt { color: #ff3333; font-weight: bold; margin-right: 10px; }
         .cursor { display: inline-block; width: 10px; height: 18px; background: #ff3333; animation: blink 1s infinite; vertical-align: text-bottom; }
 
         /* 解析區 */
-        .sim-decoder { background: #150505; border-left: 1px solid #661111; display: flex; flex-direction: column; }
+        .sim-decoder { 
+            background: #150505; border-left: 1px solid #661111; 
+            display: flex; flex-direction: column; 
+            min-width: 300px;
+        }
         .decoder-header { padding: 15px; background: #220505; border-bottom: 1px solid #661111; color: #ff3333; font-weight: bold; }
         .decoder-content { padding: 20px; flex: 1; overflow-y: auto; }
         
@@ -149,24 +162,33 @@
         }
         .reset-btn:hover { background: #ff3333; color: #000; }
 
-        /* Exploit-DB 列表樣式 */
-        .edb-header { color: #ff3333; border-bottom: 1px solid #ff3333; margin-bottom: 5px; font-weight: bold; }
-        .edb-row { display: flex; justify-content: space-between; color: #ccc; border-bottom: 1px dotted #333; padding: 2px 0; }
-        .edb-title { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding-right: 10px; }
-        .edb-path { width: 300px; text-align: right; color: #888; }
-
         @keyframes blink { 50% { opacity: 0; } }
         @keyframes slideIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
-        /* 頁尾 */
+        /* 頁尾樣式 (完全修正版) 
+           重點：將 Footer 獨立為與 Container 同級的容器，
+           並賦予相同的 max-width 與 margin 設定，確保絕對左對齊。
+        */
         footer {
-            background: #0f0505; border-top: 1px solid #ff3333; padding: 30px 0;
-            text-align: center; color: #666; margin-top: 40px;
+            width: 90%;            
+            max-width: 1400px;     
+            margin: 50px auto 0;   
+            padding: 40px 20px;    
+            border-top: 1px solid #331111;
+            text-align: left;      
+            color: #666;
+            font-size: 0.9rem;
+            background: transparent;
         }
         footer p { margin: 5px 0; color: #888; }
 
         /* RWD */
-        @media (max-width: 900px) { .sim-grid { grid-template-columns: 1fr; grid-template-rows: auto 400px auto; } .sim-decoder { border-left: none; border-top: 1px solid #661111; height: 300px; } }
+        @media (max-width: 1200px) { .sim-grid { grid-template-columns: 200px 1fr 250px; } }
+        @media (max-width: 900px) {
+            .sim-grid { grid-template-columns: 1fr; grid-template-rows: auto 400px auto; }
+            .sim-decoder { border-left: none; border-top: 1px solid #661111; height: 300px; }
+            .simulator-wrapper { height: auto; }
+        }
     </style>
 </head>
 <body>
@@ -177,7 +199,7 @@
 
     <header>
         <div class="container">
-            <h1><i class="fas fa-search"></i> Searchsploit 漏洞搜尋實戰</h1>
+            <h1><i class="fas fa-search"></i> Searchsploit 漏洞搜尋</h1>
             <p>Exploit-DB 的離線搜尋引擎 • 從版本偵查到漏洞利用的關鍵橋樑</p>
         </div>
     </header>
@@ -187,7 +209,7 @@
             <ul>
                 <li><a href="#intro">工具介紹</a></li>
                 <li><a href="#install">環境準備</a></li>
-                <li><a href="#simulation">搜尋實戰</a></li>
+                <li><a href="#simulation">搜尋漏洞</a></li>
                 <li><a href="#features">進階技巧</a></li>
                 <li><a href="#ethics">法律規範</a></li>
             </ul>
@@ -201,12 +223,15 @@
                 <article id="intro">
                     <h2><i class="fas fa-book"></i> 什麼是 Searchsploit？</h2>
                     
-                    <p><strong>Searchsploit</strong> 是 <strong>Exploit-DB</strong> 的官方命令列搜尋工具。當你透過 Nmap 掃描出目標主機的服務版本（例如 Apache 2.4.49）後，下一步就是「找找看有沒有現成的攻擊腳本」。</p>
-                    <p>它內建了成千上萬個已公開的漏洞利用代碼 (Exploits)，而且完全離線，不需要連網即可查詢。這在無法上網的內網滲透環境中非常重要。</p>
+                    <p><strong>Searchsploit</strong> 是 <strong>Exploit-DB</strong> 的官方命令列搜尋工具。當我們透過 Nmap 或其他掃描工具發現目標主機的服務版本後（例如 Apache 2.4.49），最關鍵的一步就是確認「這個版本是否有已知的安全漏洞」。</p>
+                    <p>Searchsploit 就是這個環節的絕對主角。它內建了成千上萬個已公開的漏洞利用代碼 (Exploits)，而且完全離線。它能將單純的「版本資訊」轉化為致命的「攻擊情報」。</p>
                     
                     <div class="info-box">
-                        <p><strong><i class="fas fa-project-diagram"></i> 攻擊流程定位：</strong></p>
-                        <p>偵查 (Nmap) ➔ <strong>分析 (Searchsploit)</strong> ➔ 攻擊 (Metasploit / 手動腳本)</p>
+                        <p><strong><i class="fas fa-bullseye"></i> 核心價值：</strong></p>
+                        <p>Nmap 負責告訴你「門在哪裡」，而 <strong>Searchsploit 負責告訴你「哪把鑰匙能開這扇門」</strong>。</p>
+                        <p style="margin-top: 10px; color: #ffcccc; font-style: italic;">
+                            偵查 (Nmap) <i class="fas fa-arrow-right"></i> <strong>精確鎖定 (Searchsploit)</strong>
+                        </p>
                     </div>
                 </article>
 
@@ -237,7 +262,7 @@ searchsploit -u</code></pre>
                     <ul>
                         <li><a href="#intro" style="color:#d0d0d0; text-decoration:none;"><i class="fas fa-angle-right"></i> 1. 工具介紹</a></li>
                         <li><a href="#install" style="color:#d0d0d0; text-decoration:none;"><i class="fas fa-angle-right"></i> 2. 環境準備</a></li>
-                        <li><a href="#simulation" style="color:#ff3333; font-weight:bold; text-decoration:none;"><i class="fas fa-angle-right"></i> 3. 搜尋實戰</a></li>
+                        <li><a href="#simulation" style="color:#d0d0d0;  text-decoration:none;"><i class="fas fa-angle-right"></i> 3. 搜尋漏洞</a></li>
                         <li><a href="#features" style="color:#d0d0d0; text-decoration:none;"><i class="fas fa-angle-right"></i> 4. 進階技巧</a></li>
                         <li><a href="#ethics" style="color:#d0d0d0; text-decoration:none;"><i class="fas fa-angle-right"></i> 5. 法律規範</a></li>
                     </ul>
@@ -247,7 +272,7 @@ searchsploit -u</code></pre>
 
         <div class="full-width">
             <article id="simulation" style="border: 2px solid #ff3333; box-shadow: 0 0 30px rgba(255, 51, 51, 0.1);">
-                <h2><i class="fas fa-search-location"></i> 漏洞搜尋實戰 (Exploit Search Lab)</h2>
+                <h2><i class="fas fa-search-location"></i> 互動虛擬實驗室</h2>
                 <p>假設我們用 Nmap 掃描發現目標開放了 <code>vsftpd 2.3.4</code> 服務。現在，我們用 Searchsploit 來找找看有沒有對應的漏洞。</p>
                 
                 <div class="simulator-wrapper">
@@ -334,7 +359,7 @@ searchsploit -u</code></pre>
                     <h2><i class="fas fa-gavel"></i> 法律與道德</h2>
                     
                     <div class="danger-box">
-                        <h3><i class="fas fa-exclamation-triangle"></i> 腳本小子的禁區</h3>
+                        <h3><i class="fas fa-exclamation-triangle"></i> 惡意後門警示</h3>
                         <p>下載並執行網路上不明來源的 Exploit 腳本是非常危險的。有些腳本可能包含惡意後門，反過來攻擊你的電腦。</p>
                     </div>
 
@@ -358,13 +383,9 @@ searchsploit -u</code></pre>
             </div>
         </div>
 
-    </div>
-
-    <footer>
-        <div class="container">
-            <p>© 2025 Searchsploit 搜尋實驗室 | 僅供資安教育用途</p>
-            <p>請務必遵守法律與道德規範</p>
-        </div>
+    </div> <footer>
+        <p>© 2025 Searchsploit 漏洞搜尋實戰 | 僅供資安教育用途</p>
+        <p>請務必遵守法律與道德規範</p>
     </footer>
 
     <script>
@@ -542,8 +563,7 @@ searchsploit -u</code></pre>
 
         function printText(text, color, style) {
             const div = document.createElement('div');
-            // 處理 Exploit-DB 列表格式
-            if (text.includes("|")) {
+            if (text.includes("|") || text.includes("---")) {
                 div.innerHTML = `<pre style="margin:0; white-space:pre;">${text}</pre>`;
             } else {
                 div.textContent = text;

