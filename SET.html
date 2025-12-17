@@ -634,19 +634,11 @@ sudo setoolkit</code></pre>
         function resetSim() {
             if(isTyping) return;
             const logs = termBody.querySelectorAll('div:not(#prompt-line)');
+            //重置邏輯
             for(let i=1; i<logs.length; i++) logs[i].remove(); 
-            
-            const welcome = document.createElement('div');
-            welcome.textContent = "Kali GNU/Linux Rolling [Version 2024.1]";
-            termBody.insertBefore(welcome, promptLine);
-            const br = document.createElement('div');
-            br.innerHTML = "<br>";
-            termBody.insertBefore(br, promptLine);
-
             promptLine.style.display = "flex";
             updatePrompt("root@kali:~#");
             typingArea.textContent = "";
-
             decoderContent.innerHTML = `
                 <div style="text-align: center; color: #666; margin-top: 50px;">
                     <i class="fas fa-arrow-left"></i><br><br>
