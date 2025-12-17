@@ -32,21 +32,25 @@
         .grid-layout { display: grid; grid-template-columns: 2fr 1fr; gap: 30px; margin-bottom: 40px; }
         .full-width { width: 100%; margin-bottom: 2rem; }
         article { background: rgba(20, 20, 20, 0.9); padding: 30px; border-radius: 8px; border: 1px solid #333; margin-bottom: 30px; }
+        
         h2 { color: #fff; margin-bottom: 20px; padding-bottom: 10px; border-bottom: 1px solid #333; font-size: 1.8rem; }
-        h3 { color: #00ff00; margin: 15px 0 10px 0; font-size: 1.3rem; }
+        h3 { color: #00ff00; margin: 15px 0 10px 0; font-size: 1.3rem; border-bottom: 1px solid #333; padding-bottom: 5px; }
         p, li { margin-bottom: 10px; color: #ccc; }
+
+        /* 側邊欄樣式 */
+        aside { background: rgba(20, 20, 20, 0.9); padding: 25px; border-radius: 8px; border: 1px solid #333; height: fit-content; border-top: 3px solid #00ff00; }
         
         /* 表格樣式 */
         table { width: 100%; border-collapse: collapse; margin-top: 15px; }
-        th, td { padding: 12px; border-bottom: 1px solid #333; text-align: left; vertical-align: top; }
-        th { background: rgba(255,255,255,0.05); color: #fff; }
+        th, td { padding: 15px; border-bottom: 1px solid #333; text-align: left; vertical-align: middle; }
+        th { background: rgba(255,255,255,0.05); color: #fff; font-size: 1.1rem; }
         td strong { color: #fff; }
 
         /* 提示框 */
         .danger-box { background: rgba(255, 0, 0, 0.1); border-left: 5px solid #ff3333; padding: 15px; margin: 15px 0; }
         .info-box { background: rgba(255, 255, 255, 0.05); border-left: 5px solid #fff; padding: 15px; margin: 15px 0; }
 
-        /* --- 模擬器樣式 (滾動條修復版) --- */
+        /* --- 模擬器樣式 (維持不變) --- */
         .simulator-wrapper {
             background: #000; border: 2px solid #333; border-radius: 8px;
             height: 650px; /* 固定高度 */
@@ -103,8 +107,9 @@
         <div class="container">
             <ul>
                 <li><a href="#intro">工具介紹</a></li>
+                <li><a href="#install">環境準備</a></li>
                 <li><a href="#simulation">釣魚流程演示</a></li>
-                <li><a href="#vectors">攻擊向量</a></li>
+                <li><a href="#vectors">防禦與預防</a></li>
                 <li><a href="#ethics">法律規範</a></li>
             </ul>
         </div>
@@ -112,11 +117,60 @@
 
     <div class="container">
         
-        <article id="intro">
-            <h2><i class="fas fa-users"></i> 什麼是 SET？</h2>
-            <p><strong>Social-Engineer Toolkit (SET)</strong> 是一個專門針對「人性弱點」進行攻擊的開源滲透測試框架。</p>
-            <p>不同於 Metasploit 攻擊系統漏洞，SET 主要用於攻擊「人」。它可以快速生成釣魚網站、偽造電子郵件、或是帶有惡意 Payload 的 QR Code。</p>
-        </article>
+        <div class="grid-layout">
+            <div class="content-left">
+                <article id="intro">
+                    <h2><i class="fas fa-users"></i> 什麼是 SET？</h2>
+                    <p><strong>Social-Engineer Toolkit (SET)</strong> 是一個專門針對「人性弱點」進行攻擊的開源滲透測試框架。</p>
+                    <p>不同於 Metasploit 攻擊系統漏洞，SET 主要用於攻擊「人」。它可以快速生成釣魚網站、偽造電子郵件、或是帶有惡意 Payload 的 QR Code。</p>
+                    <div class="info-box">
+                        <p><strong><i class="fas fa-brain"></i> 為什麼這很危險？</strong></p>
+                        <p>再強大的防火牆也擋不住一個自願交出密碼的員工。社交工程 (Social Engineering) 往往是駭客入侵企業內網的第一步。</p>
+                    </div>
+                </article>
+
+                <article id="install">
+                    <h2><i class="fas fa-terminal"></i> 安裝與啟動</h2>
+                    <p>SET 內建於 Kali Linux。它的操作介面是互動式選單，不需要背誦複雜參數。</p>
+                    <pre><code style="background:#111; padding:15px; display:block; border-radius:5px; color:#00ff00;"># 安裝 (若未安裝)
+sudo apt install set
+
+# 啟動工具 (需要 root)
+sudo setoolkit</code></pre>
+                </article>
+            </div>
+
+            <aside>
+                <div style="margin-bottom: 30px;">
+                    <h3><i class="fas fa-laptop-code"></i> 實驗配置</h3>
+                    <ul style="list-style: none; margin: 0; padding: 0;">
+                        <li style="padding: 10px 0; border-bottom: 1px solid #333;">
+                            <i class="fas fa-check" style="color:#00ff00; margin-right:8px;"></i> 攻擊機: Kali Linux
+                        </li>
+                        <li style="padding: 10px 0; border-bottom: 1px solid #333;">
+                            <i class="fas fa-globe" style="color:#00ff00; margin-right:8px;"></i> 偽造目標: Gmail / FB
+                        </li>
+                        <li style="padding: 10px 0; border-bottom: 1px solid #333;">
+                            <i class="fas fa-keyboard" style="color:#aaa; margin-right:8px;"></i> 攻擊方式: 憑證收割
+                        </li>
+                        <li style="padding: 10px 0;">
+                            <i class="fas fa-network-wired" style="color:#00ff00; margin-right:8px;"></i> 監聽 Port: 80
+                        </li>
+                    </ul>
+                </div>
+
+                <div>
+                    <h3><i class="fas fa-book"></i> 章節導覽</h3>
+                    <ul style="list-style: none; margin: 0; padding: 0;">
+                        <li style="padding: 8px 0;"><a href="#intro" style="color:#aaa; text-decoration:none;">1. 工具介紹</a></li>
+                        <li style="padding: 8px 0;"><a href="#install" style="color:#aaa; text-decoration:none;">2. 環境準備</a></li>
+                        <li style="padding: 8px 0;"><a href="#simulation" style="color:#aaa;  text-decoration:none;">3. 釣魚流程演示</a></li>
+                        <li style="padding: 8px 0;"><a href="#vectors" style="color:#aaa; text-decoration:none;">4. 防禦與預防</a></li>
+                        <li style="padding: 8px 0;"><a href="#ethics" style="color:#aaa; text-decoration:none;">5. 法律規範</a></li>
+                    </ul>
+                </div>
+            </aside>
+        </div>
 
         <div class="full-width">
             <article id="simulation" style="border: 2px solid #333; box-shadow: 0 0 30px rgba(0, 255, 0, 0.05);">
@@ -184,31 +238,31 @@
         <div class="grid-layout">
             <div class="content-left">
                 <article id="vectors">
-                    <h2><i class="fas fa-project-diagram"></i> 常見攻擊向量</h2>
-                    <p>SET 提供了多種攻擊手法，以下是選單中最常用的幾個：</p>
+                    <h2><i class="fas fa-shield-alt"></i> 防禦與預防措施</h2>
+                    <p>了解攻擊是為了更好的防禦。針對上述的攻擊手法，我們應採取以下防護措施：</p>
                     <table>
                         <thead>
                             <tr>
-                                <th width="30%">攻擊名稱</th>
-                                <th>原理與說明</th>
+                                <th width="30%">針對攻擊 (Defense Against)</th>
+                                <th>防護建議 (Best Practice)</th>
                             </tr>
                         </thead>
                         <tbody>
                             <tr>
-                                <td><strong>Spear-Phishing</strong></td>
-                                <td><span style="color:#00ff00;">魚叉式釣魚</span>。發送帶有惡意附件（如 PDF、Word）的 Email 給特定目標。</td>
+                                <td><strong style="color:#00ff00;">魚叉式釣魚</strong><br><span style="font-size:0.85rem; color:#888;">Spear-Phishing</span></td>
+                                <td>確認寄件者身分，不隨意開啟不明附件 (PDF/Word)。若收到緊急要求的信件，請透過其他管道（如電話）查證</td>
                             </tr>
                             <tr>
-                                <td><strong>Website Vectors</strong></td>
-                                <td><span style="color:#00ff00;">網站攻擊</span>。包含 Java Applet 攻擊、網站複製、憑證竊取。</td>
+                                <td><strong style="color:#00ff00;">網站攻擊 / 釣魚</strong><br><span style="font-size:0.85rem; color:#888;">Website Vectors</span></td>
+                                <td>檢查網址 (URL) 正確性，確認 HTTPS 憑證是否為偽造。不要在來源不明的視窗中輸入敏感資料</td>
                             </tr>
                             <tr>
-                                <td><strong>Credential Harvester</strong></td>
-                                <td><span style="color:#00ff00;">憑證收割機</span>。複製一個像 Gmail 或公司登入頁面的網站，誘騙使用者輸入帳密。</td>
+                                <td><strong style="color:#00ff00;">憑證收割機</strong><br><span style="font-size:0.85rem; color:#888;">Credential Harvester</span></td>
+                                <td><strong>啟用雙重認證 (2FA/MFA)</strong>。這是對抗帳號竊取最有效的方法，即使密碼外洩，駭客沒有手機驗證碼也無法登入</td>
                             </tr>
                             <tr>
-                                <td><strong>QRCode Generator</strong></td>
-                                <td>產生一個指向惡意網站的 QR Code，貼在實體世界讓人掃描。</td>
+                                <td><strong style="color:#00ff00;">惡意程式 / QR Code</strong><br><span style="font-size:0.85rem; color:#888;">Payloads</span></td>
+                                <td>保持作業系統與防毒軟體更新。掃描實體 QR Code 前請確認來源，避免掃描路邊不明的條碼</td>
                             </tr>
                         </tbody>
                     </table>
@@ -221,7 +275,7 @@
                     
                     <div class="danger-box">
                         <h3><i class="fas fa-exclamation-triangle"></i> 詐欺與偽造</h3>
-                        <p>製作釣魚網站竊取他人帳號，違反<strong>刑法第 339-4 條 (加重詐欺罪)</strong> 及 <strong>358 條 (妨害電腦使用)</strong>。</p>
+                        <p>製作釣魚網站竊取他人帳號，違反<strong>刑法第 339-4 條 (加重詐欺罪)</strong> 及 <strong>358 條 (妨害電腦使用)</strong></p>
                     </div>
 
                     <div class="info-box">
@@ -234,11 +288,11 @@
 
                     <div style="margin-top: 20px; border-top: 1px solid #333; padding-top: 15px; text-align: center;">
                         <h4 style="color:#fff;">資安倫理</h4>
-                            <p>不要欺騙無辜的人。</p>
-                            <p style="color: #00ff00; font-weight: bold; font-size: 1.2rem; text-align: center; margin-top: 20px;">
-                                Verify before you Trust.
+                        <p>不要欺騙無辜的人</p>
+                        <p style="color: #00ff00; font-weight: bold; font-size: 1.2rem; margin-top: 20px;">
+                            Verify before you Trust.
                         </p>
-                    </div
+                    </div>
                 </article>
             </div>
         </div>
@@ -326,7 +380,7 @@
                         
                         <div class="menu-list-explanation">
                             <p><strong style="color:#fff;">1) Spear-Phishing Attack Vectors</strong><br>
-                            <span style="color:#aaa;">👉 魚叉式釣魚</span>：透過 Email 發送惡意檔案(如 PDF)給特定目標。</p>
+                            <span style="color:#aaa;">👉 魚叉式釣魚</span>：透過 Email 發送惡意檔案(如PDF)給特定目標。</p>
                             
                             <p><strong style="color:#fff;">2) Website Attack Vectors</strong><br>
                             <span class="highlight-option">👉 網站攻擊向量</span>：利用「網頁」作為陷阱。這是我們今天要用的，因為我們要架設假網站。</p>
