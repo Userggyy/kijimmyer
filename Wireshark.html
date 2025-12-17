@@ -3,182 +3,163 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Searchsploit 漏洞搜尋實戰 | 資安模擬學習</title>
+    <title>Wireshark 封包分析實戰 | 資安模擬學習</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
-        /* --- 1. Searchsploit 主題美術風格 (Archive Crimson) --- */
+        /* --- 1. Wireshark 主題美術風格 (Deep Sea Blue) --- */
         
-        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Consolas', 'Monaco', 'Courier New', monospace; }
-        body { line-height: 1.6; color: #d0d0d0; background-color: #0f0505; position: relative; overflow-x: hidden; font-family: 'Segoe UI', sans-serif; }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body { line-height: 1.6; color: #e0e0e0; background-color: #001122; position: relative; overflow-x: hidden; }
 
-        /* 背景特效：檢索光束 */
-        .archive-background {
+        /* 背景特效：深海數據流 */
+        .sea-background {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1;
-            background: 
-                linear-gradient(90deg, #0f0505 20px, transparent 1%) center,
-                linear-gradient(#0f0505 20px, transparent 1%) center,
-                rgba(20, 5, 5, 0.9);
-            background-size: 22px 22px;
+            background: linear-gradient(180deg, #001a33 0%, #000d1a 100%);
         }
         
-        .scan-line {
-            position: fixed; top: 0; left: 0; width: 100%; height: 5px;
-            background: linear-gradient(90deg, transparent, #ff3333, transparent);
-            opacity: 0.3; animation: scanDown 4s linear infinite; z-index: -1;
+        .bubble {
+            position: fixed; bottom: -20px; background: rgba(0, 153, 255, 0.1); border-radius: 50%;
+            border: 1px solid rgba(0, 153, 255, 0.3); animation: rise 8s infinite ease-in;
         }
-        .scan-line:nth-child(2) { animation-delay: 2s; height: 2px; opacity: 0.2; }
+        .bubble:nth-child(1) { left: 10%; width: 20px; height: 20px; animation-duration: 7s; }
+        .bubble:nth-child(2) { left: 30%; width: 40px; height: 40px; animation-duration: 10s; animation-delay: 1s; }
+        .bubble:nth-child(3) { left: 70%; width: 15px; height: 15px; animation-duration: 6s; animation-delay: 3s; }
+        .bubble:nth-child(4) { left: 90%; width: 30px; height: 30px; animation-duration: 9s; animation-delay: 0.5s; }
 
-        @keyframes scanDown {
-            0% { top: -10%; }
-            100% { top: 110%; }
+        @keyframes rise {
+            0% { transform: translateY(0); opacity: 0; }
+            50% { opacity: 1; }
+            100% { transform: translateY(-110vh); opacity: 0; }
         }
 
         /* 容器 */
-        .container { width: 90%; max-width: 1400px; margin: 0 auto; padding: 20px; position: relative; }
+        .container { width: 95%; max-width: 1600px; margin: 0 auto; padding: 20px; }
 
         /* 頁首 */
         header {
-            background: rgba(30, 10, 10, 0.95); padding: 4rem 0; text-align: center; margin-bottom: 2rem;
-            border-radius: 4px; border: 1px solid #ff3333; border-top: 4px solid #ff3333;
-            box-shadow: 0 5px 20px rgba(255, 51, 51, 0.1); position: relative; overflow: hidden;
+            background: rgba(0, 40, 80, 0.8); padding: 3rem 0; text-align: center; margin-bottom: 2rem;
+            border-radius: 8px; border-bottom: 4px solid #0099ff; box-shadow: 0 0 30px rgba(0, 153, 255, 0.2);
         }
         header h1 {
-            font-size: 2.8rem; margin-bottom: 1rem; color: #ff3333;
-            text-shadow: 0 0 10px rgba(255, 51, 51, 0.4); letter-spacing: 1px;
+            font-size: 2.5rem; margin-bottom: 0.5rem; color: #fff;
+            text-shadow: 0 0 10px #0099ff; letter-spacing: 1px;
         }
-        header p { font-size: 1.2rem; color: #ff9999; max-width: 800px; margin: 0 auto; }
+        header h1 i { color: #0099ff; margin-right: 10px; }
+        header p { font-size: 1.1rem; color: #80ccff; }
 
         /* 導覽列 */
         nav {
-            background: #1a0a0a; padding: 1rem; border-radius: 4px; border: 1px solid #ff3333;
-            position: sticky; top: 0; z-index: 100; margin-bottom: 30px; box-shadow: 0 5px 15px rgba(0,0,0,0.8);
+            background: #002244; padding: 1rem; border-radius: 4px; border: 1px solid #005588;
+            position: sticky; top: 0; z-index: 100; margin-bottom: 20px; box-shadow: 0 5px 15px rgba(0,0,0,0.5);
         }
-        nav ul { display: flex; justify-content: center; list-style: none; gap: 20px; flex-wrap: wrap; }
+        nav ul { display: flex; justify-content: center; list-style: none; gap: 20px; }
         nav a {
-            text-decoration: none; color: #ffcccc; font-weight: bold; padding: 8px 16px;
-            border-radius: 2px; transition: 0.3s; border: 1px solid transparent;
+            text-decoration: none; color: #b3e0ff; font-weight: bold; padding: 8px 16px;
+            border-radius: 4px; transition: 0.3s;
         }
-        nav a:hover { background: rgba(255, 51, 51, 0.15); color: #ff3333; border-color: #ff3333; }
+        nav a:hover { background: #004488; color: #fff; }
 
         /* --- 佈局 --- */
-        .grid-layout { display: grid; grid-template-columns: 2fr 1fr; gap: 30px; margin-bottom: 40px; }
-        .full-width { width: 100%; margin-bottom: 2rem; }
+        .grid-layout { display: grid; grid-template-columns: 280px 1fr; gap: 20px; margin-bottom: 40px; }
         @media (max-width: 1024px) { .grid-layout { grid-template-columns: 1fr; } }
 
-        /* 卡片樣式 */
-        article {
-            background: rgba(20, 10, 10, 0.95); padding: 30px; border-radius: 4px; border: 1px solid #661111; margin-bottom: 30px;
-        }
-        h2 { color: #ff3333; margin-bottom: 20px; padding-bottom: 10px; border-bottom: 1px solid #661111; font-size: 1.8rem; display: flex; align-items: center; gap: 10px; }
-        h3 { color: #ff6666; margin: 25px 0 15px 0; font-size: 1.4rem; }
-        p, li { margin-bottom: 10px; color: #cccccc; font-size: 1.05rem; }
-        ul { margin-left: 20px; }
-
-        /* 側邊欄 (此次重點補回項目) */
-        aside {
-            background: rgba(20, 10, 10, 0.95); padding: 25px; border-radius: 4px; border: 1px solid #ff3333;
-            height: fit-content; box-shadow: 0 0 20px rgba(255, 51, 51, 0.05); position: sticky; top: 100px;
-        }
-        aside h3 { margin-top: 0; border-bottom: 1px solid #ff3333; padding-bottom: 10px; color: #ff3333; }
-        aside ul { list-style: none; margin: 0; padding: 0; }
-        aside li { padding: 10px 0; border-bottom: 1px dashed #661111; color: #d0d0d0; font-size: 0.95rem; }
-        aside li:last-child { border-bottom: none; }
-        aside i { margin-right: 10px; color: #ff6666; width: 20px; text-align: center; }
-
-        /* 提示框 */
-        .info-box { background: rgba(255, 51, 51, 0.05); border-left: 4px solid #ff3333; padding: 20px; margin: 20px 0; border-radius: 2px; }
-        .danger-box { background: rgba(255, 0, 0, 0.1); border-left: 4px solid #cc0000; padding: 20px; margin: 20px 0; border-radius: 2px; }
-
-        /* --- 模擬器樣式 (Searchsploit Style) --- */
-        .simulator-wrapper {
-            background: #000; border: 2px solid #ff3333; border-radius: 4px; overflow: hidden;
-            box-shadow: 0 0 40px rgba(255, 51, 51, 0.1); margin: 20px 0;
-            display: flex; flex-direction: column; height: 700px;
-        }
-
-        .sim-header {
-            background: #220505; padding: 10px 15px; border-bottom: 1px solid #ff3333;
-            display: flex; justify-content: space-between; align-items: center; color: #ff3333; font-family: monospace; font-weight: bold;
-        }
-
-        .sim-grid {
-            display: grid; grid-template-columns: 240px 1fr 300px; flex: 1; overflow: hidden;
-        }
-
-        /* 控制區 */
-        .sim-controls { background: #150505; border-right: 1px solid #661111; padding: 15px; overflow-y: auto; }
-        .sim-btn {
-            width: 100%; padding: 15px; margin-bottom: 10px; background: rgba(255, 51, 51, 0.05); border: 1px solid #661111;
-            color: #ffcccc; text-align: left; cursor: pointer; border-radius: 2px; transition: all 0.2s; font-family: monospace;
-        }
-        .sim-btn:hover { background: rgba(255, 51, 51, 0.15); color: #fff; border-color: #ff3333; }
-        .sim-btn.active { background: rgba(255, 51, 51, 0.25); border-color: #ff3333; color: #fff; border-left: 4px solid #ff3333; }
-        .sim-btn strong { display: block; font-size: 1rem; margin-bottom: 4px; }
-
-        /* 終端機 */
-        .sim-terminal {
-            background: #000; padding: 0; display: flex; flex-direction: column; 
-            font-family: 'Consolas', 'Courier New', monospace; position: relative;
-        }
-        .term-body { 
-            flex: 1; padding: 20px; overflow-y: auto; color: #ccc; 
-            font-size: 0.9rem; line-height: 1.4; white-space: pre-wrap; 
-        }
-        .prompt { color: #ff3333; font-weight: bold; margin-right: 10px; }
-        .cursor { display: inline-block; width: 10px; height: 18px; background: #ff3333; animation: blink 1s infinite; vertical-align: text-bottom; }
-
-        /* 解析區 */
-        .sim-decoder { background: #150505; border-left: 1px solid #661111; display: flex; flex-direction: column; }
-        .decoder-header { padding: 15px; background: #220505; border-bottom: 1px solid #661111; color: #ff3333; font-weight: bold; }
-        .decoder-content { padding: 20px; flex: 1; overflow-y: auto; }
+        /* 卡片 */
+        article { background: rgba(0, 30, 60, 0.9); padding: 25px; border-radius: 6px; border: 1px solid #004466; margin-bottom: 20px; }
+        h2 { color: #33adff; margin-bottom: 15px; border-bottom: 1px solid #004466; padding-bottom: 5px; }
         
-        .explanation-card { 
-            background: rgba(255, 51, 51, 0.08); border-left: 3px solid #ff3333; 
-            padding: 15px; border-radius: 2px; animation: slideIn 0.3s ease; margin-bottom: 15px;
-        }
-        .analogy { 
-            margin-top: 10px; padding: 10px; background: rgba(255, 255, 255, 0.05); 
-            border-radius: 2px; color: #ff9999; font-style: italic; border: 1px dashed #661111;
+        /* --- Wireshark GUI 模擬器 (核心設計) --- */
+        .ws-window {
+            background: #f0f0f0; border-radius: 4px; overflow: hidden; height: 700px;
+            display: flex; flex-direction: column; color: #333; font-family: 'Segoe UI', sans-serif;
+            box-shadow: 0 0 50px rgba(0, 0, 0, 0.5); border: 1px solid #666;
         }
 
-        /* 重置按鈕 */
-        .reset-btn {
-            background: transparent; border: 1px solid #ff3333; color: #ff3333; 
-            padding: 4px 12px; font-size: 0.8rem; cursor: pointer; transition: 0.3s;
-            font-family: monospace; text-transform: uppercase;
+        /* 標題列 */
+        .ws-titlebar {
+            background: #e6e6e6; padding: 5px 10px; border-bottom: 1px solid #ccc; font-size: 0.9rem;
+            display: flex; justify-content: space-between; align-items: center;
         }
-        .reset-btn:hover { background: #ff3333; color: #000; }
+        .ws-controls { display: flex; gap: 5px; }
+        .ws-dot { width: 12px; height: 12px; border-radius: 50%; background: #ccc; }
+        .ws-dot.red { background: #ff5f56; } .ws-dot.yellow { background: #ffbd2e; } .ws-dot.green { background: #27c93f; }
 
-        /* Exploit-DB 列表樣式 */
-        .edb-header { color: #ff3333; border-bottom: 1px solid #ff3333; margin-bottom: 5px; font-weight: bold; }
-        .edb-row { display: flex; justify-content: space-between; color: #ccc; border-bottom: 1px dotted #333; padding: 2px 0; }
-        .edb-title { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding-right: 10px; }
-        .edb-path { width: 300px; text-align: right; color: #888; }
-
-        @keyframes blink { 50% { opacity: 0; } }
-        @keyframes slideIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-
-        /* 頁尾 */
-        footer {
-            background: #0f0505; border-top: 1px solid #ff3333; padding: 30px 0;
-            text-align: center; color: #666; margin-top: 40px;
+        /* 工具列 */
+        .ws-toolbar {
+            background: #f5f5f5; padding: 8px; border-bottom: 1px solid #ccc; display: flex; gap: 15px; align-items: center;
         }
-        footer p { margin: 5px 0; color: #888; }
+        .ws-tool-btn {
+            color: #555; cursor: pointer; font-size: 1.1rem; transition: 0.2s;
+        }
+        .ws-tool-btn:hover { color: #0078d7; transform: scale(1.1); }
+        .ws-tool-btn.active { color: #d00; animation: pulseRed 1s infinite; }
 
-        /* RWD */
-        @media (max-width: 900px) { .sim-grid { grid-template-columns: 1fr; grid-template-rows: auto 400px auto; } .sim-decoder { border-left: none; border-top: 1px solid #661111; height: 300px; } }
+        /* 過濾欄 */
+        .ws-filter-bar {
+            background: #e8e8e8; padding: 5px 10px; border-bottom: 1px solid #ccc; display: flex; align-items: center; gap: 10px;
+        }
+        .ws-filter-input {
+            flex: 1; padding: 4px 8px; border: 1px solid #aaa; border-radius: 3px; font-family: monospace;
+            background: #fff; transition: 0.3s;
+        }
+        .ws-filter-input.valid { background: #d4f7d4; border-color: #008000; } /* 綠色代表語法正確 */
+        
+        /* 封包列表 (Packet List) - 核心 */
+        .ws-packet-list {
+            flex: 1; background: #fff; overflow-y: auto; overflow-x: hidden; position: relative;
+            font-family: 'Consolas', monospace; font-size: 0.85rem;
+        }
+        .ws-table { width: 100%; border-collapse: collapse; table-layout: fixed; }
+        .ws-table th {
+            background: #e6e6e6; border-right: 1px solid #d0d0d0; border-bottom: 1px solid #d0d0d0;
+            padding: 2px 5px; text-align: left; font-weight: normal; color: #444; position: sticky; top: 0;
+        }
+        .ws-table td { padding: 2px 5px; border-right: 1px solid #f0f0f0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: pointer; }
+        .ws-table tr:hover { background: #dbeeff !important; }
+        .ws-table tr.selected { background: #0078d7 !important; color: #fff !important; }
+
+        /* Wireshark 顏色規則 */
+        .row-tcp { background: #e4ffc7; }
+        .row-udp { background: #daeeff; }
+        .row-http { background: #e4ffc7; }
+        .row-error { background: #111; color: #ff5f56; }
+        .row-dns { background: #daeeff; }
+
+        /* 封包詳情 (Packet Details) */
+        .ws-packet-details {
+            height: 200px; background: #fff; border-top: 1px solid #ccc; overflow-y: auto; padding: 10px;
+            font-family: 'Consolas', monospace; font-size: 0.9rem; color: #333;
+        }
+        .tree-node { margin-left: 15px; cursor: pointer; }
+        .tree-node::before { content: '▶ '; font-size: 0.7rem; color: #666; display: inline-block; width: 15px; }
+        .tree-node.open::before { content: '▼ '; }
+        
+        /* 控制面板 (側邊) */
+        .control-panel { background: #002244; padding: 20px; border-radius: 6px; border: 1px solid #005588; }
+        .step-btn {
+            width: 100%; padding: 15px; margin-bottom: 10px; background: rgba(0, 153, 255, 0.1); 
+            border: 1px solid #005588; color: #fff; text-align: left; cursor: pointer; border-radius: 4px;
+            transition: all 0.2s; display: flex; align-items: center; justify-content: space-between;
+        }
+        .step-btn:hover { background: #004488; border-color: #0099ff; }
+        .step-btn.active { background: #005588; border-left: 4px solid #0099ff; box-shadow: 0 0 10px rgba(0,153,255,0.3); }
+        .step-icon { width: 30px; text-align: center; }
+
+        @keyframes pulseRed { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
+
     </style>
 </head>
 <body>
 
-    <div class="archive-background"></div>
-    <div class="scan-line"></div>
-    <div class="scan-line"></div>
+    <div class="sea-background"></div>
+    <div class="bubble"></div>
+    <div class="bubble"></div>
+    <div class="bubble"></div>
+    <div class="bubble"></div>
 
     <header>
         <div class="container">
-            <h1><i class="fas fa-search"></i> Searchsploit 漏洞搜尋實戰</h1>
-            <p>Exploit-DB 的離線搜尋引擎 • 從版本偵查到漏洞利用的關鍵橋樑</p>
+            <h1><i class="fas fa-shark"></i> Wireshark 封包分析實戰</h1>
+            <p>網路世界的顯微鏡 • 視覺化封包嗅探與協定分析</p>
         </div>
     </header>
 
@@ -186,9 +167,9 @@
         <div class="container">
             <ul>
                 <li><a href="#intro">工具介紹</a></li>
-                <li><a href="#install">環境準備</a></li>
-                <li><a href="#simulation">搜尋實戰</a></li>
-                <li><a href="#features">進階技巧</a></li>
+                <li><a href="#install">安裝準備</a></li>
+                <li><a href="#simulation">圖形化實戰</a></li>
+                <li><a href="#filters">過濾語法</a></li>
                 <li><a href="#ethics">法律規範</a></li>
             </ul>
         </div>
@@ -197,394 +178,276 @@
     <div class="container">
         
         <div class="grid-layout">
-            <div class="content-left">
+            <div class="left-col">
                 <article id="intro">
-                    <h2><i class="fas fa-book"></i> 什麼是 Searchsploit？</h2>
+                    <h2><i class="fas fa-search"></i> 什麼是 Wireshark？</h2>
                     
-                    <p><strong>Searchsploit</strong> 是 <strong>Exploit-DB</strong> 的官方命令列搜尋工具。當你透過 Nmap 掃描出目標主機的服務版本（例如 Apache 2.4.49）後，下一步就是「找找看有沒有現成的攻擊腳本」。</p>
-                    <p>它內建了成千上萬個已公開的漏洞利用代碼 (Exploits)，而且完全離線，不需要連網即可查詢。這在無法上網的內網滲透環境中非常重要。</p>
-                    
-                    <div class="info-box">
-                        <p><strong><i class="fas fa-project-diagram"></i> 攻擊流程定位：</strong></p>
-                        <p>偵查 (Nmap) ➔ <strong>分析 (Searchsploit)</strong> ➔ 攻擊 (Metasploit / 手動腳本)</p>
-                    </div>
+                    <p><strong>Wireshark</strong> 是世界上最廣泛使用的網路封包分析軟體。它就像是網路線上的「監視攝影機」。</p>
+                    <p>它可以攔截網卡上的所有流量，並將原本看不懂的 0/1 訊號，翻譯成人類可讀的 HTTP, TCP, DNS 等協定內容。</p>
                 </article>
 
-                <article id="install">
-                    <h2><i class="fas fa-terminal"></i> 安裝與更新</h2>
-                    <p>Searchsploit 內建於 Kali Linux。保持資料庫最新是非常重要的。</p>
-                    <pre><code style="color:#ff3333;"># 安裝 (若未安裝)
-sudo apt install exploitdb
-
-# 更新漏洞資料庫
-searchsploit -u</code></pre>
-                </article>
-            </div>
-
-            <aside>
-                <div>
-                    <h3><i class="fas fa-laptop-code"></i> 實驗配置</h3>
-                    <ul>
-                        <li><i class="fas fa-check"></i> <strong>攻擊機</strong>: Kali Linux (Root)</li>
-                        <li><i class="fas fa-bullseye"></i> <strong>目標服務</strong>: vsftpd 2.3.4</li>
-                        <li><i class="fas fa-database"></i> <strong>資料庫</strong>: Exploit-DB (Local)</li>
-                        <li><i class="fas fa-file-code"></i> <strong>目標腳本</strong>: 49757.py</li>
-                    </ul>
+                <div class="control-panel">
+                    <h3 style="color:#0099ff; margin-bottom:15px; border-bottom:1px solid #005588; padding-bottom:5px;">
+                        <i class="fas fa-gamepad"></i> 互動操作面板
+                    </h3>
+                    <button class="step-btn" onclick="runStep(1)" id="btn-1">
+                        <div><i class="fas fa-mouse-pointer step-icon"></i> 1. 選擇網卡 (Capture)</div>
+                    </button>
+                    <button class="step-btn" onclick="runStep(2)" id="btn-2">
+                        <div><i class="fas fa-play step-icon"></i> 2. 開始嗅探 (Start)</div>
+                    </button>
+                    <button class="step-btn" onclick="runStep(3)" id="btn-3">
+                        <div><i class="fas fa-filter step-icon"></i> 3. 過濾 HTTP (Filter)</div>
+                    </button>
+                    <button class="step-btn" onclick="runStep(4)" id="btn-4">
+                        <div><i class="fas fa-file-code step-icon"></i> 4. 追蹤串流 (Stream)</div>
+                    </button>
+                    <button class="step-btn" onclick="resetSim()" style="margin-top:20px; background:transparent; border-color:#666; color:#aaa;">
+                        <div><i class="fas fa-undo step-icon"></i> 重置模擬器</div>
+                    </button>
                 </div>
-                
-                <div style="margin-top: 30px;">
-                    <h3><i class="fas fa-list-ul"></i> 章節導覽</h3>
-                    <ul>
-                        <li><a href="#intro" style="color:#d0d0d0; text-decoration:none;"><i class="fas fa-angle-right"></i> 1. 工具介紹</a></li>
-                        <li><a href="#install" style="color:#d0d0d0; text-decoration:none;"><i class="fas fa-angle-right"></i> 2. 環境準備</a></li>
-                        <li><a href="#simulation" style="color:#ff3333; font-weight:bold; text-decoration:none;"><i class="fas fa-angle-right"></i> 3. 搜尋實戰</a></li>
-                        <li><a href="#features" style="color:#d0d0d0; text-decoration:none;"><i class="fas fa-angle-right"></i> 4. 進階技巧</a></li>
-                        <li><a href="#ethics" style="color:#d0d0d0; text-decoration:none;"><i class="fas fa-angle-right"></i> 5. 法律規範</a></li>
-                    </ul>
-                </div>
-            </aside>
-        </div>
 
-        <div class="full-width">
-            <article id="simulation" style="border: 2px solid #ff3333; box-shadow: 0 0 30px rgba(255, 51, 51, 0.1);">
-                <h2><i class="fas fa-search-location"></i> 漏洞搜尋實戰 (Exploit Search Lab)</h2>
-                <p>假設我們用 Nmap 掃描發現目標開放了 <code>vsftpd 2.3.4</code> 服務。現在，我們用 Searchsploit 來找找看有沒有對應的漏洞。</p>
-                
-                <div class="simulator-wrapper">
-                    <div class="sim-header">
-                        <div><i class="fas fa-terminal"></i> KALI TERMINAL (SEARCHSPLOIT)</div>
-                        <button class="reset-btn" onclick="resetSim()">
-                            <i class="fas fa-redo"></i> 重置模擬器
-                        </button>
-                    </div>
-
-                    <div class="sim-grid">
-                        <div class="sim-controls">
-                            <button class="sim-btn" onclick="runStep(1)" id="btn-1">
-                                <strong>Step 1: 更新資料庫</strong><span>searchsploit -u</span>
-                            </button>
-                            <button class="sim-btn" onclick="runStep(2)" id="btn-2">
-                                <strong>Step 2: 搜尋關鍵字</strong><span>searchsploit vsftpd 2.3.4</span>
-                            </button>
-                            <button class="sim-btn" onclick="runStep(3)" id="btn-3">
-                                <strong>Step 3: 查看腳本路徑</strong><span>(Check Path)</span>
-                            </button>
-                            <button class="sim-btn" onclick="runStep(4)" id="btn-4">
-                                <strong>Step 4: 複製腳本到當前目錄</strong><span>searchsploit -m 49757</span>
-                            </button>
-                            <button class="sim-btn" onclick="runStep(5)" id="btn-5" style="border-left: 3px solid #ff3333; background: rgba(255,0,0,0.1);">
-                                <strong style="color:#ff3333;">Step 5: 查看腳本內容</strong><span>cat 49757.py</span>
-                            </button>
-                        </div>
-
-                        <div class="sim-terminal">
-                            <div class="term-body" id="term-body">
-                                <div>Kali GNU/Linux Rolling [Version 2024.1]</div>
-                                <br>
-                                <div id="prompt-line" style="display:flex; flex-wrap:wrap;">
-                                    <span class="prompt" id="prompt-text">root@kali:~#</span>
-                                    <span id="typing-area"></span><span class="cursor"></span>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="sim-decoder">
-                            <div class="decoder-header"><i class="fas fa-info-circle"></i> 檢索解析</div>
-                            <div class="decoder-content" id="decoder-content">
-                                <div style="text-align: center; color: #ff9999; margin-top: 100px;">
-                                    <i class="fas fa-archive fa-3x" style="margin-bottom: 20px;"></i><br>
-                                    資料庫就緒<br>點擊左側 <strong>Step 1</strong> 開始搜尋
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </article>
-        </div>
-
-        <div class="grid-layout">
-            
-            <div class="content-left">
-                <article id="features">
-                    <h2><i class="fas fa-lightbulb"></i> 實用技巧</h2>
-                    <p>Searchsploit 的功能不只是關鍵字搜尋：</p>
-                    
-                    <ul style="list-style: none; padding: 0;">
-                        <li style="margin-bottom: 15px; background: rgba(255,51,51,0.05); padding: 10px; border-left: 3px solid #ff3333;">
-                            <strong>精確搜尋 (Strict Search)</strong><br>
-                            <code>searchsploit -s "Apache 2.4"</code><br>
-                            <span style="font-size:0.9rem; color:#888;">如果你不想看到 "Apache 1.x" 的結果，使用 -s 進行精確匹配。</span>
-                        </li>
-                        <li style="margin-bottom: 15px; background: rgba(255,51,51,0.05); padding: 10px; border-left: 3px solid #ff3333;">
-                            <strong>排除特定詞 (Exclude)</strong><br>
-                            <code>searchsploit apache --exclude="DoS"</code><br>
-                            <span style="font-size:0.9rem; color:#888;">排除那些只能造成當機 (DoS) 的腳本，專注於能拿到權限 (RCE) 的漏洞。</span>
-                        </li>
-                        <li style="background: rgba(255,51,51,0.05); padding: 10px; border-left: 3px solid #ff3333;">
-                            <strong>檢視腳本 (Examine)</strong><br>
-                            <code>searchsploit -x 12345.py</code><br>
-                            <span style="font-size:0.9rem; color:#888;">直接在終端機開啟並閱讀腳本內容，不用複製出來。</span>
-                        </li>
+                <article id="filters" style="margin-top:20px;">
+                    <h2><i class="fas fa-filter"></i> 常用過濾語法</h2>
+                    <ul style="list-style:none; padding:0;">
+                        <li style="margin-bottom:10px;"><code style="background:#004466; padding:2px 5px; color:#fff;">ip.addr == 192.168.1.1</code><br><span style="font-size:0.9rem; color:#aaa;">只看特定 IP 的流量</span></li>
+                        <li style="margin-bottom:10px;"><code style="background:#004466; padding:2px 5px; color:#fff;">http.request.method == "POST"</code><br><span style="font-size:0.9rem; color:#aaa;">只看送出表單的動作 (找密碼用)</span></li>
+                        <li><code style="background:#004466; padding:2px 5px; color:#fff;">tcp.port == 80</code><br><span style="font-size:0.9rem; color:#aaa;">只看 Port 80 的流量</span></li>
                     </ul>
                 </article>
             </div>
 
-            <div class="content-right">
-                <article id="ethics">
-                    <h2><i class="fas fa-gavel"></i> 法律與道德</h2>
-                    
-                    <div class="danger-box">
-                        <h3><i class="fas fa-exclamation-triangle"></i> 腳本小子的禁區</h3>
-                        <p>下載並執行網路上不明來源的 Exploit 腳本是非常危險的。有些腳本可能包含惡意後門，反過來攻擊你的電腦。</p>
+            <div class="right-col">
+                <div class="ws-window">
+                    <div class="ws-titlebar">
+                        <span>Capturing from 'Eth0' - Wireshark</span>
+                        <div class="ws-controls">
+                            <div class="ws-dot green"></div><div class="ws-dot yellow"></div><div class="ws-dot red"></div>
+                        </div>
                     </div>
-
-                    <div style="margin-bottom:20px;">
-                        <h4 style="color:#ff3333; margin-bottom:10px;">安全守則</h4>
-                        <ul>
-                            <li><strong>永遠先閱讀代碼</strong>：不要直接執行。</li>
-                            <li><strong>在沙盒中測試</strong>：先在虛擬機測試效果。</li>
-                            <li><strong>確認授權</strong>：只對授權目標使用。</li>
-                        </ul>
+                    <div class="ws-toolbar">
+                        <i class="fas fa-shark" style="color:#0078d7; font-size:1.5rem; margin-right:10px;"></i>
+                        <i class="fas fa-play ws-tool-btn" id="tool-start" title="Start Capture"></i>
+                        <i class="fas fa-stop ws-tool-btn" id="tool-stop" title="Stop Capture" style="color:#ccc;"></i>
+                        <i class="fas fa-search-plus ws-tool-btn"></i>
+                        <i class="fas fa-search-minus ws-tool-btn"></i>
                     </div>
-
-                    <div class="info-box" style="text-align: center;">
-                        <h4 style="margin-top: 0; color: #fff;">資安倫理</h4>
-                        <p>工具本身無罪，重點在於使用者的意圖。</p>
-                        <p style="color: #ff3333; font-weight: bold; margin-top: 10px;">
-                            Read Code Before You Run.
-                        </p>
+                    <div class="ws-filter-bar">
+                        <span>Apply a display filter:</span>
+                        <input type="text" class="ws-filter-input" id="filter-input" placeholder="<Ctrl-/> to enter a display filter">
+                        <i class="fas fa-arrow-right" style="color:#666;"></i>
                     </div>
-                </article>
+                    <div class="ws-packet-list" id="packet-list">
+                        <table class="ws-table">
+                            <thead>
+                                <tr>
+                                    <th width="60">No.</th>
+                                    <th width="100">Time</th>
+                                    <th width="120">Source</th>
+                                    <th width="120">Destination</th>
+                                    <th width="70">Protocol</th>
+                                    <th width="60">Length</th>
+                                    <th>Info</th>
+                                </tr>
+                            </thead>
+                            <tbody id="packet-tbody">
+                                </tbody>
+                        </table>
+                        <div id="welcome-msg" style="text-align:center; padding:50px; color:#888;">
+                            <i class="fas fa-network-wired fa-3x"></i><br><br>
+                            準備就緒<br>請點擊左側 <strong>Step 1</strong> 開始操作
+                        </div>
+                    </div>
+                    <div class="ws-packet-details" id="packet-details">
+                        <div style="color:#888; font-style:italic;">No packet selected.</div>
+                    </div>
+                </div>
             </div>
         </div>
 
     </div>
 
-    <footer>
-        <div class="container">
-            <p>© 2025 Searchsploit 搜尋實驗室 | 僅供資安教育用途</p>
-            <p>請務必遵守法律與道德規範</p>
-        </div>
-    </footer>
-
     <script>
-        const termBody = document.getElementById('term-body');
-        const promptLine = document.getElementById('prompt-line');
-        const promptText = document.getElementById('prompt-text');
-        const typingArea = document.getElementById('typing-area');
-        const decoderContent = document.getElementById('decoder-content');
-        
-        let isTyping = false;
-        let typingTimer = null;
-        let currentPromptStr = "root@kali:~#";
+        const packetList = document.getElementById('packet-tbody');
+        const filterInput = document.getElementById('filter-input');
+        const toolStart = document.getElementById('tool-start');
+        const toolStop = document.getElementById('tool-stop');
+        const welcomeMsg = document.getElementById('welcome-msg');
+        const packetDetails = document.getElementById('packet-details');
 
-        // 模擬數據
-        const scenarios = {
-            1: {
-                cmd: "searchsploit -u",
-                info: `
-                    <div class="explanation-card">
-                        <h4>Step 1: 更新資料庫 (Update)</h4>
-                        <p style="color:#ccc;">在使用之前，確保我們的漏洞資料庫是最新的。</p>
-                        <p style="color:#ccc;">這會從 GitHub 同步最新的 exploit-db 資訊。</p>
-                        <div class="analogy">
-                            <strong>💡 白話文比喻：</strong>你要去圖書館查資料前，先確認圖書館的目錄系統已經更新到今天的版本，才不會漏掉最新的書。
-                        </div>
-                    </div>`,
-                output: [
-                    { text: "[*] Updating exploitdb...", wait: 500 },
-                    { text: "[+] Git pull origin master", wait: 1000 },
-                    { text: "    From https://github.com/offensive-security/exploitdb", wait: 1200 },
-                    { text: "    * branch            master     -> FETCH_HEAD", wait: 1400 },
-                    { text: "[+] Exploit Database Updated!", color: "#00ff00", wait: 1800 },
-                    { text: "root@kali:~#", type: "prompt", wait: 2000 }
-                ]
-            },
-            2: {
-                cmd: "searchsploit vsftpd 2.3.4",
-                info: `
-                    <div class="explanation-card">
-                        <h4>Step 2: 搜尋漏洞 (Search)</h4>
-                        <p style="color:#ccc;">我們搜尋 <code>vsftpd 2.3.4</code>。</p>
-                        <p style="color:#ccc;">結果顯示這是一個非常有名的 <strong>Backdoor Command Execution (後門指令執行)</strong> 漏洞。</p>
-                        <div class="analogy">
-                            <strong>💡 白話文比喻：</strong>你在目錄系統輸入關鍵字。系統跳出一張卡片：「找到了！這款軟體的 2.3.4 版有一個已知的後門。」
-                        </div>
-                    </div>`,
-                output: [
-                    { text: "------------------------------------------------------------------------- ---------------------------------", color: "#ff3333", wait: 300 },
-                    { text: " Exploit Title                                                           |  Path", color: "#ff3333", wait: 400 },
-                    { text: "------------------------------------------------------------------------- ---------------------------------", color: "#ff3333", wait: 500 },
-                    { text: "vsftpd 2.3.4 - Backdoor Command Execution                                | unix/remote/49757.py", color: "#fff", wait: 800 },
-                    { text: "vsftpd 2.3.4 - Backdoor Command Execution (Metasploit)                   | unix/remote/17491.rb", color: "#888", wait: 1000 },
-                    { text: "------------------------------------------------------------------------- ---------------------------------", color: "#ff3333", wait: 1200 },
-                    { text: "Shellcodes: No Results", wait: 1400 },
-                    { text: "root@kali:~#", type: "prompt", wait: 1600 }
-                ]
-            },
-            3: {
-                cmd: "", // Pass
-                info: `
-                    <div class="explanation-card">
-                        <h4>Step 3: 解讀結果</h4>
-                        <p style="color:#ccc;">注意看 <strong>Path</strong> 那一欄。</p>
-                        <p style="color:#ccc;"><code>unix/remote/49757.py</code> 表示這個腳本位於 Exploit-DB 的 unix 分類，是一個遠端攻擊 (remote) 的 Python 腳本。</p>
-                    </div>`,
-                output: []
-            },
-            4: {
-                cmd: "searchsploit -m 49757",
-                info: `
-                    <div class="explanation-card">
-                        <h4>Step 4: 複製腳本 (Mirror)</h4>
-                        <p style="color:#ccc;">使用 <code>-m</code> (mirror) 加上編號 <code>49757</code>，將腳本複製到當前目錄。</p>
-                        <p style="color:#ccc;">這樣我們就可以編輯或執行它，而不會弄亂原本的資料庫。</p>
-                        <div class="analogy">
-                            <strong>💡 白話文比喻：</strong>你不想在圖書館的書上畫線，所以你把那頁影印了一份帶回座位上慢慢研究。
-                        </div>
-                    </div>`,
-                output: [
-                    { text: "  Exploit: vsftpd 2.3.4 - Backdoor Command Execution", wait: 300 },
-                    { text: "      URL: https://www.exploit-db.com/exploits/49757", wait: 500 },
-                    { text: "     Path: /usr/share/exploitdb/exploits/unix/remote/49757.py", wait: 700 },
-                    { text: "Copied to: /root/49757.py", color: "#00ff00", wait: 1000 },
-                    { text: "root@kali:~#", type: "prompt", wait: 1200 }
-                ]
-            },
-            5: {
-                cmd: "cat 49757.py",
-                info: `
-                    <div class="explanation-card">
-                        <h4>Step 5: 閱讀代碼 (Review)</h4>
-                        <p style="color:#ccc;"><strong>最重要的步驟！</strong>在執行任何腳本前，一定要先看它在做什麼。</p>
-                        <p style="color:#ccc;">我們可以看到這段 Python 代碼嘗試連線到目標的 21 port，並輸入笑臉符號 <code>:)</code> 來觸發後門。</p>
-                        <div class="analogy">
-                            <strong>⚠️ 安全檢查：</strong>在喝下這瓶藥水前，先看看標籤上的成分表。也許它是毒藥，或者會把你的電腦炸掉。
-                        </div>
-                    </div>`,
-                output: [
-                    { text: "#!/usr/bin/env python3", color: "#888", wait: 300 },
-                    { text: "# Exploit Title: vsftpd 2.3.4 - Backdoor Command Execution", color: "#888", wait: 400 },
-                    { text: "import socket", color: "#ffcccc", wait: 500 },
-                    { text: "import sys", color: "#ffcccc", wait: 600 },
-                    { text: "...", wait: 700 },
-                    { text: "def trigger_backdoor(target):", color: "#ff9999", wait: 900 },
-                    { text: "    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)", wait: 1000 },
-                    { text: "    s.connect((target, 21))", wait: 1100 },
-                    { text: "    s.send(b'USER nergal:)\\r\\n')", color: "#ff3333", style: "font-weight:bold;", wait: 1300 },
-                    { text: "    s.send(b'PASS pass\\r\\n')", wait: 1400 },
-                    { text: "root@kali:~#", type: "prompt", wait: 1800 }
-                ]
-            }
-        };
+        let isCapturing = false;
+        let captureInterval = null;
+        let packetCount = 1;
+        let filteredMode = false;
+
+        // 模擬封包數據庫
+        const packetData = [
+            { src: "192.168.1.5", dst: "192.168.1.1", proto: "DNS", info: "Standard query 0x1234 A login.example.com", class: "row-dns" },
+            { src: "192.168.1.1", dst: "192.168.1.5", proto: "DNS", info: "Standard query response 0x1234 A 93.184.216.34", class: "row-dns" },
+            { src: "192.168.1.5", dst: "93.184.216.34", proto: "TCP", info: "54321 > 80 [SYN] Seq=0 Win=64240 Len=0 MSS=1460", class: "row-tcp" },
+            { src: "93.184.216.34", dst: "192.168.1.5", proto: "TCP", info: "80 > 54321 [SYN, ACK] Seq=0 Ack=1 Win=29200 Len=0", class: "row-tcp" },
+            { src: "192.168.1.5", dst: "93.184.216.34", proto: "TCP", info: "54321 > 80 [ACK] Seq=1 Ack=1 Win=64240 Len=0", class: "row-tcp" },
+            { src: "192.168.1.5", dst: "93.184.216.34", proto: "HTTP", info: "GET /login.php HTTP/1.1", class: "row-http" },
+            { src: "93.184.216.34", dst: "192.168.1.5", proto: "HTTP", info: "HTTP/1.1 200 OK (text/html)", class: "row-http" },
+            { src: "192.168.1.5", dst: "93.184.216.34", proto: "HTTP", info: "POST /login.php HTTP/1.1 (application/x-www-form-urlencoded)", class: "row-http", important: true },
+            { src: "93.184.216.34", dst: "192.168.1.5", proto: "TCP", info: "80 > 54321 [ACK] Seq=543 Ack=888 Win=30000 Len=0", class: "row-tcp" }
+        ];
 
         function runStep(id) {
-            if (isTyping) return;
-            isTyping = true;
-            
-            const data = scenarios[id];
-            document.querySelectorAll('.sim-btn').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.step-btn').forEach(b => b.classList.remove('active'));
             document.getElementById('btn-' + id).classList.add('active');
 
-            if (id === 3) {
-                // 純解說，不執行指令
-                processOutput(data);
-            } else {
-                typeCommand(data.cmd, () => {
-                    addHistoryLog(currentPromptStr, data.cmd);
-                    processOutput(data);
-                });
+            if (id === 1) {
+                // 選擇網卡
+                welcomeMsg.style.display = 'none';
+                toolStart.style.color = '#555'; 
+                packetList.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:20px; color:#0078d7;">Interface 'Eth0' selected. Ready to capture.</td></tr>`;
+            } else if (id === 2) {
+                // 開始嗅探
+                startCapture();
+            } else if (id === 3) {
+                // 過濾 HTTP
+                applyFilter();
+            } else if (id === 4) {
+                // Follow Stream
+                showStream();
             }
         }
 
-        function processOutput(data) {
-            decoderContent.innerHTML = data.info;
-            let maxWait = 0;
-            if(data.output) {
-                data.output.forEach(line => {
-                    setTimeout(() => {
-                        if(line.type === 'prompt') {
-                            updatePrompt(line.text);
-                        } else {
-                            printText(line.text, line.color, line.style);
-                        }
-                    }, line.wait);
-                    if(line.wait > maxWait) maxWait = line.wait;
-                });
-            }
-            setTimeout(() => {
-                isTyping = false;
-            }, maxWait + 200);
-        }
-
-        function typeCommand(text, callback) {
-            typingArea.textContent = "";
+        function startCapture() {
+            if (isCapturing) return;
+            isCapturing = true;
+            packetList.innerHTML = ""; // 清空
+            toolStart.classList.add('active');
+            toolStop.style.color = '#555';
+            
             let i = 0;
-            typingTimer = setInterval(() => {
-                typingArea.textContent += text.charAt(i);
+            captureInterval = setInterval(() => {
+                if (i >= packetData.length) {
+                    i = 0; // Loop packets for effect, unless filtering
+                }
+                
+                // 隨機生成一點噪音封包
+                if (Math.random() > 0.7) {
+                    addPacket({ src: "192.168.1.10"+Math.floor(Math.random()*9), dst: "224.0.0.1", proto: "UDP", info: "Source port: 5353  Destination port: 5353", class: "row-udp" });
+                }
+
+                addPacket(packetData[i]);
+                i++;
+                
+                // 自動捲動
+                const container = document.querySelector('.ws-packet-list');
+                container.scrollTop = container.scrollHeight;
+
+            }, 400); // 速度
+        }
+
+        function addPacket(data) {
+            const row = document.createElement('tr');
+            row.className = data.class;
+            if (data.important) row.dataset.important = "true";
+            
+            const time = (packetCount * 0.05123).toFixed(6);
+            
+            row.innerHTML = `
+                <td>${packetCount++}</td>
+                <td>${time}</td>
+                <td>${data.src}</td>
+                <td>${data.dst}</td>
+                <td>${data.proto}</td>
+                <td>${Math.floor(Math.random() * 500 + 60)}</td>
+                <td>${data.info}</td>
+            `;
+            
+            row.onclick = () => selectPacket(row, data);
+            packetList.appendChild(row);
+        }
+
+        function applyFilter() {
+            clearInterval(captureInterval);
+            isCapturing = false;
+            toolStart.classList.remove('active');
+            toolStop.style.color = '#d00'; // Stop icon red
+            
+            // 模擬打字
+            let text = "http.request.method == \"POST\"";
+            let i = 0;
+            filterInput.value = "";
+            let typeInterval = setInterval(() => {
+                filterInput.value += text.charAt(i);
                 i++;
                 if (i >= text.length) {
-                    clearInterval(typingTimer);
+                    clearInterval(typeInterval);
+                    filterInput.classList.add('valid');
+                    
+                    // 執行過濾邏輯：只保留 POST
                     setTimeout(() => {
-                        typingArea.textContent = ""; 
-                        callback();
-                    }, 300);
+                        const rows = document.querySelectorAll('.ws-table tbody tr');
+                        rows.forEach(row => {
+                            if (!row.innerHTML.includes("POST")) {
+                                row.style.display = 'none';
+                            } else {
+                                row.classList.add('selected'); // Highlight the target
+                                selectPacket(row, {proto: "HTTP", info: "POST /login.php HTTP/1.1"});
+                            }
+                        });
+                    }, 500);
                 }
-            }, 30);
+            }, 50);
         }
 
-        function addHistoryLog(p, c) {
-            const div = document.createElement('div');
-            div.innerHTML = `<span class="prompt">${p}</span> ${c}`;
-            termBody.insertBefore(div, promptLine);
-            scrollToBottom();
-        }
+        function selectPacket(row, data) {
+            // 清除其他選取
+            document.querySelectorAll('.ws-table tr').forEach(r => r.classList.remove('selected'));
+            row.classList.add('selected');
 
-        function printText(text, color, style) {
-            const div = document.createElement('div');
-            // 處理 Exploit-DB 列表格式
-            if (text.includes("|")) {
-                div.innerHTML = `<pre style="margin:0; white-space:pre;">${text}</pre>`;
-            } else {
-                div.textContent = text;
+            // 顯示詳情
+            let details = `
+<div class="tree-node open">Frame ${packetCount-1}: ${data.proto}, Length: ...</div>
+<div class="tree-node open">Ethernet II, Src: ... Dst: ...</div>
+<div class="tree-node open">Internet Protocol Version 4, Src: ${data.src}, Dst: ${data.dst}</div>
+<div class="tree-node open">Transmission Control Protocol, Src Port: 54321, Dst Port: 80</div>
+`;
+            if (data.proto === "HTTP") {
+                details += `<div class="tree-node open" style="color:#000; background:#e4ffc7;">Hypertext Transfer Protocol</div>`;
+                if (data.info.includes("POST")) {
+                    details += `
+    <div class="tree-node open">HTML Form URL Encoded: application/x-www-form-urlencoded</div>
+    <div style="margin-left:30px; color:#d00;">Form item: "username" = "admin"</div>
+    <div style="margin-left:30px; color:#d00;">Form item: "password" = "MySecretPass123"</div>`;
+                }
             }
-            if(color) div.style.color = color;
-            if(style) div.setAttribute('style', div.getAttribute('style') + `; ${style}`);
-            termBody.insertBefore(div, promptLine);
-            scrollToBottom();
+            packetDetails.innerHTML = details;
         }
 
-        function updatePrompt(text) {
-            currentPromptStr = text;
-            promptText.textContent = text;
-            scrollToBottom();
-        }
+        function showStream() {
+            // 彈出視窗模擬 (用 modal 或 alert 簡化)
+            const content = `
+FOLLOW TCP STREAM:
 
-        function scrollToBottom() {
-            termBody.scrollTop = termBody.scrollHeight;
+POST /login.php HTTP/1.1
+Host: example.com
+User-Agent: Mozilla/5.0...
+Content-Type: application/x-www-form-urlencoded
+Content-Length: 45
+
+username=admin&password=MySecretPass123
+`;
+            packetDetails.innerHTML = `<pre style="color:#d00; font-weight:bold; padding:10px;">${content}</pre>`;
+            alert("成功還原 TCP Stream！發現明文密碼：MySecretPass123");
         }
 
         function resetSim() {
-            if(isTyping) return;
-            const logs = termBody.querySelectorAll('div:not(#prompt-line)');
-            for(let i=1; i<logs.length; i++) logs[i].remove();
-            
-            const welcome1 = document.createElement('div');
-            welcome1.textContent = "Kali GNU/Linux Rolling [Version 2024.1]";
-            termBody.insertBefore(welcome1, promptLine);
-            const br = document.createElement('div');
-            br.innerHTML = "<br>";
-            termBody.insertBefore(br, promptLine);
-
-            updatePrompt("root@kali:~#");
-            typingArea.textContent = "";
-
-            decoderContent.innerHTML = `
-                <div style="text-align: center; color: #ff9999; margin-top: 100px;">
-                    <i class="fas fa-archive fa-3x" style="margin-bottom: 20px;"></i><br>
-                    資料庫就緒<br>點擊左側 <strong>Step 1</strong> 開始搜尋
-                </div>`;
-            document.querySelectorAll('.sim-btn').forEach(b => b.classList.remove('active'));
+            clearInterval(captureInterval);
+            isCapturing = false;
+            packetCount = 1;
+            packetList.innerHTML = "";
+            packetDetails.innerHTML = "<div style='color:#888; font-style:italic;'>No packet selected.</div>";
+            filterInput.value = "";
+            filterInput.classList.remove('valid');
+            toolStart.classList.remove('active');
+            welcomeMsg.style.display = 'block';
+            document.querySelectorAll('.step-btn').forEach(b => b.classList.remove('active'));
         }
     </script>
 </body>
